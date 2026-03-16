@@ -12,21 +12,14 @@
     rel="stylesheet"
   />
 
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="css/login.css" />
 </head>
 <body class="auth-page">
+  <div class="auth-background" aria-hidden="true"></div>
+  <div class="auth-overlay" aria-hidden="true"></div>
+
   <div class="page-shell auth-shell">
     <main class="auth-stage">
-      <section class="auth-intro">
-        <div class="hero-spotlight auth-spotlight" aria-hidden="true"></div>
-
-        <p class="section-label"></p>
-        <h1 class="brand-hero auth-brand">Start 5</h1>
-        <p class="auth-copy">
-          
-        </p>
-      </section>
-
       <section class="auth-card">
         <div class="auth-switch" role="tablist" aria-label="Modo de acesso">
           <button
@@ -49,21 +42,32 @@
 
         <div class="auth-card-head">
           <h2 class="auth-title" id="authTitle">Acesse sua conta</h2>
-          <p class="auth-subtitle" id="authSubtitle">
-            
-          </p>
+          <p class="auth-subtitle" id="authSubtitle"></p>
         </div>
 
-        <form class="auth-form" id="authForm" novalidate>
-          <div class="auth-field is-hidden" id="authNameField">
-            <label for="authNameInput" class="auth-label">Seu nome</label>
-            <input
-              type="text"
-              id="authNameInput"
-              class="auth-input"
-              autocomplete="name"
-              placeholder="Como você quer aparecer"
-            />
+        <form class="auth-form" id="authForm" novalidate autocomplete="off">
+          <div class="auth-name-grid is-hidden" id="authNameRow">
+            <div class="auth-field">
+              <label for="authFirstNameInput" class="auth-label">Nome</label>
+              <input
+                type="text"
+                id="authFirstNameInput"
+                class="auth-input"
+                autocomplete="given-name"
+                placeholder="Seu nome"
+              />
+            </div>
+
+            <div class="auth-field">
+              <label for="authLastNameInput" class="auth-label">Sobrenome</label>
+              <input
+                type="text"
+                id="authLastNameInput"
+                class="auth-input"
+                autocomplete="family-name"
+                placeholder="Seu sobrenome"
+              />
+            </div>
           </div>
 
           <div class="auth-field">
@@ -84,8 +88,8 @@
               type="password"
               id="authPasswordInput"
               class="auth-input"
-              autocomplete="current-password"
-              placeholder="Mínimo de 6 caracteres"
+              autocomplete="off"
+              placeholder="Minimo de 6 caracteres"
               required
             />
           </div>
@@ -96,7 +100,7 @@
               type="password"
               id="authConfirmInput"
               class="auth-input"
-              autocomplete="new-password"
+              autocomplete="off"
               placeholder="Repita sua senha"
             />
           </div>
@@ -111,6 +115,7 @@
     </main>
   </div>
 
-  <script src="auth.js"></script>
+  <script src="js/main.js"></script>
+  <script src="js/auth.js"></script>
 </body>
 </html>

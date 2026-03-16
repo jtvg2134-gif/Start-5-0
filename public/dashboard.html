@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Start 5 | Painel</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <link rel="stylesheet" href="css/dashboard.css" />
+</head>
+<body class="dashboard-page protected-page">
+  <div class="page-shell">
+    <header class="header">
+      <div class="header-inner">
+        <div class="header-account" aria-label="Conta conectada">
+          <div class="header-account-avatar" data-auth-avatar>
+            <img class="header-account-avatar-image" data-auth-avatar-image alt="Foto do perfil" hidden />
+            <span class="header-account-avatar-fallback" data-auth-initials>U</span>
+          </div>
+          <div class="header-account-copy">
+            <strong class="header-account-name" data-auth-name>Usuario</strong>
+            <span class="header-account-email" data-auth-email>email@start5.app</span>
+            <span class="header-account-month" data-auth-month-minutes>0 min no mes</span>
+          </div>
+        </div>
+
+        <button
+          class="menu-toggle"
+          id="menuToggle"
+          type="button"
+          aria-label="Abrir menu"
+          aria-expanded="false"
+          aria-controls="menuPanel"
+        >
+          <span class="menu-icon" aria-hidden="true">
+            <span></span>
+            <span></span>
+          </span>
+        </button>
+      </div>
+    </header>
+
+    <div class="menu-panel" id="menuPanel">
+      <div class="menu-panel-inner">
+        <nav class="menu-nav" aria-label="Navegacao principal">
+          <div class="menu-user">
+            <span class="menu-user-label">Conectado como</span>
+            <strong class="menu-user-name" data-auth-name>Usuario</strong>
+            <span class="menu-user-email" data-auth-email>email@start5.app</span>
+          </div>
+
+          <div class="menu-column">
+            <a href="index.html" class="menu-link">Inicio</a>
+            <a href="redacao.html" class="menu-link">Redacao</a>
+            <a href="profile.html" class="menu-link">Perfil</a>
+            <a href="#progresso" class="menu-link">Progresso</a>
+            <a href="#historico" class="menu-link">Hoje</a>
+          </div>
+
+          <div class="menu-column">
+            <a href="#semanal" class="menu-link">Semanal</a>
+            <a href="#mensal" class="menu-link">Mensal</a>
+            <a href="admin.html" class="menu-link" data-admin-only hidden>Admin</a>
+            <button type="button" class="menu-link menu-link-button" data-logout>Sair</button>
+          </div>
+        </nav>
+      </div>
+    </div>
+
+    <section class="dashboard-intro">
+      <div class="dashboard-intro-inner">
+        <div>
+          <p class="section-label">Painel</p>
+          <h1 class="progress-title">Seu progresso de pratica</h1>
+          <p class="dashboard-copy">
+            Veja quanto tempo estudou, quais materias estao dominando seu ritmo e como sua materia foco esta evoluindo.
+          </p>
+        </div>
+
+        <button class="start-button dashboard-start-button" id="startSessionButton" type="button">
+          Registrar pratica
+        </button>
+      </div>
+    </section>
+
+    <section class="focus-subject-section">
+      <article class="focus-subject-card">
+        <div class="focus-subject-head">
+          <div>
+            <p class="section-label">Materia foco</p>
+            <h2 class="focus-subject-title" id="focusSubjectNameValue">Ingles</h2>
+          </div>
+          <p class="focus-subject-copy">
+            Esse bloco acompanha a materia principal definida no seu perfil.
+          </p>
+        </div>
+
+        <div class="focus-subject-grid">
+          <article class="summary-card">
+            <span class="summary-label">Minutos no mes</span>
+            <strong class="summary-value" id="focusSubjectMinutesValue">0 min</strong>
+          </article>
+
+          <article class="summary-card">
+            <span class="summary-label">Dias ativos</span>
+            <strong class="summary-value" id="focusSubjectDaysValue">0</strong>
+          </article>
+
+          <article class="summary-card summary-card-wide">
+            <span class="summary-label">Ultimo tema</span>
+            <strong class="summary-value" id="focusSubjectTopicValue">Nenhum tema ainda</strong>
+          </article>
+        </div>
+
+        <p class="focus-subject-insight" id="focusSubjectInsightText">
+          Quando voce salvar sessoes, sua materia foco vai ganhar um bloco proprio com minutos, dias ativos e ultimo tema estudado.
+        </p>
+      </article>
+    </section>
+
+    <section class="progress-section" id="progresso">
+      <div class="progress-container">
+        <p class="section-label">Progresso</p>
+        <h2 class="progress-title">Seu dia em movimento</h2>
+
+        <div class="progress-panel">
+          <div class="panel-top">
+            <span class="panel-top-label">Leitura do dia</span>
+          </div>
+
+          <div class="panel-main">
+            <div class="panel-score">
+              <span class="score-number" id="scoreNumber">0%</span>
+              <span class="score-text">do objetivo de hoje</span>
+            </div>
+
+            <div class="panel-comparison">
+              <div class="comparison-item">
+                <span class="comparison-value" id="vsYesterdayValue">0 min</span>
+                <span class="comparison-label">vs ontem</span>
+              </div>
+
+              <div class="comparison-item">
+                <span class="comparison-value" id="vsMonthValue">0 min</span>
+                <span class="comparison-label">vs semana passada</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel-bottom">
+            <div class="panel-info">
+              <span class="info-label">Estado</span>
+              <strong class="info-value" id="currentStateValue">Normal</strong>
+            </div>
+
+            <div class="panel-info">
+              <span class="info-label">Meta</span>
+              <strong class="info-value" id="goalValue">15 min</strong>
+            </div>
+
+            <div class="panel-info">
+              <span class="info-label">Feito</span>
+              <strong class="info-value" id="doneValue">0 min</strong>
+            </div>
+
+            <div class="panel-info">
+              <span class="info-label">Sequencia</span>
+              <strong class="info-value" id="streakValue">0 dias</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="day-history" id="historico">
+      <div class="day-history-head">
+        <h3>Resumo de hoje</h3>
+        <p class="day-history-date" id="todayDateLabel"></p>
+      </div>
+
+      <div class="today-summary">
+        <article class="summary-card">
+          <span class="summary-label">Minutos hoje</span>
+          <strong class="summary-value" id="todayMinutesValue">0 min</strong>
+        </article>
+
+        <article class="summary-card">
+          <span class="summary-label">Sessoes</span>
+          <strong class="summary-value" id="todayCountValue">0</strong>
+        </article>
+
+        <article class="summary-card">
+          <span class="summary-label">Ultimo estado</span>
+          <strong class="summary-value" id="todayStateValue">Normal</strong>
+        </article>
+
+        <article class="summary-card">
+          <span class="summary-label">Materias do dia</span>
+          <strong class="summary-value" id="todayActivitiesValue">Nenhuma</strong>
+        </article>
+
+        <article class="summary-card">
+          <span class="summary-label">Verbos do ingles</span>
+          <strong class="summary-value" id="todayVerbsValue">Nenhum</strong>
+        </article>
+
+        <article class="summary-card">
+          <span class="summary-label">Ultimo tema</span>
+          <strong class="summary-value" id="todayPhraseCountValue">Nenhum</strong>
+        </article>
+      </div>
+
+      <div class="today-highlight">
+        <strong class="today-highlight-title" id="todayHighlightTitle">
+          Nenhuma pratica registrada hoje.
+        </strong>
+        <p class="today-highlight-text" id="todayHighlightText">
+          Quando voce salvar a primeira pratica, este bloco vai mostrar o ritmo do dia, o foco principal e o que apareceu na sua pratica.
+        </p>
+      </div>
+
+      <div class="daily-detail-grid">
+        <article class="detail-panel">
+          <div class="detail-panel-head">
+            <h4>Materias de hoje</h4>
+            <p>O que mais apareceu nos seus estudos.</p>
+          </div>
+          <div class="detail-chip-list" id="todayActivitiesList">
+            <span class="detail-empty">Nenhuma materia registrada.</span>
+          </div>
+        </article>
+
+        <article class="detail-panel">
+          <div class="detail-panel-head">
+            <h4>Verbos do ingles</h4>
+            <p>Resumo dos verbos revisados ou aprendidos nas sessoes de ingles.</p>
+          </div>
+          <div class="detail-chip-list" id="todayVerbsList">
+            <span class="detail-empty">Nenhum verbo de ingles registrado.</span>
+          </div>
+        </article>
+      </div>
+
+      <div class="today-sessions-head">
+        <h4>Praticas de hoje</h4>
+        <p>Edite ou apague registros do dia sem sair do painel.</p>
+      </div>
+
+      <div class="today-sessions-list" id="todaySessionsList">
+        <div class="session-empty">Voce ainda nao registrou nenhuma pratica hoje.</div>
+      </div>
+
+      <div class="today-sessions-head recent-sessions-head">
+        <h4>Registros recentes</h4>
+        <p>Ultimas praticas salvas para corrigir ou revisar rapido.</p>
+      </div>
+
+      <div class="today-sessions-list" id="recentSessionsList">
+        <div class="session-empty">Nenhuma pratica recente.</div>
+      </div>
+    </section>
+
+    <section class="analysis-section" id="semanal">
+      <div class="analysis-container">
+        <p class="section-label">Semanal</p>
+        <h2 class="analysis-title">Como voce praticou nesta semana</h2>
+
+        <div class="analysis-summary">
+          <article class="summary-card">
+            <span class="summary-label">Minutos na semana</span>
+            <strong class="summary-value" id="weeklyMinutesValue">0 min</strong>
+          </article>
+
+          <article class="summary-card">
+            <span class="summary-label">Dias ativos</span>
+            <strong class="summary-value" id="weeklyDaysValue">0</strong>
+          </article>
+
+          <article class="summary-card">
+            <span class="summary-label">Materia dominante</span>
+            <strong class="summary-value" id="weeklyTopActivityValue">Nenhuma</strong>
+          </article>
+
+          <article class="summary-card">
+            <span class="summary-label">Tema em alta</span>
+            <strong class="summary-value" id="weeklyPhraseCountValue">Nenhum</strong>
+          </article>
+        </div>
+
+        <div class="today-highlight">
+          <strong class="today-highlight-title" id="weeklyInsightTitle">
+            Ainda nao ha dados suficientes nesta semana.
+          </strong>
+          <p class="today-highlight-text" id="weeklyInsightText">
+            Conforme voce registrar sessoes, o painel semanal vai destacar a materia dominante, os temas recentes e o peso da sua materia foco.
+          </p>
+        </div>
+
+        <div class="analysis-grid analysis-grid-wide">
+          <article class="analysis-panel">
+            <div class="detail-panel-head">
+              <h4>Distribuicao por materia</h4>
+              <p>Donut com os minutos divididos por materia.</p>
+            </div>
+            <div class="chart-block" id="weeklyActivityChart"></div>
+          </article>
+
+          <article class="analysis-panel">
+            <div class="detail-panel-head">
+              <h4>Minutos por dia</h4>
+              <p>Barras para ler o ritmo da semana.</p>
+            </div>
+            <div class="chart-block" id="weeklyDailyChart"></div>
+          </article>
+
+          <article class="analysis-panel">
+            <div class="detail-panel-head">
+              <h4>Ranking das materias</h4>
+              <p>Quantas vezes cada materia apareceu na semana e quais temas puxaram o volume.</p>
+            </div>
+            <div class="analysis-list" id="weeklyActivityList">
+              <div class="detail-empty">Nenhuma materia registrada nesta semana.</div>
+            </div>
+          </article>
+
+          <article class="analysis-panel">
+            <div class="detail-panel-head">
+              <h4>Verbos do ingles</h4>
+              <p>Quais verbos apareceram nas sessoes de ingles da semana.</p>
+            </div>
+            <div class="detail-chip-list" id="weeklyVerbList">
+              <span class="detail-empty">Nenhum verbo do ingles registrado nesta semana.</span>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="analysis-section" id="mensal">
+      <div class="analysis-container">
+        <p class="section-label">Mensal</p>
+        <h2 class="analysis-title">Leitura do seu mes</h2>
+
+        <div class="analysis-summary">
+          <article class="summary-card">
+            <span class="summary-label">Minutos no mes</span>
+            <strong class="summary-value" id="monthlyMinutesValue">0 min</strong>
+          </article>
+
+          <article class="summary-card">
+            <span class="summary-label">Dias ativos</span>
+            <strong class="summary-value" id="monthlyDaysValue">0</strong>
+          </article>
+
+          <article class="summary-card">
+            <span class="summary-label">Materia dominante</span>
+            <strong class="summary-value" id="monthlyTopActivityValue">Nenhuma</strong>
+          </article>
+
+          <article class="summary-card">
+            <span class="summary-label">Tema em alta</span>
+            <strong class="summary-value" id="monthlyPhraseCountValue">Nenhum</strong>
+          </article>
+        </div>
+
+        <div class="today-highlight">
+          <strong class="today-highlight-title" id="monthlyInsightTitle">
+            Ainda nao ha dados suficientes neste mes.
+          </strong>
+          <p class="today-highlight-text" id="monthlyInsightText">
+            O Start 5 vai mostrar quais materias dominaram o mes, quais temas apareceram mais e como sua materia foco esta caminhando.
+          </p>
+        </div>
+
+        <div class="analysis-grid analysis-grid-wide">
+          <article class="analysis-panel">
+            <div class="detail-panel-head">
+              <h4>Distribuicao do mes</h4>
+              <p>Donut com as materias mais fortes.</p>
+            </div>
+            <div class="chart-block" id="monthlyActivityChart"></div>
+          </article>
+
+          <article class="analysis-panel">
+            <div class="detail-panel-head">
+              <h4>Comparativo das semanas</h4>
+              <p>Barras com os minutos de cada semana do mes.</p>
+            </div>
+            <div class="chart-block" id="monthlyWeekChart"></div>
+          </article>
+
+          <article class="analysis-panel">
+            <div class="detail-panel-head">
+              <h4>Ranking das materias</h4>
+              <p>O que mais apareceu, com quantos minutos e quais temas puxaram o mes.</p>
+            </div>
+            <div class="analysis-list" id="monthlyActivityList">
+              <div class="detail-empty">Nenhuma materia registrada neste mes.</div>
+            </div>
+          </article>
+
+          <article class="analysis-panel">
+            <div class="detail-panel-head">
+              <h4>Verbos do ingles</h4>
+              <p>Os verbos que mais apareceram nas sessoes de ingles do mes.</p>
+            </div>
+            <div class="detail-chip-list" id="monthlyVerbList">
+              <span class="detail-empty">Nenhum verbo do ingles registrado neste mes.</span>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <div class="support-copy"></div>
+  </div>
+
+  <div class="modal-backdrop" id="sessionModalBackdrop" aria-hidden="true">
+    <div class="session-modal" role="dialog" aria-modal="true" aria-labelledby="sessionModalTitle">
+      <button
+        class="modal-close"
+        type="button"
+        data-close-session-modal
+        aria-label="Fechar modal"
+      >
+        ×
+      </button>
+
+      <div class="session-modal-head">
+        <span class="session-modal-mode" id="sessionModalModeLabel">Nova pratica</span>
+        <h2 class="session-modal-title" id="sessionModalTitle">Registrar pratica</h2>
+      </div>
+
+      <div class="modal-group">
+        <span class="modal-group-label">Seu dia</span>
+
+        <div class="modal-options state-options">
+          <button type="button" class="option-pill" data-state="cansado">Cansado</button>
+          <button type="button" class="option-pill" data-state="normal">Normal</button>
+          <button type="button" class="option-pill" data-state="focado">Focado</button>
+        </div>
+      </div>
+
+      <div class="modal-group">
+        <span class="modal-group-label">Tempo</span>
+
+        <div class="modal-options duration-options">
+          <button type="button" class="option-pill" data-duration="10">10 min</button>
+          <button type="button" class="option-pill" data-duration="15">15 min</button>
+          <button type="button" class="option-pill" data-duration="20">20 min</button>
+          <button type="button" class="option-pill" data-duration="extra">Horas extras</button>
+        </div>
+
+        <div class="extra-minutes-box" id="extraMinutesBox">
+          <label for="extraMinutesInput" class="extra-minutes-label">Acima de 20 min</label>
+          <input
+            type="number"
+            id="extraMinutesInput"
+            class="extra-minutes-input"
+            min="21"
+            step="1"
+            placeholder="Ex: 35"
+          />
+        </div>
+      </div>
+
+      <div class="modal-group">
+        <label for="subjectSelect" class="modal-group-label">Materia</label>
+        <div class="subject-select-shell">
+          <select id="subjectSelect" class="subject-select">
+            <option value="ingles">Ingles</option>
+            <option value="matematica">Matematica</option>
+            <option value="portugues">Portugues</option>
+            <option value="geografia">Geografia</option>
+            <option value="historia">Historia</option>
+            <option value="biologia">Biologia</option>
+            <option value="fisica">Fisica</option>
+            <option value="quimica">Quimica</option>
+            <option value="redacao">Redacao</option>
+            <option value="filosofia">Filosofia</option>
+            <option value="sociologia">Sociologia</option>
+            <option value="outras">Outra materia</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="modal-detail-group is-hidden" id="customSubjectField">
+        <label for="customSubjectInput" class="extra-minutes-label">Qual materia voce estudou?</label>
+        <input
+          type="text"
+          id="customSubjectInput"
+          class="extra-minutes-input"
+          maxlength="60"
+          placeholder="Ex: Espanhol, Direito, Programacao"
+        />
+        <div class="subject-suggestions" id="customSubjectSuggestions">
+          <div class="subject-suggestions-empty">
+            As materias personalizadas que voce salvar vao aparecer aqui.
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-detail-group">
+        <label for="topicInput" class="extra-minutes-label">O que estudou hoje?</label>
+        <input
+          type="text"
+          id="topicInput"
+          class="extra-minutes-input"
+          maxlength="140"
+          placeholder="Ex: funcoes, concordancia verbal, phrasal verbs"
+        />
+        <p class="modal-detail-hint">Uma sessao, uma materia, um tema claro.</p>
+      </div>
+
+      <div class="modal-detail-group is-hidden" id="verbDetailsField">
+        <label for="verbsEntryInput" class="extra-minutes-label">Verbos estudados</label>
+        <div class="token-input token-input-vertical">
+          <div class="token-list" id="verbsTokenList"></div>
+          <div class="token-entry-row">
+            <input
+              type="text"
+              id="verbsEntryInput"
+              class="token-input-field"
+              autocomplete="off"
+              placeholder="Busque um verbo comum"
+            />
+            <button type="button" class="token-add-button" id="addVerbButton">
+              Adicionar
+            </button>
+          </div>
+        </div>
+        <div class="verb-picker-meta">
+          <span class="verb-picker-status" id="verbPickerStatus">
+            Sugestoes com os verbos mais conhecidos primeiro.
+          </span>
+          <button type="button" class="verb-mode-button" id="verbModeToggleButton">
+            Outro verbo
+          </button>
+        </div>
+        <div class="verb-suggestions" id="verbSuggestions" aria-label="Sugestoes de verbos"></div>
+        <p class="modal-detail-hint">
+          Escolha um verbo da lista ou use Outro verbo para digitar manualmente.
+        </p>
+      </div>
+
+      <div class="modal-detail-group is-hidden" id="phraseDetailsField">
+        <label for="phrasesEntryInput" class="extra-minutes-label">Frases ou cenas registradas</label>
+        <div class="token-input token-input-vertical">
+          <div class="token-list" id="phrasesTokenList"></div>
+          <input
+            type="text"
+            id="phrasesEntryInput"
+            class="token-input-field"
+            placeholder="Digite uma frase e aperte Enter ou virgula"
+          />
+        </div>
+        <p class="modal-detail-hint">Cada item conta como uma frase registrada.</p>
+      </div>
+
+      <div class="modal-detail-group">
+        <label for="notesInput" class="extra-minutes-label">Observacoes</label>
+        <textarea
+          id="notesInput"
+          class="modal-textarea"
+          rows="3"
+          placeholder="Opcional: como foi a pratica, o que voce percebeu, em que contexto estudou..."
+        ></textarea>
+      </div>
+
+      <p class="session-helper" id="sessionHelper">Escolha a materia, o tempo e o tema estudado.</p>
+
+      <div class="modal-actions">
+        <button type="button" class="modal-button modal-button-secondary" data-close-session-modal>
+          Cancelar
+        </button>
+        <button type="button" class="modal-button modal-button-primary" id="saveSessionButton">
+          Salvar pratica
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="deleteSessionBackdrop" aria-hidden="true">
+    <div class="session-modal session-modal-compact" role="dialog" aria-modal="true" aria-labelledby="deleteSessionTitle">
+      <button
+        class="modal-close"
+        type="button"
+        data-close-delete-modal
+        aria-label="Fechar confirmacao"
+      >
+        ×
+      </button>
+
+      <div class="session-modal-head">
+        <span class="session-modal-mode">Confirmacao</span>
+        <h2 class="session-modal-title" id="deleteSessionTitle">Apagar pratica</h2>
+      </div>
+
+      <p class="confirm-copy">
+        Esta pratica sera removida do historico e dos resumos. Essa acao nao pode ser desfeita.
+      </p>
+
+      <div class="confirm-card" id="deleteSessionSummary">
+        Nenhuma pratica selecionada.
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="modal-button modal-button-secondary" data-close-delete-modal>
+          Cancelar
+        </button>
+        <button type="button" class="modal-button modal-button-danger" id="confirmDeleteSessionButton">
+          Apagar pratica
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/main.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/dashboard.js"></script>
+</body>
+</html>

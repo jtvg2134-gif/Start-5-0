@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Start 5 | Admin</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <link rel="stylesheet" href="css/admin.css" />
+</head>
+<body class="dashboard-page protected-page">
+  <div class="page-shell">
+    <header class="header">
+      <div class="header-inner">
+        <div class="header-account" aria-label="Conta conectada">
+          <div class="header-account-avatar" data-auth-avatar>
+            <img class="header-account-avatar-image" data-auth-avatar-image alt="Foto do perfil" hidden />
+            <span class="header-account-avatar-fallback" data-auth-initials>U</span>
+          </div>
+          <div class="header-account-copy">
+            <strong class="header-account-name" data-auth-name>Usuario</strong>
+            <span class="header-account-email" data-auth-email>email@start5.app</span>
+            <span class="header-account-month" data-auth-month-minutes>0 min no mes</span>
+          </div>
+        </div>
+
+        <button
+          class="menu-toggle"
+          id="menuToggle"
+          type="button"
+          aria-label="Abrir menu"
+          aria-expanded="false"
+          aria-controls="menuPanel"
+        >
+          <span class="menu-icon" aria-hidden="true">
+            <span></span>
+            <span></span>
+          </span>
+        </button>
+      </div>
+    </header>
+
+    <div class="menu-panel" id="menuPanel">
+      <div class="menu-panel-inner">
+        <nav class="menu-nav" aria-label="Navegacao principal">
+          <div class="menu-user">
+            <span class="menu-user-label">Conectado como</span>
+            <strong class="menu-user-name" data-auth-name>Usuario</strong>
+            <span class="menu-user-email" data-auth-email>email@start5.app</span>
+          </div>
+
+          <div class="menu-column">
+            <a href="index.html" class="menu-link">Inicio</a>
+            <a href="dashboard.html" class="menu-link">Painel</a>
+            <a href="profile.html" class="menu-link">Perfil</a>
+          </div>
+
+          <div class="menu-column">
+            <a href="redacao.html" class="menu-link">Redacao</a>
+            <a href="admin.html" class="menu-link">Admin</a>
+            <button type="button" class="menu-link menu-link-button" data-logout>Sair</button>
+          </div>
+        </nav>
+      </div>
+    </div>
+
+    <section class="dashboard-intro">
+      <div class="dashboard-intro-inner">
+        <div>
+          <p class="section-label">Admin</p>
+          <h1 class="progress-title">Visao geral do site</h1>
+          <p class="dashboard-copy">
+            Acompanhe crescimento, contas, praticas e o uso da nova area de redacao sem expor textos individuais.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="admin-section admin-section-overview">
+      <div class="admin-grid" id="adminOverviewGrid">
+        <article class="summary-card">
+          <span class="summary-label">Usuarios</span>
+          <strong class="summary-value" id="adminUsersValue">0</strong>
+        </article>
+
+        <article class="summary-card">
+          <span class="summary-label">Admins</span>
+          <strong class="summary-value" id="adminAdminsValue">0</strong>
+        </article>
+
+        <article class="summary-card">
+          <span class="summary-label">Sessoes</span>
+          <strong class="summary-value" id="adminSessionsValue">0</strong>
+        </article>
+
+        <article class="summary-card">
+          <span class="summary-label">Minutos totais</span>
+          <strong class="summary-value" id="adminMinutesValue">0 min</strong>
+        </article>
+
+        <article class="summary-card">
+          <span class="summary-label">Usuarios ativos</span>
+          <strong class="summary-value" id="adminActiveUsersValue">0</strong>
+        </article>
+      </div>
+    </section>
+
+    <section class="admin-section">
+      <div class="admin-grid admin-essay-grid">
+        <article class="summary-card">
+          <span class="summary-label">Redacoes</span>
+          <strong class="summary-value" id="adminEssayTotalValue">0</strong>
+        </article>
+
+        <article class="summary-card">
+          <span class="summary-label">Corrigidas na semana</span>
+          <strong class="summary-value" id="adminEssayWeekValue">0</strong>
+        </article>
+
+        <article class="summary-card">
+          <span class="summary-label">Corrigidas no mes</span>
+          <strong class="summary-value" id="adminEssayMonthValue">0</strong>
+        </article>
+
+        <article class="summary-card">
+          <span class="summary-label">Media geral</span>
+          <strong class="summary-value" id="adminEssayAverageValue">0</strong>
+        </article>
+
+        <article class="summary-card">
+          <span class="summary-label">Usuarios com redacao</span>
+          <strong class="summary-value" id="adminEssayUsersValue">0</strong>
+        </article>
+      </div>
+    </section>
+
+    <section class="admin-section">
+      <div class="admin-grid admin-essay-detail-grid">
+        <article class="admin-panel">
+          <div class="day-history-head">
+            <h3>Redacao no geral</h3>
+            <p class="day-history-date">Somente metricas agregadas.</p>
+          </div>
+
+          <div class="admin-metric-list" id="adminEssayStatusList">
+            <div class="admin-metric-row">
+              <span class="admin-metric-key">Nenhum dado de redacao ainda.</span>
+              <strong class="admin-metric-value">0</strong>
+            </div>
+          </div>
+        </article>
+
+        <article class="admin-panel">
+          <div class="day-history-head">
+            <h3>Temas sugeridos mais usados</h3>
+            <p class="day-history-date">Historico agregado sem expor textos.</p>
+          </div>
+
+          <div class="admin-metric-list" id="adminEssayThemesList">
+            <div class="admin-metric-row">
+              <span class="admin-metric-key">Nenhum tema usado ainda.</span>
+              <strong class="admin-metric-value">0</strong>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="admin-section">
+      <div class="admin-panel">
+        <div class="day-history-head">
+          <h3>Usuarios do site</h3>
+          <p class="day-history-date">Visao agregada para manter privacidade.</p>
+        </div>
+
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Conta</th>
+                <th>Perfil</th>
+                <th>Sessoes</th>
+                <th>Minutos</th>
+                <th>Ultima sessao</th>
+                <th>Acoes</th>
+              </tr>
+            </thead>
+            <tbody id="adminUsersTableBody">
+              <tr>
+                <td colspan="7" class="admin-empty">Carregando dados do admin...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <div class="support-copy"></div>
+  </div>
+
+  <div class="admin-modal-backdrop" id="adminModalBackdrop" aria-hidden="true">
+    <div
+      class="admin-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="adminModalTitle"
+    >
+      <button
+        class="modal-close"
+        type="button"
+        data-close-admin-modal
+        aria-label="Fechar modal"
+      >
+        ×
+      </button>
+
+      <h2 class="session-modal-title" id="adminModalTitle">Editar acesso</h2>
+      <p class="admin-modal-subtitle" id="adminModalSubtitle"></p>
+
+      <form class="admin-modal-form" id="adminModalForm" novalidate>
+        <div class="admin-modal-fields" id="adminEditFields">
+          <label class="admin-modal-label" for="adminEditEmailInput">E-mail</label>
+          <input
+            type="email"
+            id="adminEditEmailInput"
+            class="admin-modal-input"
+            autocomplete="off"
+            placeholder="voce@exemplo.com"
+          />
+
+          <label class="admin-modal-label" for="adminEditPasswordInput">Nova senha</label>
+          <input
+            type="password"
+            id="adminEditPasswordInput"
+            class="admin-modal-input"
+            autocomplete="off"
+            placeholder="Deixe vazio para manter a atual"
+          />
+
+          <p class="admin-modal-hint">
+            Se a senha ficar vazia, o login continua com a senha atual.
+          </p>
+        </div>
+
+        <div class="admin-modal-fields is-hidden" id="adminPermissionsFields">
+          <span class="admin-modal-label">Permissoes</span>
+
+          <div class="admin-role-options">
+            <button type="button" class="admin-role-option" data-role-option="user">
+              Usuario
+            </button>
+            <button type="button" class="admin-role-option" data-role-option="admin">
+              Admin
+            </button>
+          </div>
+
+          <p class="admin-modal-hint">
+            Somente admins podem alterar o perfil de acesso.
+          </p>
+        </div>
+
+        <p class="admin-modal-feedback" id="adminModalFeedback" aria-live="polite"></p>
+
+        <div class="admin-modal-actions">
+          <button
+            type="button"
+            class="modal-button modal-button-secondary"
+            data-close-admin-modal
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            class="modal-button modal-button-primary"
+            id="adminModalSubmitButton"
+          >
+            Salvar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="js/main.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>

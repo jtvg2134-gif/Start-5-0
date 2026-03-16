@@ -4,7 +4,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node --watch server.js"
+    "start": "node --env-file-if-exists=.env server.js",
+    "dev": "node --env-file-if-exists=.env --input-type=module -e \"process.env.PORT ??= '3001'; await import('./server.js');\"",
+    "prod": "node --env-file-if-exists=.env --input-type=module -e \"process.env.NODE_ENV='production'; await import('./server.js');\""
+  },
+  "dependencies": {
+    "openai": "^6.29.0"
   }
 }

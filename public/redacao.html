@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Start 5 | Redacao</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <link rel="stylesheet" href="css/redacao.css" />
+</head>
+<body class="dashboard-page protected-page essay-page">
+  <div class="page-shell">
+    <header class="header">
+      <div class="header-inner">
+        <div class="header-account" aria-label="Conta conectada">
+          <div class="header-account-avatar" data-auth-avatar>
+            <img class="header-account-avatar-image" data-auth-avatar-image alt="Foto do perfil" hidden />
+            <span class="header-account-avatar-fallback" data-auth-initials>U</span>
+          </div>
+          <div class="header-account-copy">
+            <strong class="header-account-name" data-auth-name>Usuario</strong>
+            <span class="header-account-email" data-auth-email>email@start5.app</span>
+            <span class="header-account-month" data-auth-month-minutes>0 min no mes</span>
+          </div>
+        </div>
+
+        <button
+          class="menu-toggle"
+          id="menuToggle"
+          type="button"
+          aria-label="Abrir menu"
+          aria-expanded="false"
+          aria-controls="menuPanel"
+        >
+          <span class="menu-icon" aria-hidden="true">
+            <span></span>
+            <span></span>
+          </span>
+        </button>
+      </div>
+    </header>
+
+    <div class="menu-panel" id="menuPanel">
+      <div class="menu-panel-inner">
+        <nav class="menu-nav" aria-label="Navegacao principal">
+          <div class="menu-user">
+            <span class="menu-user-label">Conectado como</span>
+            <strong class="menu-user-name" data-auth-name>Usuario</strong>
+            <span class="menu-user-email" data-auth-email>email@start5.app</span>
+          </div>
+
+          <div class="menu-column">
+            <a href="index.html" class="menu-link">Inicio</a>
+            <a href="dashboard.html" class="menu-link">Painel</a>
+            <a href="profile.html" class="menu-link">Perfil</a>
+          </div>
+
+          <div class="menu-column">
+            <a href="redacao.html" class="menu-link">Redacao</a>
+            <a href="admin.html" class="menu-link" data-admin-only hidden>Admin</a>
+            <button type="button" class="menu-link menu-link-button" data-logout>Sair</button>
+          </div>
+        </nav>
+      </div>
+    </div>
+
+    <section class="dashboard-intro">
+      <div class="dashboard-intro-inner">
+        <div>
+          <p class="section-label">Redacao</p>
+          <h1 class="progress-title">Correcao estilo ENEM com IA</h1>
+          <p class="dashboard-copy">
+            Escolha um tema, escreva sua redacao e receba nota por competencia, leitura geral e orientacoes de melhoria.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="essay-layout">
+      <article class="essay-card essay-editor-card">
+        <div class="essay-card-head">
+          <div>
+            <p class="section-label">Escrever</p>
+            <h2 class="essay-card-title">Nova redacao</h2>
+          </div>
+          <p class="essay-card-copy">A avaliacao e em estilo ENEM por IA, nao uma correcao oficial.</p>
+        </div>
+
+        <form class="essay-form" id="essayForm">
+          <div class="essay-mode-toggle" role="tablist" aria-label="Modo do tema">
+            <button
+              type="button"
+              class="essay-mode-button is-active"
+              data-theme-mode="preset"
+              aria-pressed="true"
+            >
+              Tema sugerido
+            </button>
+            <button
+              type="button"
+              class="essay-mode-button"
+              data-theme-mode="custom"
+              aria-pressed="false"
+            >
+              Tema livre
+            </button>
+          </div>
+
+          <div class="essay-field-group" id="presetThemeField">
+            <label class="auth-field">
+              <span class="auth-label">Tema sugerido</span>
+              <div class="subject-select-shell">
+                <select id="essayThemeSelect" class="subject-select">
+                  <option value="">Carregando temas...</option>
+                </select>
+              </div>
+            </label>
+            <div class="essay-theme-preview" id="essayThemePreview">
+              Escolha um tema para ver o recorte completo.
+            </div>
+          </div>
+
+          <div class="essay-field-group is-hidden" id="customThemeFields">
+            <label class="auth-field">
+              <span class="auth-label">Titulo do tema</span>
+              <input
+                class="auth-input"
+                id="essayCustomThemeTitle"
+                type="text"
+                maxlength="140"
+                placeholder="Ex: Desafios para..."
+              />
+            </label>
+
+            <label class="auth-field">
+              <span class="auth-label">Recorte do tema</span>
+              <textarea
+                class="modal-textarea essay-theme-textarea"
+                id="essayCustomThemePrompt"
+                rows="3"
+                maxlength="240"
+                placeholder="Explique qual enfoque voce quer trabalhar nesta proposta."
+              ></textarea>
+            </label>
+          </div>
+
+          <label class="auth-field">
+            <span class="auth-label">Sua redacao</span>
+            <textarea
+              class="modal-textarea essay-editor-input"
+              id="essayTextInput"
+              rows="14"
+              placeholder="Escreva sua redacao aqui..."
+            ></textarea>
+          </label>
+
+          <div class="essay-editor-meta">
+            <span class="essay-word-count" id="essayWordCount">0 palavras</span>
+            <span class="essay-inline-note">Cada envio fica salvo no seu historico.</span>
+          </div>
+
+          <p class="auth-feedback essay-feedback" id="essayFeedback" aria-live="polite"></p>
+
+          <div class="modal-actions essay-actions">
+            <button type="button" class="modal-button modal-button-secondary" id="essayResetButton">
+              Limpar texto
+            </button>
+            <button type="submit" class="modal-button modal-button-primary" id="essaySubmitButton">
+              Corrigir redacao
+            </button>
+          </div>
+        </form>
+      </article>
+
+      <article class="essay-card essay-history-card">
+        <div class="essay-card-head">
+          <div>
+            <p class="section-label">Historico</p>
+            <h2 class="essay-card-title">Versoes salvas</h2>
+          </div>
+          <p class="essay-card-copy">Reabra correcoes antigas ou tente novamente uma versao com falha.</p>
+        </div>
+
+        <div class="essay-history-list" id="essayHistoryList">
+          <div class="essay-empty">Nenhuma redacao enviada ainda.</div>
+        </div>
+      </article>
+
+      <article class="essay-card essay-result-card">
+        <div class="essay-card-head">
+          <div>
+            <p class="section-label">Resultado</p>
+            <h2 class="essay-card-title" id="essayResultTitle">Sua avaliacao aparece aqui</h2>
+          </div>
+          <div class="essay-result-head-meta">
+            <span class="essay-status-chip" id="essayStatusChip">Aguardando</span>
+            <span class="essay-score-pill" id="essayScorePill">0 / 1000</span>
+          </div>
+        </div>
+
+        <div class="essay-result-body" id="essayResultBody">
+          <div class="essay-empty essay-empty-large">
+            Escolha um tema, escreva a redacao e clique em corrigir para ver a nota por competencia e o feedback estruturado.
+          </div>
+        </div>
+
+        <div class="essay-result-actions is-hidden" id="essayResultActions">
+          <button type="button" class="modal-button modal-button-secondary" id="essayReuseButton">
+            Usar esta versao novamente
+          </button>
+        </div>
+      </article>
+    </section>
+  </div>
+
+  <script src="js/main.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/redacao.js"></script>
+</body>
+</html>

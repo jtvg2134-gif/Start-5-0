@@ -1,0 +1,31 @@
+services:
+  - type: web
+    runtime: node
+    name: start5
+    region: oregon
+    plan: starter
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/healthz
+    autoDeployTrigger: commit
+    disk:
+      name: start5-data
+      mountPath: /opt/render/project/src/data
+      sizeGB: 1
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: OPENAI_MODEL
+        value: gpt-5.2
+      - key: START5_ADMIN_NAME
+        value: Start 5 Owner
+      - key: START5_PUBLIC_ORIGIN
+        sync: false
+      - key: START5_ADMIN_EMAIL
+        sync: false
+      - key: START5_ADMIN_PASSWORD
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false

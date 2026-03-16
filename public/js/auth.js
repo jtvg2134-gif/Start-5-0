@@ -1,18 +1,27 @@
 const rawPage = window.location.pathname.split("/").pop().toLowerCase();
 const currentPage = rawPage || "login.html";
-const protectedPages = new Set(["index.html", "dashboard.html", "admin.html"]);
+const protectedPages = new Set(["index.html", "dashboard.html", "admin.html", "profile.html", "redacao.html"]);
 const adminPages = new Set(["admin.html"]);
 const isLoginPage = currentPage === "login.html";
+const MONTHLY_MEDAL_LEVELS = [
+  { key: "gold", minMinutes: 600 },
+  { key: "silver", minMinutes: 300 },
+  { key: "bronze", minMinutes: 150 },
+];
 
 let currentSession = null;
 let authRedirecting = false;
+
+function getServerAccessHint() {
+  return "Execute node server.js e abra http://localhost:3000/login.html no navegador.";
+}
 
 function redirectTo(page) {
   window.location.replace(page);
 }
 
-function getDefaultPage(user) {
-  return user?.role === "admin" ? "admin.html" : "index.html";
+function getDefaultPage() {
+  return "index.html";
 }
 
 function setAuthReady() {
@@ -27,16 +36,165 @@ function updateAdminVisibility() {
   });
 }
 
+function roundOne(value) {
+  return Math.round((Number(value) || 0) * 10) / 10;
+}
+
+function formatMinutesLabel(value) {
+  const safeValue = roundOne(value);
+
+  return new Intl.NumberFormat("pt-BR", {
+    minimumFractionDigits: Number.isInteger(safeValue) ? 0 : 1,
+    maximumFractionDigits: 1,
+  }).format(safeValue);
+}
+
+function getSessionDate(session) {
+  const startedAt = new Date(session?.startedAt || "");
+
+  if (!Number.isNaN(startedAt.getTime())) {
+    return startedAt;
+  }
+
+  const rawDate = String(session?.dateKey || session?.date || "").trim();
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(rawDate);
+
+  if (!match) {
+    return null;
+  }
+
+  return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]), 12, 0, 0, 0);
+}
+
+function getCurrentMonthMinutes(sessions = []) {
+  const now = new Date();
+
+  return roundOne(
+    sessions.reduce((total, session) => {
+      const date = getSessionDate(session);
+
+      if (!date) {
+        return total;
+      }
+
+      if (date.getFullYear() !== now.getFullYear() || date.getMonth() !== now.getMonth()) {
+        return total;
+      }
+
+      return total + (Number(session.minutes) || 0);
+    }, 0)
+  );
+}
+
+function getMonthlyMedal(minutes) {
+  const safeMinutes = roundOne(minutes);
+
+  return MONTHLY_MEDAL_LEVELS.find((level) => safeMinutes >= level.minMinutes)?.key || "none";
+}
+
+function setHeaderMonthlyMinutes(minutes = 0) {
+  const safeMinutes = roundOne(minutes);
+  const medal = getMonthlyMedal(safeMinutes);
+  const label = `${formatMinutesLabel(safeMinutes)} min no mes`;
+
+  document.querySelectorAll("[data-auth-month-minutes]").forEach((element) => {
+    element.textContent = label;
+  });
+
+  document.querySelectorAll("[data-auth-avatar]").forEach((element) => {
+    element.dataset.authMedal = medal;
+  });
+
+  document.querySelectorAll("[data-auth-initials]").forEach((element) => {
+    element.dataset.authMedal = medal;
+  });
+}
+
+function getSessionDisplayName(session = currentSession) {
+  if (!session) return "";
+
+  const fullName = String(session.name || "").trim();
+
+  if (fullName) {
+    return fullName;
+  }
+
+  return [session.firstName, session.lastName].filter(Boolean).join(" ").trim();
+}
+
+function getSessionInitials(session = currentSession) {
+  const label = getSessionDisplayName(session);
+
+  if (!label) {
+    return "U";
+  }
+
+  const parts = label.split(/\s+/).filter(Boolean);
+
+  if (parts.length === 1) {
+    return parts[0].slice(0, 1).toUpperCase();
+  }
+
+  return `${parts[0].slice(0, 1)}${parts[parts.length - 1].slice(0, 1)}`.toUpperCase();
+}
+
+function getSessionAvatarDataUrl(session = currentSession) {
+  return String(session?.avatarDataUrl || "").trim();
+}
+
 function hydrateUserLabels() {
   if (!currentSession) return;
 
   document.querySelectorAll("[data-auth-name]").forEach((element) => {
-    element.textContent = currentSession.name;
+    element.textContent = getSessionDisplayName(currentSession);
   });
 
   document.querySelectorAll("[data-auth-email]").forEach((element) => {
     element.textContent = currentSession.email;
   });
+
+  document.querySelectorAll("[data-auth-initials]").forEach((element) => {
+    element.textContent = getSessionInitials(currentSession);
+  });
+
+  document.querySelectorAll("[data-auth-avatar]").forEach((element) => {
+    const image = element.querySelector("[data-auth-avatar-image]");
+    const fallback = element.querySelector("[data-auth-initials]");
+    const avatarDataUrl = getSessionAvatarDataUrl(currentSession);
+    const hasAvatar = Boolean(avatarDataUrl);
+
+    element.classList.toggle("has-image", hasAvatar);
+
+    if (image) {
+      image.hidden = !hasAvatar;
+
+      if (hasAvatar) {
+        image.src = avatarDataUrl;
+      } else {
+        image.removeAttribute("src");
+      }
+    }
+
+    if (fallback) {
+      fallback.hidden = hasAvatar;
+    }
+  });
+
+  setHeaderMonthlyMinutes(0);
+}
+
+async function refreshHeaderMonthlyProgress() {
+  if (!currentSession) {
+    return;
+  }
+
+  try {
+    const response = await apiRequest("/api/sessions");
+    const sessions = Array.isArray(response?.sessions) ? response.sessions : [];
+    setHeaderMonthlyMinutes(getCurrentMonthMinutes(sessions));
+  } catch (error) {
+    console.error("Erro ao atualizar progresso mensal do topo:", error);
+  }
 }
 
 function bindLogoutButtons() {
@@ -73,11 +231,23 @@ async function apiRequest(url, options = {}) {
     nextOptions.body = JSON.stringify(nextOptions.body);
   }
 
-  const response = await fetch(url, {
-    credentials: "include",
-    ...nextOptions,
-    headers,
-  });
+  let response;
+
+  try {
+    response = await fetch(url, {
+      credentials: "include",
+      ...nextOptions,
+      headers,
+    });
+  } catch (error) {
+    const isFileProtocol = window.location.protocol === "file:";
+    const message = isFileProtocol
+      ? `Abra o Start 5 pelo servidor. ${getServerAccessHint()}`
+      : `Nao foi possivel conectar ao servidor do Start 5. ${getServerAccessHint()}`;
+    const networkError = new Error(message);
+    networkError.cause = error;
+    throw networkError;
+  }
 
   const contentType = response.headers.get("content-type") || "";
   const isJson = contentType.includes("application/json");
@@ -115,6 +285,12 @@ function getSession() {
   return currentSession;
 }
 
+function updateSession(nextSession) {
+  currentSession = nextSession || null;
+  hydrateUserLabels();
+  updateAdminVisibility();
+}
+
 async function logout() {
   try {
     await apiRequest("/api/auth/logout", { method: "POST" });
@@ -131,6 +307,7 @@ function prepareProtectedPage() {
   hydrateUserLabels();
   updateAdminVisibility();
   setAuthReady();
+  refreshHeaderMonthlyProgress();
 }
 
 function setupLoginPage() {
@@ -139,9 +316,10 @@ function setupLoginPage() {
   const authSubtitle = document.getElementById("authSubtitle");
   const authFeedback = document.getElementById("authFeedback");
   const authSubmitButton = document.getElementById("authSubmitButton");
-  const authNameField = document.getElementById("authNameField");
+  const authNameRow = document.getElementById("authNameRow");
   const authConfirmField = document.getElementById("authConfirmField");
-  const authNameInput = document.getElementById("authNameInput");
+  const authFirstNameInput = document.getElementById("authFirstNameInput");
+  const authLastNameInput = document.getElementById("authLastNameInput");
   const authEmailInput = document.getElementById("authEmailInput");
   const authPasswordInput = document.getElementById("authPasswordInput");
   const authConfirmInput = document.getElementById("authConfirmInput");
@@ -153,6 +331,14 @@ function setupLoginPage() {
   }
 
   let mode = "login";
+
+  function clearSensitiveInputs() {
+    authPasswordInput.value = "";
+
+    if (authConfirmInput) {
+      authConfirmInput.value = "";
+    }
+  }
 
   function setFeedback(message, type = "") {
     if (!authFeedback) return;
@@ -187,7 +373,7 @@ function setupLoginPage() {
       button.setAttribute("aria-pressed", String(isActive));
     });
 
-    if (authNameField) authNameField.classList.toggle("is-hidden", !isRegister);
+    if (authNameRow) authNameRow.classList.toggle("is-hidden", !isRegister);
     if (authConfirmField) authConfirmField.classList.toggle("is-hidden", !isRegister);
 
     if (authTitle) {
@@ -205,7 +391,8 @@ function setupLoginPage() {
     }
 
     if (!isRegister) {
-      if (authNameInput) authNameInput.value = "";
+      if (authFirstNameInput) authFirstNameInput.value = "";
+      if (authLastNameInput) authLastNameInput.value = "";
       if (authConfirmInput) authConfirmInput.value = "";
     }
 
@@ -222,6 +409,13 @@ function setupLoginPage() {
     });
   });
 
+  if (window.location.protocol === "file:") {
+    setFeedback(`Abra o Start 5 pelo servidor. ${getServerAccessHint()}`, "error");
+  }
+
+  clearSensitiveInputs();
+  window.addEventListener("pageshow", clearSensitiveInputs);
+
   authForm.addEventListener("submit", async (event) => {
     event.preventDefault();
 
@@ -234,11 +428,17 @@ function setupLoginPage() {
     }
 
     if (mode === "register") {
-      const name = authNameInput?.value.trim() || "";
+      const firstName = authFirstNameInput?.value.trim() || "";
+      const lastName = authLastNameInput?.value.trim() || "";
       const confirmPassword = authConfirmInput?.value.trim() || "";
 
-      if (name.length < 2) {
+      if (firstName.length < 2) {
         setFeedback("Informe um nome com pelo menos 2 caracteres.", "error");
+        return;
+      }
+
+      if (lastName.length < 2) {
+        setFeedback("Informe um sobrenome com pelo menos 2 caracteres.", "error");
         return;
       }
 
@@ -262,7 +462,8 @@ function setupLoginPage() {
           ? await apiRequest("/api/auth/register", {
               method: "POST",
               body: {
-                name: authNameInput?.value.trim() || "",
+                firstName: authFirstNameInput?.value.trim() || "",
+                lastName: authLastNameInput?.value.trim() || "",
                 email,
                 password,
               },
@@ -274,13 +475,14 @@ function setupLoginPage() {
 
       currentSession = response?.user || null;
       setFeedback(
-        mode === "register" ? "Conta criada. Redirecionando..." : "Login feito. Redirecionando...",
+        mode === "register" ? "Conta criada. Redirecionando..." : "login feito!",
         "success"
       );
       setTimeout(() => {
         redirectTo(getDefaultPage(currentSession));
       }, 180);
     } catch (error) {
+      clearSensitiveInputs();
       setFeedback(error.message || "Nao foi possivel concluir o acesso.", "error");
       setLoading(false);
     }
@@ -338,4 +540,6 @@ window.Start5Auth = {
   ready,
   getSession,
   logout,
+  setHeaderMonthlyMinutes,
+  updateSession,
 };
