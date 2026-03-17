@@ -1,4 +1,4 @@
-const body = document.body;
+﻿const body = document.body;
 const menuToggle = document.getElementById("menuToggle");
 const menuPanel = document.getElementById("menuPanel");
 
@@ -154,20 +154,20 @@ function renderAdminEssayMetrics(metrics = {}) {
       { label: "Corrigidas com sucesso", value: String(metrics.statusBreakdown?.evaluated || 0) },
       { label: "Pendentes", value: String(metrics.statusBreakdown?.pending || 0) },
       { label: "Falharam", value: String(metrics.statusBreakdown?.failed || 0) },
-      { label: "Media C1", value: formatAdminNumber(metrics.averageByCompetency?.competency1 || 0) },
-      { label: "Media C2", value: formatAdminNumber(metrics.averageByCompetency?.competency2 || 0) },
-      { label: "Media C3", value: formatAdminNumber(metrics.averageByCompetency?.competency3 || 0) },
-      { label: "Media C4", value: formatAdminNumber(metrics.averageByCompetency?.competency4 || 0) },
-      { label: "Media C5", value: formatAdminNumber(metrics.averageByCompetency?.competency5 || 0) },
+      { label: "M\u00e9dia C1", value: formatAdminNumber(metrics.averageByCompetency?.competency1 || 0) },
+      { label: "M\u00e9dia C2", value: formatAdminNumber(metrics.averageByCompetency?.competency2 || 0) },
+      { label: "M\u00e9dia C3", value: formatAdminNumber(metrics.averageByCompetency?.competency3 || 0) },
+      { label: "M\u00e9dia C4", value: formatAdminNumber(metrics.averageByCompetency?.competency4 || 0) },
+      { label: "M\u00e9dia C5", value: formatAdminNumber(metrics.averageByCompetency?.competency5 || 0) },
     ],
-    "Nenhum dado de redacao ainda."
+    "Nenhum dado de reda\u00e7\u00e3o ainda."
   );
 
   renderMetricRows(
     adminEssayThemesList,
     Array.isArray(metrics.topThemes)
       ? metrics.topThemes.map((theme) => ({
-          label: theme.themeTitle || "Tema sem titulo",
+          label: theme.themeTitle || "Tema sem t\u00edtulo",
           value: String(theme.total || 0),
         }))
       : [],
@@ -314,7 +314,7 @@ async function openEditModal(userId) {
 
     openAdminModal();
   } catch (error) {
-    console.error("Erro ao abrir edicao:", error);
+    console.error("Erro ao abrir edi\u00e7\u00e3o:", error);
   }
 }
 
@@ -331,7 +331,7 @@ function openPermissionsModal(userId) {
   modalUserId = user.id;
   selectedRole = user.role || "user";
 
-  if (adminModalTitle) adminModalTitle.textContent = "Permissoes";
+  if (adminModalTitle) adminModalTitle.textContent = "Permiss\u00f5es";
   if (adminModalSubtitle) {
     adminModalSubtitle.textContent = `Escolha o perfil de acesso para ${user.name}.`;
   }
@@ -368,7 +368,7 @@ async function submitEditMode() {
     await loadAdminData();
     closeAdminModal();
   } catch (error) {
-    setModalFeedback(error.message || "Nao foi possivel atualizar o acesso.", "error");
+    setModalFeedback(error.message || "N\u00e3o foi poss\u00edvel atualizar o acesso.", "error");
     setModalLoading(false);
   }
 }
@@ -388,7 +388,7 @@ async function submitPermissionsMode() {
     await loadAdminData();
     closeAdminModal();
   } catch (error) {
-    setModalFeedback(error.message || "Nao foi possivel atualizar as permissoes.", "error");
+    setModalFeedback(error.message || "N\u00e3o foi poss\u00edvel atualizar as permiss\u00f5es.", "error");
     setModalLoading(false);
   }
 }
@@ -406,7 +406,7 @@ function createActionsCell(user) {
   button.className = "admin-kebab-button";
   button.setAttribute("aria-haspopup", "true");
   button.setAttribute("aria-expanded", "false");
-  button.setAttribute("aria-label", `Abrir acoes de ${user.name}`);
+  button.setAttribute("aria-label", `Abrir a\u00e7\u00f5es de ${user.name}`);
   button.textContent = "⋯";
   button.addEventListener("click", (event) => {
     event.stopPropagation();
@@ -419,7 +419,7 @@ function createActionsCell(user) {
   const permissionsButton = document.createElement("button");
   permissionsButton.type = "button";
   permissionsButton.className = "admin-user-menu-button";
-  permissionsButton.textContent = "Permissoes";
+  permissionsButton.textContent = "Permiss\u00f5es";
   permissionsButton.addEventListener("click", () => {
     openPermissionsModal(user.id);
   });
@@ -445,7 +445,7 @@ function renderAdminUsers(users) {
   closeUserMenus();
 
   if (!adminUsers.length) {
-    renderEmptyRow("Nenhum usuario encontrado.");
+    renderEmptyRow("Nenhum usu\u00e1rio encontrado.");
     return;
   }
 
@@ -453,7 +453,7 @@ function renderAdminUsers(users) {
     const row = document.createElement("tr");
     row.appendChild(createCell(user.name || "Sem nome"));
     row.appendChild(createCell(user.maskedEmail || "Privado"));
-    row.appendChild(createCell(user.role === "admin" ? "Admin" : "Usuario"));
+    row.appendChild(createCell(user.role === "admin" ? "Admin" : "Usu\u00e1rio"));
     row.appendChild(createCell(formatAdminNumber(user.totalSessions)));
     row.appendChild(createCell(formatAdminMinutes(user.totalMinutes)));
     row.appendChild(createCell(formatAdminDate(user.lastSessionAt)));
@@ -480,7 +480,7 @@ async function loadAdminData() {
   } catch (error) {
     console.error("Erro ao carregar admin:", error);
     renderAdminEssayMetrics({});
-    renderEmptyRow("Nao foi possivel carregar os dados do admin.");
+    renderEmptyRow("N\u00e3o foi poss\u00edvel carregar os dados do admin.");
   }
 }
 

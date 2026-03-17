@@ -106,28 +106,28 @@ const ALLOWED_DURATIONS_BY_STATE = {
 };
 
 const ACTIVITY_DEFINITIONS = [
-  { key: "serie", label: "Serie em ingles", color: "#f3f6fa" },
-  { key: "game", label: "Game em ingles", color: "#d5dde6" },
+  { key: "serie", label: "S\u00e9rie em ingl\u00eas", color: "#f3f6fa" },
+  { key: "game", label: "Game em ingl\u00eas", color: "#d5dde6" },
   { key: "verbos", label: "Estudo de verbos", color: "#aeb8c3" },
-  { key: "frases", label: "Repeticao de frases", color: "#8894a3" },
-  { key: "escuta", label: "Escuta em ingles", color: "#728093" },
-  { key: "leitura", label: "Leitura em ingles", color: "#5f6d80" },
+  { key: "frases", label: "Repeti\u00e7\u00e3o de frases", color: "#8894a3" },
+  { key: "escuta", label: "Escuta em ingl\u00eas", color: "#728093" },
+  { key: "leitura", label: "Leitura em ingl\u00eas", color: "#5f6d80" },
   { key: "outros", label: "Outros", color: "#8db4ff" },
 ];
 const DEFAULT_SUBJECT_KEY = "ingles";
 const SUBJECT_DEFINITIONS = [
-  { key: "ingles", label: "Ingles", color: "#f0d7b1" },
-  { key: "matematica", label: "Matematica", color: "#d8eef9" },
-  { key: "portugues", label: "Portugues", color: "#efd4dc" },
+  { key: "ingles", label: "Ingl\u00eas", color: "#f0d7b1" },
+  { key: "matematica", label: "Matem\u00e1tica", color: "#d8eef9" },
+  { key: "portugues", label: "Portugu\u00eas", color: "#efd4dc" },
   { key: "geografia", label: "Geografia", color: "#d4e8da" },
-  { key: "historia", label: "Historia", color: "#e4d7c5" },
+  { key: "historia", label: "Hist\u00f3ria", color: "#e4d7c5" },
   { key: "biologia", label: "Biologia", color: "#cfe7cf" },
-  { key: "fisica", label: "Fisica", color: "#cedbff" },
-  { key: "quimica", label: "Quimica", color: "#d6d3f3" },
-  { key: "redacao", label: "Redacao", color: "#f3dcc3" },
+  { key: "fisica", label: "F\u00edsica", color: "#cedbff" },
+  { key: "quimica", label: "Qu\u00edmica", color: "#d6d3f3" },
+  { key: "redacao", label: "Reda\u00e7\u00e3o", color: "#f3dcc3" },
   { key: "filosofia", label: "Filosofia", color: "#ddd3e4" },
   { key: "sociologia", label: "Sociologia", color: "#d8d8d8" },
-  { key: "outras", label: "Outra materia", color: "#f1ddb8" },
+  { key: "outras", label: "Outra mat\u00e9ria", color: "#f1ddb8" },
 ];
 
 const ACTIVITY_MAP = new Map(ACTIVITY_DEFINITIONS.map((activity) => [activity.key, activity]));
@@ -395,7 +395,7 @@ function formatFullDate(dateKey) {
   const date = parseDateKey(dateKey);
 
   if (!isValidDate(date)) {
-    return "Data nao registrada";
+    return "Data n\u00e3o registrada";
   }
 
   return date.toLocaleDateString("pt-BR", {
@@ -628,11 +628,11 @@ function deriveLegacyTopicText(subjectKey, activities, otherLabel, verbs, phrase
   }
 
   if (phrases.length) {
-    return "Repeticao de frases";
+    return "Repeti\u00e7\u00e3o de frases";
   }
 
   return subjectKey === DEFAULT_SUBJECT_KEY
-    ? "Pratica livre de ingles"
+    ? "Pr\u00e1tica livre de ingl\u00eas"
     : `Estudo de ${getSubjectLabel(subjectKey, rawSession?.customSubjectName).toLowerCase()}`;
 }
 
@@ -959,7 +959,7 @@ function describeActivityComparison(stats, firstKey, secondKey, periodLabel) {
 
   if (first && second) {
     if (first.count === second.count) {
-      return `${first.label} e ${second.label} apareceram com a mesma frequencia ${periodLabel}.`;
+      return `${first.label} e ${second.label} apareceram com a mesma frequ\u00eancia ${periodLabel}.`;
     }
 
     const winner = first.count > second.count ? first : second;
@@ -972,7 +972,7 @@ function describeActivityComparison(stats, firstKey, secondKey, periodLabel) {
     ? getActivityLabel(secondKey)
     : getActivityLabel(firstKey);
 
-  return `${present.label} entrou nos registros ${periodLabel}, enquanto ${missingLabel} ainda nao apareceu.`;
+  return `${present.label} entrou nos registros ${periodLabel}, enquanto ${missingLabel} ainda n\u00e3o apareceu.`;
 }
 
 function getVerbsFromSessions(list) {
@@ -1089,7 +1089,7 @@ function createSessionCard(session) {
   subjectChipRow.appendChild(
     createDetailChip(
       session.subjectLabel,
-      session.topicText ? "Materia do registro" : "",
+      session.topicText ? "Mat\u00e9ria do registro" : "",
       getSubjectColor(session.subjectKey)
     )
   );
@@ -1113,7 +1113,7 @@ function createSessionCard(session) {
 
   const timesRow = document.createElement("div");
   timesRow.className = "session-times";
-  timesRow.appendChild(createDetailChip(`Inicio ${formatTime(session.startedAt)}`));
+  timesRow.appendChild(createDetailChip(`In\u00edcio ${formatTime(session.startedAt)}`));
   timesRow.appendChild(createDetailChip(`Fim ${formatTime(session.endedAt)}`));
 
   card.appendChild(topRow);
@@ -1135,7 +1135,7 @@ function createSessionCard(session) {
   }
 
   if (session.notes) {
-    detailLines.push(`Observacao: ${session.notes}`);
+    detailLines.push(`Observa\u00e7\u00e3o: ${session.notes}`);
   }
 
   if (detailLines.length) {
@@ -1463,7 +1463,7 @@ async function importLegacySessionsIfNeeded() {
     });
     window.localStorage.setItem(importKey, "1");
   } catch (error) {
-    console.error("Erro ao importar historico legado:", error);
+    console.error("Erro ao importar hist\u00f3rico legado:", error);
   }
 }
 
@@ -1546,7 +1546,7 @@ function updateSubjectSelectionUI() {
 
   if (savedCustomSubjects.length) {
     const customGroup = document.createElement("optgroup");
-    customGroup.label = "Materias ja usadas";
+    customGroup.label = "Mat\u00e9rias j\u00e1 usadas";
     customGroup.dataset.customSubjectGroup = "true";
 
     savedCustomSubjects.forEach((subjectName) => {
@@ -1602,7 +1602,7 @@ function renderCustomSubjectSuggestions() {
   if (!savedCustomSubjects.length) {
     customSubjectSuggestions.appendChild(
       createEmptyMessage(
-        "As materias personalizadas que voce salvar vao aparecer aqui.",
+        "As mat\u00e9rias personalizadas que voc\u00ea salvar v\u00e3o aparecer aqui.",
         "subject-suggestions-empty"
       )
     );
@@ -1758,8 +1758,8 @@ function getFilteredVerbSuggestions(query, limit = MAX_VERB_SUGGESTIONS) {
 
 function getDefaultVerbPickerStatus() {
   return isCustomVerbMode
-    ? "Modo manual ativo. Digite qualquer verbo em ingles."
-    : "Sugestoes com os verbos mais conhecidos primeiro.";
+    ? "Modo manual ativo. Digite qualquer verbo em ingl\u00eas."
+    : "Sugest\u00f5es com os verbos mais conhecidos primeiro.";
 }
 
 function setVerbPickerStatus(message = "") {
@@ -1901,7 +1901,7 @@ function commitVerbInput() {
   if (!prefixMatches.length) {
     setCustomVerbMode(
       true,
-      `"${normalizedValue}" nao apareceu na lista principal. Agora voce pode adicionar manualmente.`
+      `"${normalizedValue}" n\u00e3o apareceu na lista principal. Agora voc\u00ea pode adicionar manualmente.`
     );
     verbsEntryInput.focus();
     return;
@@ -1945,7 +1945,7 @@ function bindVerbInput() {
     const suggestions = getFilteredVerbSuggestions(normalizedValue);
 
     if (!suggestions.length) {
-      setVerbPickerStatus("Esse verbo nao esta na lista principal. Use Outro verbo.");
+      setVerbPickerStatus("Esse verbo n\u00e3o est\u00e1 na lista principal. Use Outro verbo.");
     } else {
       setVerbPickerStatus("Escolha um verbo sugerido ou continue digitando.");
     }
@@ -2022,15 +2022,15 @@ function setModalMode(mode) {
   const isEditing = mode === "edit";
 
   if (sessionModalModeLabel) {
-    sessionModalModeLabel.textContent = isEditing ? "Edicao" : "Nova pratica";
+    sessionModalModeLabel.textContent = isEditing ? "Edi\u00e7\u00e3o" : "Nova pr\u00e1tica";
   }
 
   if (sessionModalTitle) {
-    sessionModalTitle.textContent = isEditing ? "Editar pratica" : "Registrar pratica";
+    sessionModalTitle.textContent = isEditing ? "Editar pr\u00e1tica" : "Registrar pr\u00e1tica";
   }
 
   if (saveSessionButton) {
-    saveSessionButton.textContent = isEditing ? "Atualizar pratica" : "Salvar pratica";
+    saveSessionButton.textContent = isEditing ? "Atualizar pr\u00e1tica" : "Salvar pr\u00e1tica";
   }
 }
 
@@ -2045,12 +2045,12 @@ function updateSessionHelper() {
   const topicText = String(topicInput?.value || "").trim();
 
   if (!topicText) {
-    sessionHelper.textContent = "Escolha a materia e descreva o que voce estudou hoje.";
+    sessionHelper.textContent = "Escolha a mat\u00e9ria e descreva o que voc\u00ea estudou hoje.";
     return;
   }
 
   if (selectedSubjectKey === "outras" && !customSubjectName) {
-    sessionHelper.textContent = "Digite o nome da materia para continuar.";
+    sessionHelper.textContent = "Digite o nome da mat\u00e9ria para continuar.";
     return;
   }
 
@@ -2205,9 +2205,9 @@ function setSaveSessionLoading(isLoading) {
   });
 
   if (editingSessionId) {
-    saveSessionButton.textContent = isLoading ? "Atualizando..." : "Atualizar pratica";
+    saveSessionButton.textContent = isLoading ? "Atualizando..." : "Atualizar pr\u00e1tica";
   } else {
-    saveSessionButton.textContent = isLoading ? "Salvando..." : "Salvar pratica";
+    saveSessionButton.textContent = isLoading ? "Salvando..." : "Salvar pr\u00e1tica";
   }
 }
 
@@ -2250,7 +2250,7 @@ function setDeleteLoading(isLoading) {
     button.disabled = isLoading;
   });
 
-  confirmDeleteSessionButton.textContent = isLoading ? "Apagando..." : "Apagar pratica";
+  confirmDeleteSessionButton.textContent = isLoading ? "Apagando..." : "Apagar pr\u00e1tica";
 }
 
 function renderProgress() {
@@ -2325,23 +2325,23 @@ function renderTodaySummary() {
   }
 
   if (!todaySessions.length) {
-    todayHighlightTitle.textContent = "Nenhuma pratica registrada hoje.";
+    todayHighlightTitle.textContent = "Nenhuma pr\u00e1tica registrada hoje.";
     todayHighlightText.textContent =
-      "Quando voce salvar a primeira sessao, este bloco vai mostrar sua materia principal, o tema estudado e o ritmo do dia.";
+      "Quando voc\u00ea salvar a primeira sess\u00e3o, este bloco vai mostrar sua mat\u00e9ria principal, o tema estudado e o ritmo do dia.";
   } else {
     const firstSession = todaySessions[todaySessions.length - 1];
     const topSubjectText = topSubject ? topSubject.label : "estudo livre";
     const verbsText = verbStats.length
       ? `Verbos em destaque: ${formatCompactList(verbStats.slice(0, 3).map((item) => item.word), 3)}.`
-      : "Nenhum verbo de ingles foi registrado hoje.";
+      : "Nenhum verbo de ingl\u00eas foi registrado hoje.";
     const latestTopicText = latestSession?.topicText
-      ? `Ultimo tema registrado: ${latestSession.topicText}.`
+      ? `\u00daltimo tema registrado: ${latestSession.topicText}.`
       : "";
 
     todayHighlightTitle.textContent =
-      `Hoje voce registrou ${todaySessions.length} pratica${todaySessions.length === 1 ? "" : "s"} e ${formatMinutesOnly(todayMinutes)}.`;
+      `Hoje voc\u00ea registrou ${todaySessions.length} pr\u00e1tica${todaySessions.length === 1 ? "" : "s"} e ${formatMinutesOnly(todayMinutes)}.`;
     todayHighlightText.textContent =
-      `A materia mais frequente hoje foi ${topSubjectText}. Janela do dia: ${formatTime(firstSession.startedAt)} ate ${formatTime(latestSession.endedAt)}. ${latestTopicText} ${verbsText}`;
+      `A mat\u00e9ria mais frequente hoje foi ${topSubjectText}. Janela do dia: ${formatTime(firstSession.startedAt)} at\u00e9 ${formatTime(latestSession.endedAt)}. ${latestTopicText} ${verbsText}`;
   }
 
   renderChipList(
@@ -2349,26 +2349,26 @@ function renderTodaySummary() {
     subjectStats.map((item) =>
       createDetailChip(item.label, `${item.count}x • ${formatMinutesOnly(item.minutes)}`, getSubjectColor(item.subjectKey))
     ),
-    "Nenhuma materia registrada."
+    "Nenhuma mat\u00e9ria registrada."
   );
 
   renderChipList(
     todayVerbsList,
     verbStats.map((item) => createDetailChip(item.word, `${item.count}x`)),
-    "Nenhum verbo de ingles registrado."
+    "Nenhum verbo de ingl\u00eas registrado."
   );
 
   renderSessionList(
     todaySessionsList,
     todaySessions,
-    "Voce ainda nao registrou nenhuma pratica hoje."
+    "Voc\u00ea ainda n\u00e3o registrou nenhuma pr\u00e1tica hoje."
   );
 
   const recentSessions = sortSessionsByStartDesc(
     sessions.filter((session) => session.dateKey !== todayKey)
   ).slice(0, 12);
 
-  renderSessionList(recentSessionsList, recentSessions, "Nenhuma pratica recente.");
+  renderSessionList(recentSessionsList, recentSessions, "Nenhuma pr\u00e1tica recente.");
 }
 
 function renderFocusSubject() {
@@ -2391,21 +2391,21 @@ function renderFocusSubject() {
 
   if (!monthlySessions.length) {
     focusSubjectInsightText.textContent =
-      "Quando voce salvar sessoes, sua materia foco vai ganhar um bloco proprio com minutos, dias ativos e ultimo tema estudado.";
+      "Quando voc\u00ea salvar sess\u00f5es, sua mat\u00e9ria foco vai ganhar um bloco pr\u00f3prio com minutos, dias ativos e \u00faltimo tema estudado.";
     return;
   }
 
   if (!focusSessions.length) {
     focusSubjectInsightText.textContent =
-      `${focusSubject.label} ainda nao apareceu neste mes. A proxima sessao nessa materia ja entra aqui automaticamente.`;
+      `${focusSubject.label} ainda n\u00e3o apareceu neste m\u00eas. A pr\u00f3xima sess\u00e3o nessa mat\u00e9ria j\u00e1 entra aqui automaticamente.`;
     return;
   }
 
   const comparisonText = otherMinutes > focusMinutes
-    ? `Ainda ha ${formatMinutesOnly(otherMinutes - focusMinutes)} a mais nas outras materias do que em ${focusSubject.label}.`
+    ? `Ainda h\u00e1 ${formatMinutesOnly(otherMinutes - focusMinutes)} a mais nas outras mat\u00e9rias do que em ${focusSubject.label}.`
     : otherMinutes === focusMinutes
-      ? `${focusSubject.label} esta empatada com o restante do seu mes.`
-      : `${focusSubject.label} ja lidera seu mes por ${formatMinutesOnly(focusMinutes - otherMinutes)}.`;
+      ? `${focusSubject.label} est\u00e1 empatada com o restante do seu m\u00eas.`
+      : `${focusSubject.label} j\u00e1 lidera seu m\u00eas por ${formatMinutesOnly(focusMinutes - otherMinutes)}.`;
 
   focusSubjectInsightText.textContent =
     `${focusSubject.label} somou ${formatMinutesOnly(focusMinutes)} em ${focusDays} dia${focusDays === 1 ? "" : "s"} ativo${focusDays === 1 ? "" : "s"}. ${comparisonText}`;
@@ -2434,9 +2434,9 @@ function renderWeeklyAnalysis() {
   weeklyPhraseCountValue.textContent = topicHighlights[0] || "Nenhum";
 
   if (!weeklySessions.length) {
-    weeklyInsightTitle.textContent = "Ainda nao ha dados suficientes nesta semana.";
+    weeklyInsightTitle.textContent = "Ainda n\u00e3o h\u00e1 dados suficientes nesta semana.";
     weeklyInsightText.textContent =
-      "Conforme voce registrar sessoes, o painel semanal vai destacar a materia dominante, os temas mais recentes e o peso da sua materia foco.";
+      "Conforme voc\u00ea registrar sess\u00f5es, o painel semanal vai destacar a mat\u00e9ria dominante, os temas mais recentes e o peso da sua mat\u00e9ria foco.";
   } else {
     const comparisonText =
       comparison === 0
@@ -2446,19 +2446,19 @@ function renderWeeklyAnalysis() {
           : `${formatNumber(Math.abs(comparison))} min a menos que na semana passada`;
     const weeklyLeadText = runnerUp
       ? `${topSubject.label} liderou sua semana, seguida por ${runnerUp.label}.`
-      : `${topSubject?.label || "Nenhuma materia"} foi a materia dominante da semana.`;
+      : `${topSubject?.label || "Nenhuma mat\u00e9ria"} foi a mat\u00e9ria dominante da semana.`;
     const focusText = focusSessions.length
       ? `${focusSubject.label} recebeu ${formatMinutesOnly(sumMinutes(focusSessions))} nesta semana.`
-      : `${focusSubject.label} ainda nao apareceu nesta semana.`;
+      : `${focusSubject.label} ainda n\u00e3o apareceu nesta semana.`;
     const weeklyVerbText = verbStats.length
-      ? `Verbos do ingles: ${formatTopWords(verbStats)}.`
-      : "Nenhum verbo do ingles foi registrado nesta semana.";
+      ? `Verbos do ingl\u00eas: ${formatTopWords(verbStats)}.`
+      : "Nenhum verbo do ingl\u00eas foi registrado nesta semana.";
     const topicText = topicHighlights.length
       ? `Temas recentes: ${formatCompactList(topicHighlights, 3)}.`
       : "";
 
     weeklyInsightTitle.textContent =
-      `Nesta semana voce estudou em ${activeDays} dia${activeDays === 1 ? "" : "s"} e somou ${formatMinutesOnly(weeklyMinutes)}.`;
+      `Nesta semana voc\u00ea estudou em ${activeDays} dia${activeDays === 1 ? "" : "s"} e somou ${formatMinutesOnly(weeklyMinutes)}.`;
     weeklyInsightText.textContent =
       `${weeklyLeadText} O Start 5 registrou ${comparisonText}. ${focusText} ${topicText} ${weeklyVerbText}`;
   }
@@ -2467,25 +2467,25 @@ function renderWeeklyAnalysis() {
     weeklyActivityChart,
     subjectStats,
     weeklyMinutes,
-    "Nenhuma materia registrada nesta semana."
+    "Nenhuma mat\u00e9ria registrada nesta semana."
   );
 
   renderBarChart(
     weeklyDailyChart,
     buildWeeklyDailyPoints(weeklySessions),
-    "Nenhum dia com pratica nesta semana."
+    "Nenhum dia com pr\u00e1tica nesta semana."
   );
 
   renderActivityRows(
     weeklyActivityList,
     subjectStats,
-    "Nenhuma materia registrada nesta semana."
+    "Nenhuma mat\u00e9ria registrada nesta semana."
   );
 
   renderChipList(
     weeklyVerbList,
     verbStats.map((item) => createDetailChip(item.word, `${item.count}x`)),
-    "Nenhum verbo do ingles registrado nesta semana."
+    "Nenhum verbo do ingl\u00eas registrado nesta semana."
   );
 }
 
@@ -2510,26 +2510,26 @@ function renderMonthlyAnalysis() {
   monthlyPhraseCountValue.textContent = topicHighlights[0] || "Nenhum";
 
   if (!monthlySessions.length) {
-    monthlyInsightTitle.textContent = "Ainda nao ha dados suficientes neste mes.";
+    monthlyInsightTitle.textContent = "Ainda n\u00e3o h\u00e1 dados suficientes neste m\u00eas.";
     monthlyInsightText.textContent =
-      "O Start 5 vai mostrar quais materias dominaram o mes, quais temas apareceram mais e como sua materia foco esta caminhando.";
+      "O Start 5 vai mostrar quais mat\u00e9rias dominaram o m\u00eas, quais temas apareceram mais e como sua mat\u00e9ria foco est\u00e1 caminhando.";
   } else {
     const runnerUp = subjectStats[1];
     const monthlyVerbText = verbStats.length
-      ? `Verbos do ingles: ${formatTopWords(verbStats)}.`
-      : "Nenhum verbo do ingles foi registrado neste mes.";
+      ? `Verbos do ingl\u00eas: ${formatTopWords(verbStats)}.`
+      : "Nenhum verbo do ingl\u00eas foi registrado neste m\u00eas.";
     const monthlyLeadText = runnerUp
-      ? `${topSubject.label} lidera seu mes com ${topSubject.count} registros. Em seguida vem ${runnerUp.label}.`
-      : `${topSubject?.label || "Nenhuma materia"} foi a materia dominante do mes.`;
+      ? `${topSubject.label} lidera seu m\u00eas com ${topSubject.count} registros. Em seguida vem ${runnerUp.label}.`
+      : `${topSubject?.label || "Nenhuma mat\u00e9ria"} foi a mat\u00e9ria dominante do m\u00eas.`;
     const focusText = focusSessions.length
-      ? `${focusSubject.label} recebeu ${formatMinutesOnly(sumMinutes(focusSessions))} neste mes.`
-      : `${focusSubject.label} ainda nao apareceu neste mes.`;
+      ? `${focusSubject.label} recebeu ${formatMinutesOnly(sumMinutes(focusSessions))} neste m\u00eas.`
+      : `${focusSubject.label} ainda n\u00e3o apareceu neste m\u00eas.`;
     const topicText = topicHighlights.length
       ? `Temas em alta: ${formatCompactList(topicHighlights, 3)}.`
       : "";
 
     monthlyInsightTitle.textContent =
-      `Neste mes voce somou ${formatMinutesOnly(monthlyMinutes)} em ${activeDays} dia${activeDays === 1 ? "" : "s"} ativo${activeDays === 1 ? "" : "s"}.`;
+      `Neste m\u00eas voc\u00ea somou ${formatMinutesOnly(monthlyMinutes)} em ${activeDays} dia${activeDays === 1 ? "" : "s"} ativo${activeDays === 1 ? "" : "s"}.`;
     monthlyInsightText.textContent = `${monthlyLeadText} ${focusText} ${topicText} ${monthlyVerbText}`;
   }
 
@@ -2537,7 +2537,7 @@ function renderMonthlyAnalysis() {
     monthlyActivityChart,
     subjectStats,
     monthlyMinutes,
-    "Nenhuma materia registrada neste mes."
+    "Nenhuma mat\u00e9ria registrada neste m\u00eas."
   );
 
   renderBarChart(
@@ -2549,13 +2549,13 @@ function renderMonthlyAnalysis() {
   renderActivityRows(
     monthlyActivityList,
     subjectStats,
-    "Nenhuma materia registrada neste mes."
+    "Nenhuma mat\u00e9ria registrada neste m\u00eas."
   );
 
   renderChipList(
     monthlyVerbList,
     verbStats.map((item) => createDetailChip(item.word, `${item.count}x`)),
-    "Nenhum verbo do ingles registrado neste mes."
+    "Nenhum verbo do ingl\u00eas registrado neste m\u00eas."
   );
 }
 
@@ -2598,17 +2598,17 @@ async function saveSession() {
   const payload = getCurrentSessionPayload();
 
   if (!Number.isFinite(payload.minutes) || payload.minutes <= 0) {
-    sessionHelper.textContent = "Escolha um tempo valido para salvar a pratica.";
+    sessionHelper.textContent = "Escolha um tempo v\u00e1lido para salvar a pr\u00e1tica.";
     return;
   }
 
   if (!payload.topicText) {
-    sessionHelper.textContent = "Descreva o que voce estudou hoje.";
+    sessionHelper.textContent = "Descreva o que voc\u00ea estudou hoje.";
     return;
   }
 
   if (payload.subjectKey === "outras" && !payload.customSubjectName) {
-    sessionHelper.textContent = "Digite o nome da materia antes de salvar.";
+    sessionHelper.textContent = "Digite o nome da mat\u00e9ria antes de salvar.";
     return;
   }
 
@@ -2631,7 +2631,7 @@ async function saveSession() {
     renderDashboard();
     closeSessionModal();
   } catch (error) {
-    sessionHelper.textContent = error.message || "Nao foi possivel salvar a pratica.";
+    sessionHelper.textContent = error.message || "N\u00e3o foi poss\u00edvel salvar a pr\u00e1tica.";
   } finally {
     setSaveSessionLoading(false);
   }
@@ -2653,10 +2653,10 @@ async function confirmDeleteSession() {
     renderDashboard();
     closeDeleteModal();
   } catch (error) {
-    console.error("Erro ao apagar sessao:", error);
+    console.error("Erro ao apagar sess\u00e3o:", error);
 
     if (deleteSessionSummary) {
-      deleteSessionSummary.textContent = error.message || "Nao foi possivel apagar a pratica.";
+      deleteSessionSummary.textContent = error.message || "N\u00e3o foi poss\u00edvel apagar a pr\u00e1tica.";
     }
   } finally {
     setDeleteLoading(false);

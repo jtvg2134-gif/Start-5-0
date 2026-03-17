@@ -1,4 +1,4 @@
-const body = document.body;
+﻿const body = document.body;
 const menuToggle = document.getElementById("menuToggle");
 const menuPanel = document.getElementById("menuPanel");
 const profileForm = document.getElementById("profileForm");
@@ -22,24 +22,24 @@ const profileFocusSubjectNameField = document.getElementById("profileFocusSubjec
 const profileFocusSubjectNameInput = document.getElementById("profileFocusSubjectNameInput");
 
 const PROFILE_MEDAL_LEVELS = [
-  { key: "gold", minMinutes: 600, label: "Nivel atual: ouro" },
-  { key: "silver", minMinutes: 300, label: "Nivel atual: prata" },
-  { key: "bronze", minMinutes: 150, label: "Nivel atual: bronze" },
+  { key: "gold", minMinutes: 600, label: "N\u00edvel atual: ouro" },
+  { key: "silver", minMinutes: 300, label: "N\u00edvel atual: prata" },
+  { key: "bronze", minMinutes: 150, label: "N\u00edvel atual: bronze" },
 ];
 const DEFAULT_SUBJECT_KEY = "ingles";
 const SUBJECT_LABELS = {
-  ingles: "Ingles",
-  matematica: "Matematica",
-  portugues: "Portugues",
+  ingles: "Ingl\u00eas",
+  matematica: "Matem\u00e1tica",
+  portugues: "Portugu\u00eas",
   geografia: "Geografia",
-  historia: "Historia",
+  historia: "Hist\u00f3ria",
   biologia: "Biologia",
-  fisica: "Fisica",
-  quimica: "Quimica",
-  redacao: "Redacao",
+  fisica: "F\u00edsica",
+  quimica: "Qu\u00edmica",
+  redacao: "Reda\u00e7\u00e3o",
   filosofia: "Filosofia",
   sociologia: "Sociologia",
-  outras: "Outra materia",
+  outras: "Outra mat\u00e9ria",
 };
 
 const ACCEPTED_AVATAR_TYPES = new Set([
@@ -114,7 +114,7 @@ function setLoading(isLoading) {
     });
 
   if (profileSaveButton) {
-    profileSaveButton.textContent = isLoading ? "Salvando..." : "Salvar alteracoes";
+    profileSaveButton.textContent = isLoading ? "Salvando..." : "Salvar altera\u00e7\u00f5es";
   }
 }
 
@@ -133,7 +133,7 @@ function getDisplayName(firstName = "", lastName = "", fallbackName = "") {
     .join(" ")
     .trim();
 
-  return fullName || String(fallbackName || "").trim() || "Usuario";
+  return fullName || String(fallbackName || "").trim() || "Usu\u00e1rio";
 }
 
 function getInitials(firstName = "", lastName = "", fallbackName = "") {
@@ -242,15 +242,15 @@ function updateOverviewLabels(profile = currentProfile) {
   }
 
   if (profileMonthCopy) {
-    profileMonthCopy.textContent = `${formatMinutes(currentMonthMinutes)} min no mes`;
+    profileMonthCopy.textContent = `${formatMinutes(currentMonthMinutes)} min no m\u00eas`;
   }
 
   if (profileLevelBadge) {
-    profileLevelBadge.textContent = medal?.label || "Nivel atual: iniciante";
+    profileLevelBadge.textContent = medal?.label || "N\u00edvel atual: iniciante";
   }
 
   if (profileFocusBadge) {
-    profileFocusBadge.textContent = `Materia foco: ${getSubjectLabel(focusSubjectKey, focusSubjectName)}`;
+    profileFocusBadge.textContent = `Mat\u00e9ria foco: ${getSubjectLabel(focusSubjectKey, focusSubjectName)}`;
   }
 
   if (profileAvatarShell) {
@@ -297,7 +297,7 @@ function readFileAsDataUrl(file) {
     const reader = new FileReader();
 
     reader.onload = () => resolve(String(reader.result || ""));
-    reader.onerror = () => reject(new Error("Nao foi possivel ler a imagem selecionada."));
+    reader.onerror = () => reject(new Error("N\u00e3o foi poss\u00edvel ler a imagem selecionada."));
     reader.readAsDataURL(file);
   });
 }
@@ -307,7 +307,7 @@ function loadImage(dataUrl) {
     const image = new Image();
 
     image.onload = () => resolve(image);
-    image.onerror = () => reject(new Error("Nao foi possivel processar a imagem selecionada."));
+    image.onerror = () => reject(new Error("N\u00e3o foi poss\u00edvel processar a imagem selecionada."));
     image.src = dataUrl;
   });
 }
@@ -318,7 +318,7 @@ async function optimizeAvatarDataUrl(file) {
   }
 
   if (file.size > MAX_RAW_FILE_SIZE) {
-    throw new Error("A imagem esta muito grande. Escolha um arquivo menor.");
+    throw new Error("A imagem est\u00e1 muito grande. Escolha um arquivo menor.");
   }
 
   const originalDataUrl = await readFileAsDataUrl(file);
@@ -328,7 +328,7 @@ async function optimizeAvatarDataUrl(file) {
   }
 
   if (file.type === "image/gif") {
-    throw new Error("GIF muito grande. Use um GIF menor ou uma imagem estatica.");
+    throw new Error("GIF muito grande. Use um GIF menor ou uma imagem est\u00e1tica.");
   }
 
   if (originalDataUrl.length <= MAX_AVATAR_DATA_URL_LENGTH && file.size <= 900 * 1024) {
@@ -344,7 +344,7 @@ async function optimizeAvatarDataUrl(file) {
   const context = canvas.getContext("2d");
 
   if (!context) {
-    throw new Error("Seu navegador nao conseguiu preparar a imagem.");
+    throw new Error("Seu navegador n\u00e3o conseguiu preparar a imagem.");
   }
 
   canvas.width = width;
@@ -382,7 +382,7 @@ async function loadProfile() {
   const profile = response?.user || window.Start5Auth.getSession();
 
   if (!profile) {
-    throw new Error("Nao foi possivel carregar seu perfil.");
+    throw new Error("N\u00e3o foi poss\u00edvel carregar seu perfil.");
   }
 
   applyProfile(profile);
@@ -413,7 +413,7 @@ async function handlePhotoSelection(event) {
   } catch (error) {
     draftAvatarDataUrl = null;
     setUploadStatus("Nenhuma nova foto selecionada.");
-    setFeedback(error.message || "Nao foi possivel preparar a imagem.", "error");
+    setFeedback(error.message || "N\u00e3o foi poss\u00edvel preparar a imagem.", "error");
   } finally {
     event.target.value = "";
   }
@@ -427,7 +427,7 @@ function handleRemovePhoto() {
     profileLastNameInput?.value || currentProfile?.lastName,
     currentProfile?.name
   );
-  setUploadStatus("Foto removida da pre-visualizacao. Salve para confirmar.");
+  setUploadStatus("Foto removida da pr\u00e9-visualiza\u00e7\u00e3o. Salve para confirmar.");
   setFeedback("");
 }
 
@@ -452,7 +452,7 @@ async function handleSubmit(event) {
   }
 
   if (focusSubjectKey === "outras" && focusSubjectName.length < 2) {
-    setFeedback("Informe o nome da materia foco com pelo menos 2 caracteres.", "error");
+    setFeedback("Informe o nome da mat\u00e9ria foco com pelo menos 2 caracteres.", "error");
     return;
   }
 
@@ -473,7 +473,7 @@ async function handleSubmit(event) {
     const nextProfile = response?.user;
 
     if (!nextProfile) {
-      throw new Error("O servidor nao retornou o perfil atualizado.");
+      throw new Error("O servidor n\u00e3o retornou o perfil atualizado.");
     }
 
     applyProfile(nextProfile);
@@ -481,7 +481,7 @@ async function handleSubmit(event) {
     updateOverviewLabels(nextProfile);
     setFeedback("Perfil atualizado com sucesso.", "success");
   } catch (error) {
-    setFeedback(error.message || "Nao foi possivel salvar as alteracoes.", "error");
+    setFeedback(error.message || "N\u00e3o foi poss\u00edvel salvar as altera\u00e7\u00f5es.", "error");
   } finally {
     setLoading(false);
   }
@@ -519,7 +519,7 @@ function bindEvents() {
 
 async function initializeProfilePage() {
   if (!window.Start5Auth?.ready) {
-    throw new Error("Autenticacao indisponivel.");
+    throw new Error("Autentica\u00e7\u00e3o indispon\u00edvel.");
   }
 
   bindEvents();
@@ -534,5 +534,5 @@ async function initializeProfilePage() {
 
 initializeProfilePage().catch((error) => {
   console.error("Erro ao iniciar tela de perfil:", error);
-  setFeedback(error.message || "Nao foi possivel carregar o perfil.", "error");
+  setFeedback(error.message || "N\u00e3o foi poss\u00edvel carregar o perfil.", "error");
 });

@@ -1,4 +1,4 @@
-const rawPage = window.location.pathname.split("/").pop().toLowerCase();
+﻿const rawPage = window.location.pathname.split("/").pop().toLowerCase();
 const currentPage = rawPage || "login.html";
 const protectedPages = new Set(["index.html", "dashboard.html", "admin.html", "profile.html", "redacao.html"]);
 const adminPages = new Set(["admin.html"]);
@@ -95,7 +95,7 @@ function getMonthlyMedal(minutes) {
 function setHeaderMonthlyMinutes(minutes = 0) {
   const safeMinutes = roundOne(minutes);
   const medal = getMonthlyMedal(safeMinutes);
-  const label = `${formatMinutesLabel(safeMinutes)} min no mes`;
+  const label = `${formatMinutesLabel(safeMinutes)} min no m\u00eas`;
 
   document.querySelectorAll("[data-auth-month-minutes]").forEach((element) => {
     element.textContent = label;
@@ -243,7 +243,7 @@ async function apiRequest(url, options = {}) {
     const isFileProtocol = window.location.protocol === "file:";
     const message = isFileProtocol
       ? `Abra o Start 5 pelo servidor. ${getServerAccessHint()}`
-      : `Nao foi possivel conectar ao servidor do Start 5. ${getServerAccessHint()}`;
+      : `N\u00e3o foi poss\u00edvel conectar ao servidor do Start 5. ${getServerAccessHint()}`;
     const networkError = new Error(message);
     networkError.cause = error;
     throw networkError;
@@ -255,7 +255,7 @@ async function apiRequest(url, options = {}) {
 
   if (!response.ok) {
     const error = new Error(
-      normalizeApiError(payload, "Nao foi possivel concluir a requisicao.")
+      normalizeApiError(payload, "N\u00e3o foi poss\u00edvel concluir a requisi\u00e7\u00e3o.")
     );
     error.status = response.status;
     error.payload = payload;
@@ -295,7 +295,7 @@ async function logout() {
   try {
     await apiRequest("/api/auth/logout", { method: "POST" });
   } catch (error) {
-    console.error("Erro ao encerrar sessao:", error);
+    console.error("Erro ao encerrar sess\u00e3o:", error);
   }
 
   currentSession = null;
@@ -382,7 +382,7 @@ function setupLoginPage() {
 
     if (authSubtitle) {
       authSubtitle.textContent = isRegister
-        ? "Cadastre-se para entrar no Start 5 e manter seu proprio historico."
+        ? "Cadastre-se para entrar no Start 5 e manter seu pr\u00f3prio hist\u00f3rico."
         : "Use seu e-mail e senha para entrar no Start 5.";
     }
 
@@ -448,7 +448,7 @@ function setupLoginPage() {
       }
 
       if (password !== confirmPassword) {
-        setFeedback("As senhas nao conferem.", "error");
+        setFeedback("As senhas n\u00e3o conferem.", "error");
         return;
       }
     }
@@ -483,7 +483,7 @@ function setupLoginPage() {
       }, 180);
     } catch (error) {
       clearSensitiveInputs();
-      setFeedback(error.message || "Nao foi possivel concluir o acesso.", "error");
+      setFeedback(error.message || "N\u00e3o foi poss\u00edvel concluir o acesso.", "error");
       setLoading(false);
     }
   });
@@ -522,7 +522,7 @@ const ready = (async () => {
     prepareProtectedPage();
     return currentSession;
   } catch (error) {
-    console.error("Erro ao inicializar autenticacao:", error);
+    console.error("Erro ao inicializar autentica\u00e7\u00e3o:", error);
 
     if (protectedPages.has(currentPage)) {
       authRedirecting = true;

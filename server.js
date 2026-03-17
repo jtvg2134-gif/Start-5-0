@@ -36,66 +36,60 @@ const DEFAULT_SUBJECT_KEY = "ingles";
 const ESSAY_STATUS_VALUES = new Set(["pending", "evaluated", "failed"]);
 const ESSAY_THEME_MODE_VALUES = new Set(["preset", "custom"]);
 const SUBJECT_LABELS = {
-  ingles: "Ingles",
-  matematica: "Matematica",
-  portugues: "Portugues",
+  ingles: "Ingl\u00eas",
+  matematica: "Matem\u00e1tica",
+  portugues: "Portugu\u00eas",
   geografia: "Geografia",
-  historia: "Historia",
+  historia: "Hist\u00f3ria",
   biologia: "Biologia",
-  fisica: "Fisica",
-  quimica: "Quimica",
-  redacao: "Redacao",
+  fisica: "F\u00edsica",
+  quimica: "Qu\u00edmica",
+  redacao: "Reda\u00e7\u00e3o",
   filosofia: "Filosofia",
   sociologia: "Sociologia",
-  outras: "Outra materia",
+  outras: "Outra mat\u00e9ria",
 };
 const ALLOWED_SUBJECTS = new Set(Object.keys(SUBJECT_LABELS));
 const ENEM_COMPETENCIES = [
-  { id: 1, name: "Competencia 1" },
-  { id: 2, name: "Competencia 2" },
-  { id: 3, name: "Competencia 3" },
-  { id: 4, name: "Competencia 4" },
-  { id: 5, name: "Competencia 5" },
+  { id: 1, name: "Compet\u00eancia 1" },
+  { id: 2, name: "Compet\u00eancia 2" },
+  { id: 3, name: "Compet\u00eancia 3" },
+  { id: 4, name: "Compet\u00eancia 4" },
+  { id: 5, name: "Compet\u00eancia 5" },
 ];
 const ESSAY_MAX_TITLE_LENGTH = 140;
 const ESSAY_MAX_PROMPT_LENGTH = 240;
 const ESSAY_MAX_TEXT_LENGTH = 12000;
 const ESSAY_THEMES = [
   {
-    key: "tecnologia_educacao",
-    title: "Desafios para equilibrar tecnologia e aprendizado no Brasil",
-    prompt:
-      "Analise como o uso intenso de recursos digitais afeta a concentracao, o acesso ao conhecimento e a qualidade do aprendizado, propondo caminhos viaveis para o contexto brasileiro.",
-  },
-  {
     key: "desinformacao_juventude",
-    title: "Caminhos para combater a desinformacao entre jovens no ambiente digital",
+    title: "Caminhos para combater a desinforma\u00e7\u00e3o entre jovens no ambiente digital",
     prompt:
-      "Discuta os impactos da desinformacao na formacao critica dos jovens e proponha medidas educativas e institucionais para reduzir esse problema.",
+      "Discuta os impactos da desinforma\u00e7\u00e3o na forma\u00e7\u00e3o cr\u00edtica dos jovens e proponha medidas educativas e institucionais para reduzir esse problema.",
   },
   {
     key: "saude_mental_estudantes",
-    title: "Desafios para proteger a saude mental de estudantes no Brasil",
+    title: "Desafios para proteger a sa\u00fade mental de estudantes no Brasil",
     prompt:
-      "Aborde fatores que pressionam estudantes, os impactos emocionais dessa realidade e uma proposta de intervencao socialmente responsavel.",
+      "Aborde fatores que pressionam estudantes, os impactos emocionais dessa realidade e uma proposta de interven\u00e7\u00e3o socialmente respons\u00e1vel.",
   },
   {
     key: "leitura_formacao",
-    title: "A importancia do incentivo a leitura na formacao dos jovens",
+    title: "A import\u00e2ncia do incentivo \u00e0 leitura na forma\u00e7\u00e3o dos jovens",
     prompt:
-      "Analise como o habito da leitura interfere na autonomia intelectual, no desempenho escolar e na participacao social dos jovens brasileiros.",
+      "Analise como o h\u00e1bito da leitura interfere na autonomia intelectual, no desempenho escolar e na participa\u00e7\u00e3o social dos jovens brasileiros.",
   },
   {
     key: "sustentabilidade_cidades",
-    title: "Desafios para tornar as cidades brasileiras mais sustentaveis",
+    title: "Desafios para tornar as cidades brasileiras mais sustent\u00e1veis",
     prompt:
-      "Discuta obstaculos urbanos ligados a mobilidade, residuos, consumo e desigualdade, apresentando uma proposta de intervencao aplicavel.",
+      "Discuta obst\u00e1culos urbanos ligados a mobilidade, res\u00edduos, consumo e desigualdade, apresentando uma proposta de interven\u00e7\u00e3o aplic\u00e1vel.",
   },
   {
     key: "valorizacao_docente",
     title: "Caminhos para valorizar o trabalho docente no Brasil",
     prompt:
-      "Avalie como a valorizacao de professores impacta a qualidade da educacao e proponha solucoes viaveis no contexto brasileiro.",
+      "Avalie como a valoriza\u00e7\u00e3o de professores impacta a qualidade da educa\u00e7\u00e3o e proponha solu\u00e7\u00f5es vi\u00e1veis no contexto brasileiro.",
   },
 ];
 const ESSAY_THEME_MAP = new Map(ESSAY_THEMES.map((theme) => [theme.key, theme]));
@@ -1042,16 +1036,16 @@ function getSubjectLabel(subjectKey, customSubjectName = "") {
 
 function getLegacyActivityLabel(activityKey) {
   const labels = {
-    serie: "Serie em ingles",
-    game: "Game em ingles",
+    serie: "S\u00e9rie em ingl\u00eas",
+    game: "Game em ingl\u00eas",
     verbos: "Estudo de verbos",
-    frases: "Repeticao de frases",
-    escuta: "Escuta em ingles",
-    leitura: "Leitura em ingles",
-    outros: "Pratica livre",
+    frases: "Repeti\u00e7\u00e3o de frases",
+    escuta: "Escuta em ingl\u00eas",
+    leitura: "Leitura em ingl\u00eas",
+    outros: "Pr\u00e1tica livre",
   };
 
-  return labels[activityKey] || "Pratica livre";
+  return labels[activityKey] || "Pr\u00e1tica livre";
 }
 
 function deriveLegacyTopicText(
@@ -1085,11 +1079,11 @@ function deriveLegacyTopicText(
   }
 
   if (phrases.length) {
-    return "Repeticao de frases";
+    return "Repeti\u00e7\u00e3o de frases";
   }
 
   return subjectKey === DEFAULT_SUBJECT_KEY
-    ? "Pratica livre de ingles"
+    ? "Pr\u00e1tica livre de ingl\u00eas"
     : `Estudo de ${getSubjectLabel(subjectKey, otherLabel).toLowerCase()}`;
 }
 
@@ -1539,7 +1533,7 @@ function normalizeEssayPayload(payload) {
   const wordCount = countWords(essayText);
 
   if (essayText.length < 120 || wordCount < 20) {
-    throw createError(400, "Escreva uma redacao mais completa antes de corrigir.");
+    throw createError(400, "Escreva uma reda\u00e7\u00e3o mais completa antes de corrigir.");
   }
 
   const createdAt = nowIso();
@@ -1559,7 +1553,7 @@ function normalizeEssayPayload(payload) {
 
 function normalizeEssayEvaluation(rawEvaluation) {
   if (!rawEvaluation || typeof rawEvaluation !== "object") {
-    throw new Error("A avaliacao da IA veio em um formato invalido.");
+    throw new Error("A avalia\u00e7\u00e3o da IA veio em um formato inv\u00e1lido.");
   }
 
   const rawCompetencies = Array.isArray(rawEvaluation.competencies)
@@ -1576,7 +1570,7 @@ function normalizeEssayEvaluation(rawEvaluation) {
     const improvement = sanitizeEssayFeedbackText(rawCompetency.improvement, 320);
 
     if (!justification || !improvement) {
-      throw new Error("A avaliacao da IA veio incompleta para as competencias.");
+      throw new Error("A avalia\u00e7\u00e3o da IA veio incompleta para as compet\u00eancias.");
     }
 
     return {
@@ -1593,7 +1587,7 @@ function normalizeEssayEvaluation(rawEvaluation) {
   const interventionFeedback = sanitizeEssayFeedbackText(rawEvaluation.interventionFeedback, 460);
 
   if (!summaryFeedback || !interventionFeedback) {
-    throw new Error("A avaliacao da IA nao retornou o resumo principal esperado.");
+    throw new Error("A avalia\u00e7\u00e3o da IA n\u00e3o retornou o resumo principal esperado.");
   }
 
   return {
@@ -1684,18 +1678,18 @@ async function getOpenAIClient() {
   const model = String(process.env.OPENAI_MODEL || "").trim();
 
   if (!apiKey) {
-    throw createError(503, "Configure OPENAI_API_KEY para usar a correcao por IA.");
+    throw createError(503, "Configure OPENAI_API_KEY para usar a corre\u00e7\u00e3o por IA.");
   }
 
   if (!model) {
-    throw createError(503, "Configure OPENAI_MODEL para usar a correcao por IA.");
+    throw createError(503, "Configure OPENAI_MODEL para usar a corre\u00e7\u00e3o por IA.");
   }
 
   if (!openAIClientPromise) {
     openAIClientPromise = import("openai")
       .then(({ default: OpenAI }) => new OpenAI({ apiKey }))
       .catch(() => {
-        throw createError(500, "Nao foi possivel carregar a SDK da OpenAI.");
+        throw createError(500, "N\u00e3o foi poss\u00edvel carregar a SDK da OpenAI.");
       });
   }
 
@@ -1710,11 +1704,11 @@ async function evaluateEssayWithAI(submission) {
   const response = await client.responses.create({
     model,
     instructions: [
-      "Voce e um corretor de redacao em estilo ENEM.",
-      "Avalie em portugues e responda apenas no formato JSON solicitado.",
-      "Use cinco competencias no padrao ENEM, cada uma de 0 a 200 pontos.",
-      "Considere repertorio, coesao, argumentacao, dominio da norma padrao e proposta de intervencao.",
-      "Se o texto estiver fraco ou curto, ainda assim avalie com honestidade e explique por que.",
+      "Voc\u00ea \u00e9 um corretor de reda\u00e7\u00e3o em estilo ENEM.",
+      "Avalie em portugu\u00eas e responda apenas no formato JSON solicitado.",
+      "Use cinco compet\u00eancias no padr\u00e3o ENEM, cada uma de 0 a 200 pontos.",
+      "Considere repert\u00f3rio, coes\u00e3o, argumenta\u00e7\u00e3o, dom\u00ednio da norma padr\u00e3o e proposta de interven\u00e7\u00e3o.",
+      "Se o texto estiver fraco ou curto, ainda assim avalie com honestidade e explique por qu\u00ea.",
     ].join(" "),
     input: [
       `Tema: ${submission.themeTitle}`,
@@ -1728,7 +1722,7 @@ async function evaluateEssayWithAI(submission) {
         type: "json_schema",
         name: "enem_essay_evaluation",
         strict: true,
-        description: "Correcao estruturada de redacao em estilo ENEM.",
+        description: "Corre\u00e7\u00e3o estruturada de reda\u00e7\u00e3o em estilo ENEM.",
         schema: ESSAY_EVALUATION_SCHEMA,
       },
     },
@@ -1737,7 +1731,7 @@ async function evaluateEssayWithAI(submission) {
   const outputText = extractResponseOutputText(response);
 
   if (!outputText) {
-    throw new Error("A IA nao retornou um conteudo valido para a avaliacao.");
+    throw new Error("A IA n\u00e3o retornou um conte\u00fado v\u00e1lido para a avalia\u00e7\u00e3o.");
   }
 
   let parsedEvaluation;
@@ -1745,7 +1739,7 @@ async function evaluateEssayWithAI(submission) {
   try {
     parsedEvaluation = JSON.parse(outputText);
   } catch {
-    throw new Error("A resposta da IA nao veio em JSON valido.");
+    throw new Error("A resposta da IA n\u00e3o veio em JSON v\u00e1lido.");
   }
 
   return normalizeEssayEvaluation(parsedEvaluation);
@@ -1809,7 +1803,7 @@ function markEssaySubmissionEvaluated(userId, submissionId, evaluation) {
 
 function markEssaySubmissionFailed(userId, submissionId, errorMessage) {
   updateEssaySubmissionFailureStatement.run(
-    sanitizeEssayFeedbackText(errorMessage, 240) || "Nao foi possivel corrigir a redacao com IA.",
+    sanitizeEssayFeedbackText(errorMessage, 240) || "N\u00e3o foi poss\u00edvel corrigir a reda\u00e7\u00e3o com IA.",
     nowIso(),
     submissionId,
     userId
@@ -2054,7 +2048,7 @@ function validateRuntimeConfiguration() {
   }
 
   if (!PUBLIC_ORIGIN) {
-    console.warn("[start5] START5_PUBLIC_ORIGIN nao foi definido. Defina a origem publica do site em producao.");
+    console.warn("[start5] START5_PUBLIC_ORIGIN n\u00e3o foi definido. Defina a origem p\u00fablica do site em produ\u00e7\u00e3o.");
   }
 }
 
@@ -2187,7 +2181,7 @@ function normalizeSessionPayload(payload) {
   }
 
   if (activities.some((activity) => !ALLOWED_ACTIVITIES.has(activity))) {
-    throw createError(400, "Atividade invÃ¡lida.");
+    throw createError(400, "Atividade inv\u00e1lida.");
   }
 
   if (Number.isNaN(startedAt.getTime())) {
@@ -2270,28 +2264,28 @@ function normalizeStructuredSessionPayload(payload, options = {}) {
   const allowLooseMigration = options.allowLooseMigration === true;
 
   if (!Number.isFinite(minutes) || minutes <= 0) {
-    throw createError(400, "Minutos invalidos.");
+    throw createError(400, "Minutos inv\u00e1lidos.");
   }
 
   if (!ALLOWED_STATES.has(state)) {
-    throw createError(400, "Estado invalido.");
+    throw createError(400, "Estado inv\u00e1lido.");
   }
 
   if (activities.some((activity) => !ALLOWED_ACTIVITIES.has(activity))) {
-    throw createError(400, "Atividade invalida.");
+    throw createError(400, "Atividade inv\u00e1lida.");
   }
 
   if (subjectKey === "outras" && !customSubjectName) {
-    throw createError(400, "Informe qual materia voce estudou.");
+    throw createError(400, "Informe qual mat\u00e9ria voc\u00ea estudou.");
   }
 
   if (Number.isNaN(startedAt.getTime())) {
-    throw createError(400, "Data de inicio invalida.");
+    throw createError(400, "Data de in\u00edcio inv\u00e1lida.");
   }
 
   const safeActivities = activities;
   const safeOtherLabel = safeActivities.includes("outros")
-    ? otherLabel || (allowLooseMigration ? "Pratica livre" : "")
+    ? otherLabel || (allowLooseMigration ? "Pr\u00e1tica livre" : "")
     : "";
 
   if (safeActivities.includes("outros") && !safeOtherLabel) {
@@ -2299,7 +2293,7 @@ function normalizeStructuredSessionPayload(payload, options = {}) {
   }
 
   if (safeActivities.includes("verbos") && !verbs.length && !allowLooseMigration) {
-    throw createError(400, "Informe quais verbos voce estudou.");
+    throw createError(400, "Informe quais verbos voc\u00ea estudou.");
   }
 
   const safeTopicText = topicText || (allowLooseMigration
@@ -2314,7 +2308,7 @@ function normalizeStructuredSessionPayload(payload, options = {}) {
     : "");
 
   if (!safeTopicText && !allowLooseMigration) {
-    throw createError(400, "Descreva o que voce estudou hoje.");
+    throw createError(400, "Descreva o que voc\u00ea estudou hoje.");
   }
 
   const isEnglishSubject = subjectKey === DEFAULT_SUBJECT_KEY;
@@ -2428,7 +2422,7 @@ function updateStructuredSession(userId, sessionId, payload) {
   const currentSession = getStructuredUserSession(userId, sessionId);
 
   if (!currentSession) {
-    throw createError(404, "Sessao nao encontrada.");
+    throw createError(404, "Sess\u00e3o n\u00e3o encontrada.");
   }
 
   const session = normalizeStructuredSessionPayload(
@@ -2465,7 +2459,7 @@ function updateStructuredSession(userId, sessionId, payload) {
     );
 
     if (!result.changes) {
-      throw createError(404, "Sessao nao encontrada.");
+      throw createError(404, "Sess\u00e3o n\u00e3o encontrada.");
     }
 
     replaceSessionRelations(sessionId, session);
@@ -2477,7 +2471,7 @@ function deleteStructuredSession(userId, sessionId) {
   const result = deleteStartSessionStatement.run(sessionId, userId);
 
   if (!result.changes) {
-    throw createError(404, "Sessao nao encontrada.");
+    throw createError(404, "Sess\u00e3o n\u00e3o encontrada.");
   }
 }
 
@@ -2595,7 +2589,7 @@ function migrateLegacySessionsToStructured() {
           phrasesText: row.phrasesText,
           notes: row.notesText,
           otherLabel: Array.isArray(parsedActivities) && parsedActivities.includes("outros")
-            ? "Pratica livre"
+            ? "Pr\u00e1tica livre"
             : "",
           dateKey: row.dateKey,
           startedAt: row.startedAt,
@@ -2773,7 +2767,7 @@ function handleProfile(request, response) {
   const user = getAuthenticatedUser(request);
 
   if (!user) {
-    throw createError(401, "Sessao nao encontrada.");
+    throw createError(401, "Sess\u00e3o n\u00e3o encontrada.");
   }
 
   sendJson(response, 200, { user: sanitizeUser(findUserByIdStatement.get(user.id)) });
@@ -2783,14 +2777,14 @@ async function handleUpdateProfile(request, response) {
   const user = getAuthenticatedUser(request);
 
   if (!user) {
-    throw createError(401, "Sessao nao encontrada.");
+    throw createError(401, "Sess\u00e3o n\u00e3o encontrada.");
   }
 
   const payload = await readRequestBody(request);
   const currentUser = findUserByIdStatement.get(user.id);
 
   if (!currentUser) {
-    throw createError(404, "Usuario nao encontrado.");
+    throw createError(404, "Usu\u00e1rio n\u00e3o encontrado.");
   }
 
   const hasNameUpdate = payload.firstName !== undefined || payload.lastName !== undefined;
@@ -2831,7 +2825,7 @@ async function handleUpdateProfile(request, response) {
     : "";
 
   if (focusSubjectKey === "outras" && !focusSubjectName) {
-    throw createError(400, "Informe o nome da sua materia foco.");
+    throw createError(400, "Informe o nome da sua mat\u00e9ria foco.");
   }
 
   updateUserProfileStatement.run(
@@ -2897,13 +2891,13 @@ async function handleUpdateSession(request, response, rawSessionId) {
   const user = getAuthenticatedUser(request);
 
   if (!user) {
-    throw createError(401, "Sessao nao encontrada.");
+    throw createError(401, "Sess\u00e3o n\u00e3o encontrada.");
   }
 
   const sessionId = Number(rawSessionId);
 
   if (!Number.isInteger(sessionId) || sessionId <= 0) {
-    throw createError(400, "Sessao invalida.");
+    throw createError(400, "Sess\u00e3o inv\u00e1lida.");
   }
 
   const payload = await readRequestBody(request);
@@ -2916,13 +2910,13 @@ function handleDeleteSession(request, response, rawSessionId) {
   const user = getAuthenticatedUser(request);
 
   if (!user) {
-    throw createError(401, "Sessao nao encontrada.");
+    throw createError(401, "Sess\u00e3o n\u00e3o encontrada.");
   }
 
   const sessionId = Number(rawSessionId);
 
   if (!Number.isInteger(sessionId) || sessionId <= 0) {
-    throw createError(400, "Sessao invalida.");
+    throw createError(400, "Sess\u00e3o inv\u00e1lida.");
   }
 
   deleteStructuredSession(user.id, sessionId);
@@ -2933,7 +2927,7 @@ function handleEssayThemes(request, response) {
   const user = getAuthenticatedUser(request);
 
   if (!user) {
-    throw createError(401, "Sessao nao encontrada.");
+    throw createError(401, "Sess\u00e3o n\u00e3o encontrada.");
   }
 
   sendJson(response, 200, { themes: getEssayThemes() });
@@ -2943,7 +2937,7 @@ function handleListEssaySubmissions(request, response) {
   const user = getAuthenticatedUser(request);
 
   if (!user) {
-    throw createError(401, "Sessao nao encontrada.");
+    throw createError(401, "Sess\u00e3o n\u00e3o encontrada.");
   }
 
   sendJson(response, 200, { submissions: listUserEssaySubmissions(user.id) });
@@ -2953,13 +2947,13 @@ function handleGetEssaySubmission(request, response, rawSubmissionId) {
   const user = getAuthenticatedUser(request);
 
   if (!user) {
-    throw createError(401, "Sessao nao encontrada.");
+    throw createError(401, "Sess\u00e3o n\u00e3o encontrada.");
   }
 
   const submissionId = Number(rawSubmissionId);
 
   if (!Number.isInteger(submissionId) || submissionId <= 0) {
-    throw createError(400, "Redacao invalida.");
+    throw createError(400, "Reda\u00e7\u00e3o inv\u00e1lida.");
   }
 
   const submission = getUserEssaySubmission(user.id, submissionId, {
@@ -2968,7 +2962,7 @@ function handleGetEssaySubmission(request, response, rawSubmissionId) {
   });
 
   if (!submission) {
-    throw createError(404, "Redacao nao encontrada.");
+    throw createError(404, "Reda\u00e7\u00e3o n\u00e3o encontrada.");
   }
 
   sendJson(response, 200, { submission });
@@ -2978,7 +2972,7 @@ async function handleCreateEssaySubmission(request, response) {
   const user = getAuthenticatedUser(request);
 
   if (!user) {
-    throw createError(401, "Sessao nao encontrada.");
+    throw createError(401, "Sess\u00e3o n\u00e3o encontrada.");
   }
 
   const payload = await readRequestBody(request);
@@ -2992,7 +2986,7 @@ async function handleCreateEssaySubmission(request, response) {
     const submission = markEssaySubmissionFailed(
       user.id,
       pendingSubmission.id,
-      error?.message || "Nao foi possivel corrigir a redacao com IA."
+      error?.message || "N\u00e3o foi poss\u00edvel corrigir a reda\u00e7\u00e3o com IA."
     );
     const statusCode =
       Number.isInteger(error?.statusCode) && error.statusCode >= 400
@@ -3000,7 +2994,7 @@ async function handleCreateEssaySubmission(request, response) {
         : 502;
 
     sendJson(response, statusCode, {
-      error: submission.errorMessage || "Nao foi possivel corrigir a redacao com IA.",
+      error: submission.errorMessage || "N\u00e3o foi poss\u00edvel corrigir a reda\u00e7\u00e3o com IA.",
       submission,
     });
   }
@@ -3056,13 +3050,13 @@ function handleAdminUserDetails(request, response, rawUserId) {
   const userId = Number(rawUserId);
 
   if (!Number.isInteger(userId) || userId <= 0) {
-    throw createError(400, "Usuario invalido.");
+    throw createError(400, "Usu\u00e1rio inv\u00e1lido.");
   }
 
   const targetUser = findUserByIdStatement.get(userId);
 
   if (!targetUser) {
-    throw createError(404, "Usuario nao encontrado.");
+    throw createError(404, "Usu\u00e1rio n\u00e3o encontrado.");
   }
 
   sendJson(response, 200, { user: sanitizeAdminUserDetails(targetUser) });
@@ -3075,13 +3069,13 @@ async function handleUpdateAdminUser(request, response, rawUserId) {
   const userId = Number(rawUserId);
 
   if (!Number.isInteger(userId) || userId <= 0) {
-    throw createError(400, "Usuario invalido.");
+    throw createError(400, "Usu\u00e1rio inv\u00e1lido.");
   }
 
   const targetUser = findUserByIdStatement.get(userId);
 
   if (!targetUser) {
-    throw createError(404, "Usuario nao encontrado.");
+    throw createError(404, "Usu\u00e1rio n\u00e3o encontrado.");
   }
 
   const payload = await readRequestBody(request);
@@ -3094,13 +3088,13 @@ async function handleUpdateAdminUser(request, response, rawUserId) {
 
   if (nextEmail !== null) {
     if (!nextEmail.includes("@")) {
-      throw createError(400, "Informe um e-mail valido.");
+      throw createError(400, "Informe um e-mail v\u00e1lido.");
     }
 
     const existingUser = findUserByEmailStatement.get(nextEmail);
 
     if (existingUser && existingUser.id !== userId) {
-      throw createError(409, "Esse e-mail ja esta cadastrado.");
+      throw createError(409, "Esse e-mail j\u00e1 est\u00e1 cadastrado.");
     }
 
     if (nextEmail !== targetUser.email) {
@@ -3130,20 +3124,20 @@ async function handleUpdateAdminRole(request, response, rawUserId) {
   const userId = Number(rawUserId);
 
   if (!Number.isInteger(userId) || userId <= 0) {
-    throw createError(400, "Usuario invalido.");
+    throw createError(400, "Usu\u00e1rio inv\u00e1lido.");
   }
 
   const targetUser = findUserByIdStatement.get(userId);
 
   if (!targetUser) {
-    throw createError(404, "Usuario nao encontrado.");
+    throw createError(404, "Usu\u00e1rio n\u00e3o encontrado.");
   }
 
   const payload = await readRequestBody(request);
   const nextRole = String(payload.role || "").trim().toLowerCase();
 
   if (!isValidRole(nextRole)) {
-    throw createError(400, "Permissao invalida.");
+    throw createError(400, "Permiss\u00e3o inv\u00e1lida.");
   }
 
   if (
@@ -3151,7 +3145,7 @@ async function handleUpdateAdminRole(request, response, rawUserId) {
     nextRole === "user" &&
     Number(countAdminsStatement.get().total) <= 1
   ) {
-    throw createError(400, "Nao e possivel remover o ultimo admin.");
+    throw createError(400, "N\u00e3o \u00e9 poss\u00edvel remover o \u00faltimo admin.");
   }
 
   if (targetUser.role !== nextRole) {

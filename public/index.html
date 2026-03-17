@@ -24,9 +24,9 @@
             <span class="header-account-avatar-fallback" data-auth-initials>U</span>
           </div>
           <div class="header-account-copy">
-            <strong class="header-account-name" data-auth-name>Usuario</strong>
+            <strong class="header-account-name" data-auth-name>Usuário</strong>
             <span class="header-account-email" data-auth-email>email@start5.app</span>
-            <span class="header-account-month" data-auth-month-minutes>0 min no mes</span>
+            <span class="header-account-month" data-auth-month-minutes>0 min no mês</span>
           </div>
         </div>
 
@@ -48,21 +48,21 @@
 
     <div class="menu-panel" id="menuPanel">
       <div class="menu-panel-inner">
-        <nav class="menu-nav" aria-label="Navegacao principal">
+        <nav class="menu-nav" aria-label="Navegação principal">
           <div class="menu-user">
             <span class="menu-user-label">Conectado como</span>
-            <strong class="menu-user-name" data-auth-name>Usuario</strong>
+            <strong class="menu-user-name" data-auth-name>Usuário</strong>
             <span class="menu-user-email" data-auth-email>email@start5.app</span>
           </div>
 
           <div class="menu-column">
-            <a href="index.html" class="menu-link">Inicio</a>
+            <a href="index.html" class="menu-link">Início</a>
             <a href="dashboard.html" class="menu-link">Painel</a>
             <a href="profile.html" class="menu-link">Perfil</a>
           </div>
 
           <div class="menu-column">
-            <a href="redacao.html" class="menu-link">Redacao</a>
+            <a href="redacao.html" class="menu-link">Redação</a>
             <a href="dashboard.html#semanal" class="menu-link">Semanal</a>
             <a href="dashboard.html#mensal" class="menu-link">Mensal</a>
             <a href="admin.html" class="menu-link" data-admin-only hidden>Admin</a>
@@ -81,7 +81,7 @@
 
         <div class="hero-actions">
           <button class="start-button" id="startSessionButton" type="button">
-            Registrar pratica
+            Registrar prática
           </button>
         </div>
       </div>
@@ -98,12 +98,12 @@
         data-close-session-modal
         aria-label="Fechar modal"
       >
-        ×
+        &times;
       </button>
 
       <div class="session-modal-head">
-        <span class="session-modal-mode" id="sessionModalModeLabel">Nova pratica</span>
-        <h2 class="session-modal-title" id="sessionModalTitle">Registrar pratica</h2>
+        <span class="session-modal-mode" id="sessionModalModeLabel">Nova prática</span>
+        <h2 class="session-modal-title" id="sessionModalTitle">Registrar prática</h2>
       </div>
 
       <div class="modal-group">
@@ -140,37 +140,37 @@
       </div>
 
       <div class="modal-group">
-        <label for="subjectSelect" class="modal-group-label">Materia</label>
+        <label for="subjectSelect" class="modal-group-label">Matéria</label>
         <div class="subject-select-shell">
           <select id="subjectSelect" class="subject-select">
-            <option value="ingles">Ingles</option>
-            <option value="matematica">Matematica</option>
-            <option value="portugues">Portugues</option>
+            <option value="ingles">Inglês</option>
+            <option value="matematica">Matemática</option>
+            <option value="portugues">Português</option>
             <option value="geografia">Geografia</option>
-            <option value="historia">Historia</option>
+            <option value="historia">História</option>
             <option value="biologia">Biologia</option>
-            <option value="fisica">Fisica</option>
-            <option value="quimica">Quimica</option>
-            <option value="redacao">Redacao</option>
+            <option value="fisica">Física</option>
+            <option value="quimica">Química</option>
+            <option value="redacao">Redação</option>
             <option value="filosofia">Filosofia</option>
             <option value="sociologia">Sociologia</option>
-            <option value="outras">Outra materia</option>
+            <option value="outras">Outra matéria</option>
           </select>
         </div>
       </div>
 
       <div class="modal-detail-group is-hidden" id="customSubjectField">
-        <label for="customSubjectInput" class="extra-minutes-label">Qual materia voce estudou?</label>
+        <label for="customSubjectInput" class="extra-minutes-label">Qual matéria você estudou?</label>
         <input
           type="text"
           id="customSubjectInput"
           class="extra-minutes-input"
           maxlength="60"
-          placeholder="Ex: Espanhol, Direito, Programacao"
+          placeholder="Ex: Espanhol, Direito, Programação"
         />
         <div class="subject-suggestions" id="customSubjectSuggestions">
           <div class="subject-suggestions-empty">
-            As materias personalizadas que voce salvar vao aparecer aqui.
+            As matérias personalizadas que você salvar vão aparecer aqui.
           </div>
         </div>
       </div>
@@ -182,9 +182,9 @@
           id="topicInput"
           class="extra-minutes-input"
           maxlength="140"
-          placeholder="Ex: funcoes, concordancia verbal, phrasal verbs"
+          placeholder="Ex: funções, concordância verbal, phrasal verbs"
         />
-        <p class="modal-detail-hint">Uma sessao, uma materia, um tema claro.</p>
+        <p class="modal-detail-hint">Uma sessão, uma matéria, um tema claro.</p>
       </div>
 
       <div class="modal-detail-group is-hidden" id="verbDetailsField">
@@ -206,13 +206,13 @@
         </div>
         <div class="verb-picker-meta">
           <span class="verb-picker-status" id="verbPickerStatus">
-            Sugestoes com os verbos mais conhecidos primeiro.
+            Sugestões com os verbos mais conhecidos primeiro.
           </span>
           <button type="button" class="verb-mode-button" id="verbModeToggleButton">
             Outro verbo
           </button>
         </div>
-        <div class="verb-suggestions" id="verbSuggestions" aria-label="Sugestoes de verbos"></div>
+        <div class="verb-suggestions" id="verbSuggestions" aria-label="Sugestões de verbos"></div>
         <p class="modal-detail-hint">
           Escolha um verbo da lista ou use Outro verbo para digitar manualmente.
         </p>
@@ -226,30 +226,30 @@
             type="text"
             id="phrasesEntryInput"
             class="token-input-field"
-            placeholder="Digite uma frase e aperte Enter ou virgula"
+            placeholder="Digite uma frase e aperte Enter ou vírgula"
           />
         </div>
         <p class="modal-detail-hint">Cada item conta como uma frase registrada.</p>
       </div>
 
       <div class="modal-detail-group">
-        <label for="notesInput" class="extra-minutes-label">Observacoes</label>
+        <label for="notesInput" class="extra-minutes-label">Observações</label>
         <textarea
           id="notesInput"
           class="modal-textarea"
           rows="3"
-          placeholder="Opcional: como foi a pratica, o que voce percebeu, em que contexto estudou..."
+          placeholder="Opcional: como foi a prática, o que você percebeu, em que contexto estudou..."
         ></textarea>
       </div>
 
-      <p class="session-helper" id="sessionHelper">Escolha a materia, o tempo e o tema estudado.</p>
+      <p class="session-helper" id="sessionHelper">Escolha a matéria, o tempo e o tema estudado.</p>
 
       <div class="modal-actions">
         <button type="button" class="modal-button modal-button-secondary" data-close-session-modal>
           Cancelar
         </button>
         <button type="button" class="modal-button modal-button-primary" id="saveSessionButton">
-          Salvar pratica
+          Salvar prática
         </button>
       </div>
     </div>

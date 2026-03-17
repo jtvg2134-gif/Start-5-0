@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Start 5 | Redacao</title>
+  <title>Start 5 | Redação</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -24,9 +24,9 @@
             <span class="header-account-avatar-fallback" data-auth-initials>U</span>
           </div>
           <div class="header-account-copy">
-            <strong class="header-account-name" data-auth-name>Usuario</strong>
+            <strong class="header-account-name" data-auth-name>Usuário</strong>
             <span class="header-account-email" data-auth-email>email@start5.app</span>
-            <span class="header-account-month" data-auth-month-minutes>0 min no mes</span>
+            <span class="header-account-month" data-auth-month-minutes>0 min no mês</span>
           </div>
         </div>
 
@@ -48,21 +48,21 @@
 
     <div class="menu-panel" id="menuPanel">
       <div class="menu-panel-inner">
-        <nav class="menu-nav" aria-label="Navegacao principal">
+        <nav class="menu-nav" aria-label="Navegação principal">
           <div class="menu-user">
             <span class="menu-user-label">Conectado como</span>
-            <strong class="menu-user-name" data-auth-name>Usuario</strong>
+            <strong class="menu-user-name" data-auth-name>Usuário</strong>
             <span class="menu-user-email" data-auth-email>email@start5.app</span>
           </div>
 
           <div class="menu-column">
-            <a href="index.html" class="menu-link">Inicio</a>
+            <a href="index.html" class="menu-link">Início</a>
             <a href="dashboard.html" class="menu-link">Painel</a>
             <a href="profile.html" class="menu-link">Perfil</a>
           </div>
 
           <div class="menu-column">
-            <a href="redacao.html" class="menu-link">Redacao</a>
+            <a href="redacao.html" class="menu-link">Redação</a>
             <a href="admin.html" class="menu-link" data-admin-only hidden>Admin</a>
             <button type="button" class="menu-link menu-link-button" data-logout>Sair</button>
           </div>
@@ -73,12 +73,67 @@
     <section class="dashboard-intro">
       <div class="dashboard-intro-inner">
         <div>
-          <p class="section-label">Redacao</p>
-          <h1 class="progress-title">Correcao estilo ENEM com IA</h1>
+          <p class="section-label">Redação</p>
+          <h1 class="progress-title">Correção estilo ENEM com IA</h1>
           <p class="dashboard-copy">
-            Escolha um tema, escreva sua redacao e receba nota por competencia, leitura geral e orientacoes de melhoria.
+            Escolha um tema, escreva sua redação e receba nota por competência, leitura geral e orientações de melhoria.
           </p>
         </div>
+      </div>
+    </section>
+
+    <section class="essay-score-guide" aria-label="Como a nota da redação funciona">
+      <div class="essay-score-guide-copy">
+        <p class="section-label">Escala da nota</p>
+        <h2 class="essay-score-guide-title">Sua redação é avaliada em 5 competências.</h2>
+        <p class="essay-score-guide-text">
+          Cada competência vai de <strong>0 - 200 pontos</strong>. Somando as 5, sua nota final pode chegar a
+          <strong>1000 pontos</strong>.
+        </p>
+      </div>
+
+      <div class="essay-score-guide-grid">
+        <article class="essay-score-guide-card">
+          <span class="essay-score-guide-pill">C1</span>
+          <strong class="essay-score-guide-card-title">Norma padrão</strong>
+          <p class="essay-score-guide-card-copy">Ortografia, gramática e escrita formal.</p>
+          <span class="essay-score-guide-card-points">0 - 200</span>
+        </article>
+
+        <article class="essay-score-guide-card">
+          <span class="essay-score-guide-pill">C2</span>
+          <strong class="essay-score-guide-card-title">Tema</strong>
+          <p class="essay-score-guide-card-copy">Compreensão da proposta e repertório.</p>
+          <span class="essay-score-guide-card-points">0 - 200</span>
+        </article>
+
+        <article class="essay-score-guide-card">
+          <span class="essay-score-guide-pill">C3</span>
+          <strong class="essay-score-guide-card-title">Argumentação</strong>
+          <p class="essay-score-guide-card-copy">Defesa da tese e qualidade das ideias.</p>
+          <span class="essay-score-guide-card-points">0 - 200</span>
+        </article>
+
+        <article class="essay-score-guide-card">
+          <span class="essay-score-guide-pill">C4</span>
+          <strong class="essay-score-guide-card-title">Coesão</strong>
+          <p class="essay-score-guide-card-copy">Conectivos e organização do texto.</p>
+          <span class="essay-score-guide-card-points">0 - 200</span>
+        </article>
+
+        <article class="essay-score-guide-card">
+          <span class="essay-score-guide-pill">C5</span>
+          <strong class="essay-score-guide-card-title">Intervenção</strong>
+          <p class="essay-score-guide-card-copy">Solução proposta para o problema.</p>
+          <span class="essay-score-guide-card-points">0 - 200</span>
+        </article>
+
+        <article class="essay-score-guide-card essay-score-guide-card-total">
+          <span class="essay-score-guide-pill">Total</span>
+          <strong class="essay-score-guide-card-title">Nota máxima</strong>
+          <p class="essay-score-guide-card-copy">As 5 competências somadas formam a nota final.</p>
+          <span class="essay-score-guide-card-points">0 - 1000</span>
+        </article>
       </div>
     </section>
 
@@ -87,9 +142,9 @@
         <div class="essay-card-head">
           <div>
             <p class="section-label">Escrever</p>
-            <h2 class="essay-card-title">Nova redacao</h2>
+            <h2 class="essay-card-title">Nova redação</h2>
           </div>
-          <p class="essay-card-copy">A avaliacao e em estilo ENEM por IA, nao uma correcao oficial.</p>
+          <p class="essay-card-copy">A avaliação é em estilo ENEM por IA, não uma correção oficial.</p>
         </div>
 
         <form class="essay-form" id="essayForm">
@@ -128,7 +183,7 @@
 
           <div class="essay-field-group is-hidden" id="customThemeFields">
             <label class="auth-field">
-              <span class="auth-label">Titulo do tema</span>
+              <span class="auth-label">Título do tema</span>
               <input
                 class="auth-input"
                 id="essayCustomThemeTitle"
@@ -145,24 +200,24 @@
                 id="essayCustomThemePrompt"
                 rows="3"
                 maxlength="240"
-                placeholder="Explique qual enfoque voce quer trabalhar nesta proposta."
+                placeholder="Explique qual enfoque você quer trabalhar nesta proposta."
               ></textarea>
             </label>
           </div>
 
           <label class="auth-field">
-            <span class="auth-label">Sua redacao</span>
+            <span class="auth-label">Sua redação</span>
             <textarea
               class="modal-textarea essay-editor-input"
               id="essayTextInput"
               rows="14"
-              placeholder="Escreva sua redacao aqui..."
+              placeholder="Escreva sua redação aqui..."
             ></textarea>
           </label>
 
           <div class="essay-editor-meta">
             <span class="essay-word-count" id="essayWordCount">0 palavras</span>
-            <span class="essay-inline-note">Cada envio fica salvo no seu historico.</span>
+            <span class="essay-inline-note">Cada envio fica salvo no seu histórico.</span>
           </div>
 
           <p class="auth-feedback essay-feedback" id="essayFeedback" aria-live="polite"></p>
@@ -172,7 +227,7 @@
               Limpar texto
             </button>
             <button type="submit" class="modal-button modal-button-primary" id="essaySubmitButton">
-              Corrigir redacao
+              Corrigir redação
             </button>
           </div>
         </form>
@@ -181,14 +236,14 @@
       <article class="essay-card essay-history-card">
         <div class="essay-card-head">
           <div>
-            <p class="section-label">Historico</p>
-            <h2 class="essay-card-title">Versoes salvas</h2>
+            <p class="section-label">Histórico</p>
+            <h2 class="essay-card-title">Versões salvas</h2>
           </div>
-          <p class="essay-card-copy">Reabra correcoes antigas ou tente novamente uma versao com falha.</p>
+          <p class="essay-card-copy">Reabra correções antigas ou tente novamente uma versão com falha.</p>
         </div>
 
         <div class="essay-history-list" id="essayHistoryList">
-          <div class="essay-empty">Nenhuma redacao enviada ainda.</div>
+          <div class="essay-empty">Nenhuma redação enviada ainda.</div>
         </div>
       </article>
 
@@ -196,7 +251,7 @@
         <div class="essay-card-head">
           <div>
             <p class="section-label">Resultado</p>
-            <h2 class="essay-card-title" id="essayResultTitle">Sua avaliacao aparece aqui</h2>
+            <h2 class="essay-card-title" id="essayResultTitle">Sua avaliação aparece aqui</h2>
           </div>
           <div class="essay-result-head-meta">
             <span class="essay-status-chip" id="essayStatusChip">Aguardando</span>
@@ -206,13 +261,13 @@
 
         <div class="essay-result-body" id="essayResultBody">
           <div class="essay-empty essay-empty-large">
-            Escolha um tema, escreva a redacao e clique em corrigir para ver a nota por competencia e o feedback estruturado.
+            Escolha um tema, escreva a redação e clique em corrigir para ver a nota por competência e o feedback estruturado.
           </div>
         </div>
 
         <div class="essay-result-actions is-hidden" id="essayResultActions">
           <button type="button" class="modal-button modal-button-secondary" id="essayReuseButton">
-            Usar esta versao novamente
+            Usar esta versão novamente
           </button>
         </div>
       </article>

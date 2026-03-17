@@ -29,6 +29,29 @@ let submissions = [];
 let currentSubmission = null;
 let selectedSubmissionId = null;
 
+const COMPETENCY_GUIDE = {
+  1: {
+    title: "Dom\u00ednio da norma padr\u00e3o",
+    description: "Ortografia, acentua\u00e7\u00e3o, concord\u00e2ncia e escrita formal.",
+  },
+  2: {
+    title: "Compreens\u00e3o do tema",
+    description: "Leitura correta da proposta, repert\u00f3rio e recorte do assunto.",
+  },
+  3: {
+    title: "Argumenta\u00e7\u00e3o",
+    description: "Organiza\u00e7\u00e3o das ideias, defesa do ponto de vista e consist\u00eancia.",
+  },
+  4: {
+    title: "Coes\u00e3o",
+    description: "Conectivos, progress\u00e3o textual e liga\u00e7\u00e3o entre as partes.",
+  },
+  5: {
+    title: "Proposta de interven\u00e7\u00e3o",
+    description: "Solu\u00e7\u00e3o completa, vi\u00e1vel e detalhada para o problema.",
+  },
+};
+
 function closeMenu() {
   body.classList.remove("menu-open");
 
@@ -109,6 +132,209 @@ function getScoreLabel(submission) {
   return `${formatNumber(submission.totalScore || 0)} / 1000`;
 }
 
+function getCompetencyGuide(id) {
+  return (
+    COMPETENCY_GUIDE[Number(id)] || {
+      title: "Leitura da compet\u00eancia",
+      description: "Veja abaixo a interpreta\u00e7\u00e3o da banca para esta parte da reda\u00e7\u00e3o.",
+    }
+  );
+}
+
+function getCompetencyTone(score) {
+  const safeScore = Number(score) || 0;
+
+  if (safeScore >= 160) {
+    return {
+      key: "strong",
+      label: "Ponto forte",
+      helper: "Vale manter esse padr\u00e3o na pr\u00f3xima vers\u00e3o.",
+    };
+  }
+
+  if (safeScore >= 120) {
+    return {
+      key: "stable",
+      label: "Boa base",
+      helper: "J\u00e1 est\u00e1 no caminho certo, mas ainda d\u00e1 para subir.",
+    };
+  }
+
+  if (safeScore >= 80) {
+    return {
+      key: "attention",
+      label: "Aten\u00e7\u00e3o",
+      helper: "Essa compet\u00eancia pede revis\u00e3o e treino direcionado.",
+    };
+  }
+
+  return {
+    key: "priority",
+    label: "Prioridade agora",
+    helper: "Este \u00e9 o ponto que mais pode levantar sua nota total.",
+  };
+}
+
+function createDetailLine(label, value) {
+  const row = document.createElement("div");
+  row.className = "essay-competency-detail";
+
+  const title = document.createElement("strong");
+  title.className = "essay-competency-detail-title";
+  title.textContent = label;
+
+  const copy = document.createElement("p");
+  copy.className = "essay-competency-detail-copy";
+  copy.textContent = value;
+
+  row.append(title, copy);
+  return row;
+}
+
+function createCompetencyOverview(feedback) {
+  const competencies = Array.isArray(feedback?.competencies) ? [...feedback.competencies] : [];
+
+  if (!competencies.length) {
+    return null;
+  }
+
+  const sortedByScore = [...competencies].sort((left, right) => left.score - right.score);
+  const weakest = sortedByScore[0];
+  const strongest = sortedByScore[sortedByScore.length - 1];
+  const weakestGuide = getCompetencyGuide(weakest.id);
+  const strongestGuide = getCompetencyGuide(strongest.id);
+
+  const section = document.createElement("section");
+  section.className = "essay-competency-overview";
+
+  const intro = document.createElement("article");
+  intro.className = "essay-competency-spotlight";
+
+  const introLabel = document.createElement("span");
+  introLabel.className = "essay-competency-spotlight-label";
+  introLabel.textContent = "Leitura por compet\u00eancia";
+
+  const introTitle = document.createElement("strong");
+  introTitle.className = "essay-competency-spotlight-title";
+  introTitle.textContent = `${weakest.name} \u00e9 a compet\u00eancia que mais pede aten\u00e7\u00e3o agora.`;
+
+  const introCopy = document.createElement("p");
+  introCopy.className = "essay-competency-spotlight-copy";
+  introCopy.textContent = `Hoje sua menor nota foi em ${weakestGuide.title}. Foque primeiro nessa parte para ganhar mais pontos na pr\u00f3xima reda\u00e7\u00e3o.`;
+
+  intro.append(introLabel, introTitle, introCopy);
+
+  const cards = document.createElement("div");
+  cards.className = "essay-competency-overview-cards";
+
+  const urgentCard = document.createElement("article");
+  urgentCard.className = "essay-overview-card";
+  urgentCard.dataset.tone = "priority";
+  urgentCard.innerHTML = `
+    <span class="essay-overview-card-label">Precisa melhorar</span>
+    <strong class="essay-overview-card-title">${weakest.name}</strong>
+    <p class="essay-overview-card-copy">${weakestGuide.title}.</p>
+    <strong class="essay-overview-card-score">${formatNumber(weakest.score)} / 200</strong>
+  `;
+
+  const strongestCard = document.createElement("article");
+  strongestCard.className = "essay-overview-card";
+  strongestCard.dataset.tone = "strong";
+  strongestCard.innerHTML = `
+    <span class="essay-overview-card-label">Melhor compet\u00eancia</span>
+    <strong class="essay-overview-card-title">${strongest.name}</strong>
+    <p class="essay-overview-card-copy">${strongestGuide.title}.</p>
+    <strong class="essay-overview-card-score">${formatNumber(strongest.score)} / 200</strong>
+  `;
+
+  const focusCard = document.createElement("article");
+  focusCard.className = "essay-overview-card";
+  focusCard.dataset.tone = "stable";
+
+  const focusLabel = document.createElement("span");
+  focusLabel.className = "essay-overview-card-label";
+  focusLabel.textContent = "Pr\u00f3ximo foco";
+
+  const focusTitle = document.createElement("strong");
+  focusTitle.className = "essay-overview-card-title";
+  focusTitle.textContent = weakestGuide.title;
+
+  const focusCopy = document.createElement("p");
+  focusCopy.className = "essay-overview-card-copy";
+  focusCopy.textContent = weakest.improvement;
+
+  focusCard.append(focusLabel, focusTitle, focusCopy);
+  cards.append(urgentCard, strongestCard, focusCard);
+
+  section.append(intro, cards);
+  return section;
+}
+
+function createCompetencyRanking(competencies) {
+  const section = document.createElement("section");
+  section.className = "essay-competency-ranking";
+
+  const title = document.createElement("strong");
+  title.className = "essay-detail-title";
+  title.textContent = "Mapa das compet\u00eancias";
+
+  const copy = document.createElement("p");
+  copy.className = "essay-competency-ranking-copy";
+  copy.textContent = "Veja de forma r\u00e1pida quais compet\u00eancias est\u00e3o mais fortes e quais precisam de treino primeiro.";
+
+  const list = document.createElement("div");
+  list.className = "essay-competency-ranking-list";
+
+  [...competencies]
+    .sort((left, right) => right.score - left.score || left.id - right.id)
+    .forEach((competency, index) => {
+      const guide = getCompetencyGuide(competency.id);
+      const tone = getCompetencyTone(competency.score);
+      const row = document.createElement("article");
+      row.className = "essay-competency-ranking-item";
+      row.dataset.tone = tone.key;
+
+      const top = document.createElement("div");
+      top.className = "essay-competency-ranking-top";
+
+      const nameWrap = document.createElement("div");
+      nameWrap.className = "essay-competency-ranking-name-wrap";
+
+      const order = document.createElement("span");
+      order.className = "essay-competency-ranking-order";
+      order.textContent = `#${index + 1}`;
+
+      const name = document.createElement("strong");
+      name.className = "essay-competency-ranking-name";
+      name.textContent = `${competency.name} · ${guide.title}`;
+
+      const score = document.createElement("span");
+      score.className = "essay-competency-ranking-score";
+      score.textContent = `${formatNumber(competency.score)} / 200`;
+
+      nameWrap.append(order, name);
+      top.append(nameWrap, score);
+
+      const bar = document.createElement("div");
+      bar.className = "essay-competency-bar";
+
+      const fill = document.createElement("span");
+      fill.className = "essay-competency-bar-fill";
+      fill.style.width = `${Math.max(6, Math.min(100, (Number(competency.score) || 0) / 2))}%`;
+      bar.appendChild(fill);
+
+      const helper = document.createElement("p");
+      helper.className = "essay-competency-ranking-helper";
+      helper.textContent = tone.helper;
+
+      row.append(top, bar, helper);
+      list.appendChild(row);
+    });
+
+  section.append(title, copy, list);
+  return section;
+}
+
 function updateThemeMode(nextMode) {
   themeMode = nextMode === "custom" ? "custom" : "preset";
 
@@ -128,7 +354,7 @@ function renderThemePreview() {
 
   if (themeMode === "custom") {
     const title = essayCustomThemeTitle?.value.trim() || "Tema livre";
-    const prompt = essayCustomThemePrompt?.value.trim() || "Explique aqui o recorte que voce quer trabalhar.";
+    const prompt = essayCustomThemePrompt?.value.trim() || "Explique aqui o recorte que voc\u00ea quer trabalhar.";
     essayThemePreview.textContent = `${title}: ${prompt}`;
     return;
   }
@@ -143,7 +369,7 @@ function setLoading(isLoading) {
   });
 
   if (essaySubmitButton) {
-    essaySubmitButton.textContent = isLoading ? "Corrigindo..." : "Corrigir redacao";
+    essaySubmitButton.textContent = isLoading ? "Corrigindo..." : "Corrigir reda\u00e7\u00e3o";
   }
 }
 
@@ -193,7 +419,7 @@ function renderSubmission(submission) {
     return;
   }
 
-  essayResultTitle.textContent = submission?.themeTitle || "Sua avaliacao aparece aqui";
+  essayResultTitle.textContent = submission?.themeTitle || "Sua avalia\u00e7\u00e3o aparece aqui";
   essayStatusChip.textContent = getStatusLabel(submission?.status);
   essayStatusChip.dataset.status = submission?.status || "pending";
   essayScorePill.textContent = getScoreLabel(submission);
@@ -203,7 +429,7 @@ function renderSubmission(submission) {
   if (!submission) {
     essayResultBody.appendChild(
       createEmptyResult(
-        "Escolha um tema, escreva a redacao e clique em corrigir para ver a nota por competencia e o feedback estruturado."
+        "Escolha um tema, escreva a reda\u00e7\u00e3o e clique em corrigir para ver a nota por compet\u00eancia e o feedback estruturado."
       )
     );
     return;
@@ -211,57 +437,85 @@ function renderSubmission(submission) {
 
   if (essayReuseButton) {
     essayReuseButton.textContent =
-      submission.status === "failed" ? "Corrigir novamente" : "Usar esta versao novamente";
+      submission.status === "failed" ? "Corrigir novamente" : "Usar esta vers\u00e3o novamente";
   }
 
   const summary = document.createElement("section");
   summary.className = "essay-result-summary";
   summary.textContent =
     submission.status === "evaluated"
-      ? submission.feedback?.summaryFeedback || "A avaliacao ficou pronta."
-      : submission.errorMessage || "Esta tentativa nao conseguiu gerar a avaliacao completa.";
+      ? submission.feedback?.summaryFeedback || "A avalia\u00e7\u00e3o ficou pronta."
+      : submission.errorMessage || "Esta tentativa n\u00e3o conseguiu gerar a avalia\u00e7\u00e3o completa.";
   essayResultBody.appendChild(summary);
 
   if (submission.status !== "evaluated" || !submission.feedback) {
     essayResultBody.appendChild(
       createListPanel(
-        "Proximo passo",
+        "Pr\u00f3ximo passo",
         [
-          "Use o botao abaixo para carregar o mesmo texto novamente.",
-          "Confira se o tema e o recorte estao claros antes de reenviar.",
+          "Use o bot\u00e3o abaixo para carregar o mesmo texto novamente.",
+          "Confira se o tema e o recorte est\u00e3o claros antes de reenviar.",
         ],
-        "Nenhuma orientacao adicional."
+        "Nenhuma orienta\u00e7\u00e3o adicional."
       )
     );
     return;
+  }
+
+  const competencyOverview = createCompetencyOverview(submission.feedback);
+
+  if (competencyOverview) {
+    essayResultBody.appendChild(competencyOverview);
+    essayResultBody.appendChild(createCompetencyRanking(submission.feedback.competencies));
   }
 
   const competencyGrid = document.createElement("section");
   competencyGrid.className = "essay-competency-grid";
 
   submission.feedback.competencies.forEach((competency) => {
+    const guide = getCompetencyGuide(competency.id);
+    const tone = getCompetencyTone(competency.score);
     const card = document.createElement("article");
     card.className = "essay-competency-card";
+    card.dataset.tone = tone.key;
+
+    const head = document.createElement("div");
+    head.className = "essay-competency-head";
 
     const name = document.createElement("span");
     name.className = "essay-competency-name";
     name.textContent = competency.name;
 
+    const toneChip = document.createElement("span");
+    toneChip.className = "essay-competency-chip";
+    toneChip.textContent = tone.label;
+
+    const guideText = document.createElement("p");
+    guideText.className = "essay-competency-guide";
+    guideText.textContent = `Avalia: ${guide.title}. ${guide.description}`;
+
     const score = document.createElement("strong");
     score.className = "essay-competency-score";
     score.textContent = `${formatNumber(competency.score)} / 200`;
 
+    const bar = document.createElement("div");
+    bar.className = "essay-competency-bar";
+
+    const fill = document.createElement("span");
+    fill.className = "essay-competency-bar-fill";
+    fill.style.width = `${Math.max(6, Math.min(100, (Number(competency.score) || 0) / 2))}%`;
+    bar.appendChild(fill);
+
     const copy = document.createElement("div");
     copy.className = "essay-competency-copy";
 
-    const justification = document.createElement("p");
-    justification.textContent = competency.justification;
+    copy.append(
+      createDetailLine("O que a banca viu", competency.justification),
+      createDetailLine("O que melhorar agora", competency.improvement)
+    );
 
-    const improvement = document.createElement("p");
-    improvement.textContent = competency.improvement;
-
-    copy.append(justification, improvement);
-    card.append(name, score, copy);
+    head.append(name, toneChip);
+    card.append(head, guideText, score, bar, copy);
     competencyGrid.appendChild(card);
   });
 
@@ -272,11 +526,11 @@ function renderSubmission(submission) {
   detailGrid.append(
     createListPanel("Pontos fortes", submission.feedback.strengths, "Nenhum destaque principal informado."),
     createListPanel("Principais problemas", submission.feedback.mainProblems, "Nenhum problema principal informado."),
-    createListPanel("Proximos passos", submission.feedback.nextSteps, "Nenhum proximo passo informado."),
+    createListPanel("Pr\u00f3ximos passos", submission.feedback.nextSteps, "Nenhum pr\u00f3ximo passo informado."),
     createListPanel(
       "Trechos destacados",
       submission.feedback.highlightedExcerpts,
-      "Nenhum trecho citado pela avaliacao."
+      "Nenhum trecho citado pela avalia\u00e7\u00e3o."
     )
   );
 
@@ -287,7 +541,7 @@ function renderSubmission(submission) {
 
   const interventionTitle = document.createElement("strong");
   interventionTitle.className = "essay-detail-title";
-  interventionTitle.textContent = "Proposta de intervencao";
+  interventionTitle.textContent = "Proposta de interven\u00e7\u00e3o";
 
   const interventionCopy = document.createElement("div");
   interventionCopy.className = "essay-bullet-item";
@@ -305,7 +559,7 @@ function renderHistory() {
   if (!submissions.length) {
     const empty = document.createElement("div");
     empty.className = "essay-empty";
-    empty.textContent = "Nenhuma redacao enviada ainda.";
+    empty.textContent = "Nenhuma reda\u00e7\u00e3o enviada ainda.";
     essayHistoryList.appendChild(empty);
     return;
   }
@@ -373,7 +627,7 @@ function setThemeOptions(themes) {
   if (!presetThemes.length) {
     const option = document.createElement("option");
     option.value = "";
-    option.textContent = "Nenhum tema disponivel";
+    option.textContent = "Nenhum tema dispon\u00edvel";
     essayThemeSelect.appendChild(option);
     return;
   }
@@ -427,7 +681,7 @@ async function openSubmission(submissionId) {
     renderSubmission(response.submission || null);
     renderHistory();
   } catch (error) {
-    setFeedback(error.message || "Nao foi possivel abrir essa redacao.", "error");
+    setFeedback(error.message || "N\u00e3o foi poss\u00edvel abrir essa reda\u00e7\u00e3o.", "error");
   }
 }
 
@@ -504,7 +758,7 @@ async function handleSubmit(event) {
     });
 
     renderSubmission(response.submission || null);
-    setFeedback("Redacao corrigida com sucesso.", "success");
+    setFeedback("Reda\u00e7\u00e3o corrigida com sucesso.", "success");
     await loadSubmissions(response.submission?.id);
   } catch (error) {
     const failedSubmission = error?.payload?.submission || null;
@@ -514,7 +768,7 @@ async function handleSubmit(event) {
       await loadSubmissions(failedSubmission.id);
     }
 
-    setFeedback(error.message || "Nao foi possivel corrigir a redacao.", "error");
+    setFeedback(error.message || "N\u00e3o foi poss\u00edvel corrigir a reda\u00e7\u00e3o.", "error");
   } finally {
     setLoading(false);
   }
@@ -555,7 +809,7 @@ document.addEventListener("keydown", (event) => {
     await loadThemes();
     await loadSubmissions();
   } catch (error) {
-    console.error("Erro ao iniciar a area de redacao:", error);
-    setFeedback(error.message || "Nao foi possivel carregar a area de redacao.", "error");
+    console.error("Erro ao iniciar a \u00e1rea de reda\u00e7\u00e3o:", error);
+    setFeedback(error.message || "N\u00e3o foi poss\u00edvel carregar a \u00e1rea de reda\u00e7\u00e3o.", "error");
   }
 })();
