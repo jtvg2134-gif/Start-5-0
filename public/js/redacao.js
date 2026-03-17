@@ -32,6 +32,16 @@ let submissions = [];
 let currentSubmission = null;
 let selectedSubmissionId = null;
 let isHistoryOpen = false;
+const FEEDBACK_MODE_STORAGE_KEY = "start5-essay-feedback-mode";
+let feedbackMode = "student";
+
+try {
+  if (window.localStorage.getItem(FEEDBACK_MODE_STORAGE_KEY) === "technical") {
+    feedbackMode = "technical";
+  }
+} catch (error) {
+  feedbackMode = "student";
+}
 
 const COMPETENCY_GUIDE = {
   1: {
@@ -429,6 +439,358 @@ function createListPanel(title, items, fallbackMessage) {
   return panel;
 }
 
+function getConfidenceLabel(level) {
+  if (level === "alta") return "Alta confianca";
+  if (level === "baixa") return "Baixa confianca";
+  return "Confianca media";
+}
+
+function createInsightPanel(feedback) {
+  const panel = document.createElement("section");
+  panel.className = "essay-insight-panel";
+
+  const items = [
+    {
+      label: "Perfil",
+      value: feedback?.profileLabel || "Em leitura",
+      tone: "profile",
+    },
+    {
+      label: "Tema",
+      value: feedback?.themeStatus || "Sem leitura",
+      tone: "theme",
+    },
+    {
+      label: "Confianca",
+      value: getConfidenceLabel(feedback?.confidenceLevel),
+      tone: feedback?.confidenceLevel || "media",
+      helper: feedback?.confidenceNote || "",
+    },
+  ];
+
+  items.forEach((item) => {
+    const card = document.createElement("article");
+    card.className = "essay-insight-card";
+    card.dataset.tone = item.tone;
+
+    const label = document.createElement("span");
+    label.className = "essay-insight-label";
+    label.textContent = item.label;
+
+    const value = document.createElement("strong");
+    value.className = "essay-insight-value";
+    value.textContent = item.value;
+
+    card.append(label, value);
+
+    if (item.helper) {
+      const helper = document.createElement("p");
+      helper.className = "essay-insight-helper";
+      helper.textContent = item.helper;
+      card.appendChild(helper);
+    }
+
+    panel.appendChild(card);
+  });
+
+  return panel;
+}
+
+function createEvidencePanel(evidenceMap) {
+  const panel = document.createElement("article");
+  panel.className = "essay-detail-panel";
+
+  const heading = document.createElement("strong");
+  heading.className = "essay-detail-title";
+  heading.textContent = "Evidencias do texto";
+  panel.appendChild(heading);
+
+  const entries = [
+    ["Trecho da tese", evidenceMap?.thesis],
+    ["Trecho do repertorio", evidenceMap?.repertoire],
+    ["Trecho de coesao", evidenceMap?.cohesion],
+    ["Trecho da intervencao", evidenceMap?.intervention],
+    ["Trecho problematico", evidenceMap?.problemExcerpt],
+  ].filter(([, value]) => value);
+
+  if (!entries.length) {
+    const empty = document.createElement("div");
+    empty.className = "essay-empty";
+    empty.textContent = "Nenhuma evidencia destacada nesta avaliacao.";
+    panel.appendChild(empty);
+    return panel;
+  }
+
+  const list = document.createElement("div");
+  list.className = "essay-evidence-list";
+
+  entries.forEach(([labelText, value]) => {
+    const row = document.createElement("div");
+    row.className = "essay-evidence-item";
+
+    const label = document.createElement("strong");
+    label.className = "essay-evidence-label";
+    label.textContent = labelText;
+
+    const copy = document.createElement("p");
+    copy.className = "essay-evidence-copy";
+    copy.textContent = value;
+
+    row.append(label, copy);
+    list.appendChild(row);
+  });
+
+  panel.appendChild(list);
+  return panel;
+}
+
+function createCalibrationPanel(calibrationMeta) {
+  if (!calibrationMeta?.enabled) {
+    return null;
+  }
+
+  const panel = document.createElement("article");
+  panel.className = "essay-detail-panel";
+
+  const heading = document.createElement("strong");
+  heading.className = "essay-detail-title";
+  heading.textContent = "Modo calibracao";
+  panel.appendChild(heading);
+
+  const intro = document.createElement("p");
+  intro.className = "essay-bullet-item";
+  intro.textContent = calibrationMeta.scoreProfile || "Leitura pronta para comparacao com exemplos humanos.";
+  panel.appendChild(intro);
+
+  if (Array.isArray(calibrationMeta.checkpoints) && calibrationMeta.checkpoints.length) {
+    const list = document.createElement("div");
+    list.className = "essay-bullet-list";
+
+    calibrationMeta.checkpoints.forEach((item) => {
+      const row = document.createElement("div");
+      row.className = "essay-bullet-item";
+      row.textContent = item;
+      list.appendChild(row);
+    });
+
+    panel.appendChild(list);
+  }
+
+  if (calibrationMeta.recommendedHumanReview) {
+    const note = document.createElement("div");
+    note.className = "essay-empty";
+    note.textContent = "Esta leitura pede comparacao com exemplos corrigidos manualmente.";
+    panel.appendChild(note);
+  }
+
+  return panel;
+}
+
+function setFeedbackMode(nextMode) {
+  feedbackMode = nextMode === "technical" ? "technical" : "student";
+
+  try {
+    window.localStorage.setItem(FEEDBACK_MODE_STORAGE_KEY, feedbackMode);
+  } catch (error) {
+    // Ignore storage failures and keep the mode only in memory.
+  }
+
+  renderSubmission(currentSubmission);
+}
+
+function createFeedbackModeToggle(feedback) {
+  const section = document.createElement("section");
+  section.className = "essay-feedback-mode";
+
+  const copy = document.createElement("div");
+  copy.className = "essay-feedback-mode-copy";
+
+  const title = document.createElement("strong");
+  title.className = "essay-detail-title";
+  title.textContent = "Modo de leitura";
+
+  const summary = document.createElement("p");
+  summary.className = "essay-bullet-item";
+  summary.textContent =
+    feedbackMode === "technical"
+      ? feedback?.feedbackModes?.technicalSummary || feedback?.summaryFeedback || "Leitura tecnica indisponivel."
+      : feedback?.feedbackModes?.studentSummary || feedback?.summaryFeedback || "Leitura do aluno indisponivel.";
+
+  copy.append(title, summary);
+
+  const actions = document.createElement("div");
+  actions.className = "essay-feedback-mode-actions";
+
+  [
+    ["student", "Modo aluno"],
+    ["technical", "Modo tecnico"],
+  ].forEach(([mode, label]) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "essay-feedback-mode-button";
+    button.classList.toggle("is-active", feedbackMode === mode);
+    button.textContent = label;
+    button.addEventListener("click", () => setFeedbackMode(mode));
+    actions.appendChild(button);
+  });
+
+  section.append(copy, actions);
+  return section;
+}
+
+function createGroupedPanel(title, groups, fallbackMessage) {
+  const panel = document.createElement("article");
+  panel.className = "essay-detail-panel";
+
+  const heading = document.createElement("strong");
+  heading.className = "essay-detail-title";
+  heading.textContent = title;
+  panel.appendChild(heading);
+
+  const validGroups = Array.isArray(groups)
+    ? groups
+        .map((group) => ({
+          title: group?.title || "",
+          items: Array.isArray(group?.items) ? group.items.filter(Boolean) : [],
+        }))
+        .filter((group) => group.items.length)
+    : [];
+
+  if (!validGroups.length) {
+    const empty = document.createElement("div");
+    empty.className = "essay-empty";
+    empty.textContent = fallbackMessage;
+    panel.appendChild(empty);
+    return panel;
+  }
+
+  validGroups.forEach((group) => {
+    const wrap = document.createElement("div");
+    wrap.className = "essay-group-block";
+
+    const label = document.createElement("strong");
+    label.className = "essay-group-title";
+    label.textContent = group.title;
+
+    const list = document.createElement("div");
+    list.className = "essay-bullet-list";
+
+    group.items.forEach((item) => {
+      const row = document.createElement("div");
+      row.className = "essay-bullet-item";
+      row.textContent = item;
+      list.appendChild(row);
+    });
+
+    wrap.append(label, list);
+    panel.appendChild(wrap);
+  });
+
+  return panel;
+}
+
+function createMapPanel(title, entries, fallbackMessage) {
+  const panel = document.createElement("article");
+  panel.className = "essay-detail-panel";
+
+  const heading = document.createElement("strong");
+  heading.className = "essay-detail-title";
+  heading.textContent = title;
+  panel.appendChild(heading);
+
+  const validEntries = Array.isArray(entries)
+    ? entries.filter(([label, value]) => label && value)
+    : [];
+
+  if (!validEntries.length) {
+    const empty = document.createElement("div");
+    empty.className = "essay-empty";
+    empty.textContent = fallbackMessage;
+    panel.appendChild(empty);
+    return panel;
+  }
+
+  const list = document.createElement("div");
+  list.className = "essay-map-list";
+
+  validEntries.forEach(([labelText, value]) => {
+    const row = document.createElement("div");
+    row.className = "essay-map-item";
+
+    const label = document.createElement("strong");
+    label.className = "essay-map-label";
+    label.textContent = labelText;
+
+    const copy = document.createElement("p");
+    copy.className = "essay-map-copy";
+    copy.textContent = value;
+
+    row.append(label, copy);
+    list.appendChild(row);
+  });
+
+  panel.appendChild(list);
+  return panel;
+}
+
+function createPreAnalysisPanel(preAnalysis) {
+  if (!preAnalysis) {
+    return null;
+  }
+
+  return createGroupedPanel(
+    "Pre-analise textual",
+    [
+      {
+        title: "Leitura base",
+        items: [
+          `Idioma principal detectado: ${preAnalysis.primaryLanguage || "nao identificado"}.`,
+          preAnalysis.dissertativeCompatible
+            ? "O texto parece compativel com o padrao dissertativo-argumentativo."
+            : "O texto foge do padrao dissertativo-argumentativo esperado.",
+        ],
+      },
+      {
+        title: "Alertas iniciais",
+        items: preAnalysis.messages,
+      },
+    ],
+    "Nenhum alerta inicial relevante."
+  );
+}
+
+function createAuditPanel(auditTrail) {
+  if (!auditTrail || feedbackMode !== "technical") {
+    return null;
+  }
+
+  return createGroupedPanel(
+    "Auditoria da leitura",
+    [
+      {
+        title: "Versoes",
+        items: [
+          auditTrail.rubricVersion ? `Rubrica: ${auditTrail.rubricVersion}` : "",
+          auditTrail.promptVersion ? `Motor: ${auditTrail.promptVersion}` : "",
+        ],
+      },
+      {
+        title: "Regras aplicadas",
+        items: auditTrail.rulesApplied,
+      },
+      {
+        title: "Travas acionadas",
+        items: auditTrail.locksTriggered,
+      },
+      {
+        title: "Evidencias usadas",
+        items: auditTrail.evidenceUsed,
+      },
+    ],
+    "Sem trilha de auditoria disponivel."
+  );
+}
+
 function renderSubmission(submission) {
   currentSubmission = submission || null;
   selectedSubmissionId = submission?.id || null;
@@ -462,7 +824,9 @@ function renderSubmission(submission) {
   summary.className = "essay-result-summary";
   summary.textContent =
     submission.status === "evaluated"
-      ? submission.feedback?.summaryFeedback || "A avalia\u00e7\u00e3o ficou pronta."
+      ? feedbackMode === "technical"
+        ? submission.feedback?.feedbackModes?.technicalSummary || submission.feedback?.summaryFeedback || "A avalia\u00e7\u00e3o ficou pronta."
+        : submission.feedback?.feedbackModes?.studentSummary || submission.feedback?.summaryFeedback || "A avalia\u00e7\u00e3o ficou pronta."
       : submission.errorMessage || "Esta tentativa n\u00e3o conseguiu gerar a avalia\u00e7\u00e3o completa.";
   essayResultBody.appendChild(summary);
 
@@ -479,6 +843,10 @@ function renderSubmission(submission) {
     );
     return;
   }
+
+  essayResultBody.appendChild(createFeedbackModeToggle(submission.feedback));
+
+  essayResultBody.appendChild(createInsightPanel(submission.feedback));
 
   const competencyOverview = createCompetencyOverview(submission.feedback);
 
@@ -526,10 +894,20 @@ function renderSubmission(submission) {
 
     const copy = document.createElement("div");
     copy.className = "essay-competency-copy";
+    const justificationLabel = feedbackMode === "technical" ? "Leitura tecnica" : "O que a banca viu";
+    const improvementLabel = feedbackMode === "technical" ? "Ajuste tecnico" : "O que melhorar agora";
+    const justificationText =
+      feedbackMode === "technical"
+        ? competency.technicalJustification || competency.justification
+        : competency.justification;
+    const improvementText =
+      feedbackMode === "technical"
+        ? competency.technicalImprovement || competency.improvement
+        : competency.improvement;
 
     copy.append(
-      createDetailLine("O que a banca viu", competency.justification),
-      createDetailLine("O que melhorar agora", competency.improvement)
+      createDetailLine(justificationLabel, justificationText),
+      createDetailLine(improvementLabel, improvementText)
     );
 
     head.append(name, toneChip);
@@ -541,19 +919,100 @@ function renderSubmission(submission) {
 
   const detailGrid = document.createElement("section");
   detailGrid.className = "essay-detail-grid";
-  detailGrid.append(
+  [
+    createListPanel(
+      "Diagnostico rapido",
+      submission.feedback.diagnosticMessages,
+      "Nenhum diagnostico adicional informado."
+    ),
+    createPreAnalysisPanel(submission.feedback.preAnalysis),
+    createListPanel(
+      "Diagnostico da introducao",
+      submission.feedback.introductionDiagnosis,
+      "Nenhuma leitura especifica da introducao."
+    ),
+    createListPanel(
+      "Diagnostico da conclusao",
+      submission.feedback.conclusionDiagnosis,
+      "Nenhuma leitura especifica da conclusao."
+    ),
     createListPanel("Pontos fortes", submission.feedback.strengths, "Nenhum destaque principal informado."),
     createListPanel("Principais problemas", submission.feedback.mainProblems, "Nenhum problema principal informado."),
     createListPanel("Pr\u00f3ximos passos", submission.feedback.nextSteps, "Nenhum pr\u00f3ximo passo informado."),
+    createGroupedPanel(
+      "Teto atual da redacao",
+      [
+        {
+          title: "Leitura do teto",
+          items: [submission.feedback.ceilingAnalysis?.explanation],
+        },
+        {
+          title: "Leitura por faixas",
+          items: submission.feedback.ceilingAnalysis?.bandReadings,
+        },
+        {
+          title: "Travamentos ativos",
+          items: submission.feedback.ceilingAnalysis?.locks,
+        },
+      ],
+      "Nenhum teto estimado informado."
+    ),
     createListPanel("Leitura t\u00e9cnica", submission.feedback.analysisIndicators, "Nenhum indicador adicional informado."),
-    createListPanel(
-      "Trechos destacados",
-      submission.feedback.highlightedExcerpts,
-      "Nenhum trecho citado pela avalia\u00e7\u00e3o."
-    )
-  );
+    createListPanel("Riscos da correcao", submission.feedback.riskNotes, "Nenhum risco relevante indicado."),
+    createGroupedPanel(
+      "Escada de melhoria",
+      [
+        {
+          title: "Ajuste rapido",
+          items: submission.feedback.improvementLadder?.quickFixes,
+        },
+        {
+          title: "Melhora de competencia",
+          items: submission.feedback.improvementLadder?.competenceImprovements,
+        },
+        {
+          title: "Salto de faixa",
+          items: submission.feedback.improvementLadder?.bandLeapSteps,
+        },
+      ],
+      "Nenhuma escada de melhoria disponivel."
+    ),
+    createMapPanel(
+      "Reescrita orientada",
+      [
+        ["Introducao", submission.feedback.rewritingGuidance?.introduction],
+        ["Topico frasal", submission.feedback.rewritingGuidance?.topicSentence],
+        ["Repertorio", submission.feedback.rewritingGuidance?.repertoire],
+        ["Amarracao argumentativa", submission.feedback.rewritingGuidance?.argumentativeLink],
+        ["Intervencao", submission.feedback.rewritingGuidance?.intervention],
+      ],
+      "Nenhuma orientacao de reescrita disponivel."
+    ),
+    createEvidencePanel(submission.feedback.evidenceMap),
+    createListPanel("Trechos destacados", submission.feedback.highlightedExcerpts, "Nenhum trecho citado pela avalia\u00e7\u00e3o.")
+  ]
+    .filter(Boolean)
+    .forEach((panel) => detailGrid.appendChild(panel));
 
   essayResultBody.appendChild(detailGrid);
+
+  if (Array.isArray(submission.feedback.criticalAlerts) && submission.feedback.criticalAlerts.length) {
+    essayResultBody.appendChild(
+      createListPanel("Alertas da avaliacao", submission.feedback.criticalAlerts, "Nenhum alerta critico informado.")
+    );
+  }
+
+  const calibrationPanel = createCalibrationPanel(submission.feedback.calibrationMeta);
+
+  if (calibrationPanel) {
+    essayResultBody.appendChild(calibrationPanel);
+  }
+
+  const auditPanel = createAuditPanel(submission.feedback.auditTrail);
+
+  if (auditPanel) {
+    essayResultBody.appendChild(auditPanel);
+  }
 
   const interventionPanel = document.createElement("section");
   interventionPanel.className = "essay-detail-panel";

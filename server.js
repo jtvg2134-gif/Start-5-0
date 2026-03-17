@@ -46,6 +46,9 @@ const ESSAY_LOCAL_ENGINE = ESSAY_LOCAL_ENGINE_VALUES.has(String(process.env.STAR
   ? String(process.env.START5_ESSAY_LOCAL_ENGINE || "").trim().toLowerCase()
   : "javascript";
 const ESSAY_PYTHON_COMMAND = String(process.env.START5_PYTHON_COMMAND || "python").trim() || "python";
+const ESSAY_CALIBRATION_MODE = /^(1|true|on|yes)$/i.test(
+  String(process.env.START5_ESSAY_CALIBRATION_MODE || "").trim()
+);
 const SUBJECT_LABELS = {
   ingles: "Ingl\u00eas",
   matematica: "Matem\u00e1tica",
@@ -71,6 +74,35 @@ const ENEM_COMPETENCIES = [
 const ESSAY_MAX_TITLE_LENGTH = 140;
 const ESSAY_MAX_PROMPT_LENGTH = 240;
 const ESSAY_MAX_TEXT_LENGTH = 12000;
+const ESSAY_MIN_WORDS = Math.max(60, Number(process.env.START5_ESSAY_MIN_WORDS) || 160);
+const ESSAY_MIN_PARAGRAPHS = Math.max(3, Number(process.env.START5_ESSAY_MIN_PARAGRAPHS) || 4);
+const ESSAY_MIN_SENTENCES = Math.max(4, Number(process.env.START5_ESSAY_MIN_SENTENCES) || 8);
+const ESSAY_TANGENCY_LIMIT = Math.min(
+  0.8,
+  Math.max(0.12, Number(process.env.START5_ESSAY_TANGENCY_LIMIT) || 0.34)
+);
+const ESSAY_DISCONNECTED_SECTION_LIMIT = Math.min(
+  0.4,
+  Math.max(0.02, Number(process.env.START5_ESSAY_DISCONNECTED_SECTION_LIMIT) || 0.05)
+);
+const ESSAY_DECORATED_REPERTOIRE_LIMIT = Math.max(
+  1,
+  Number(process.env.START5_ESSAY_DECORATED_REPERTOIRE_LIMIT) || 2
+);
+const ESSAY_VAGUE_PROPOSAL_LIMIT = Math.max(
+  1,
+  Number(process.env.START5_ESSAY_VAGUE_PROPOSAL_LIMIT) || 2
+);
+const ESSAY_ALERT_WEIGHT_CRITICAL = Math.max(
+  10,
+  Number(process.env.START5_ESSAY_ALERT_WEIGHT_CRITICAL) || 45
+);
+const ESSAY_ALERT_WEIGHT_MODERATE = Math.max(
+  5,
+  Number(process.env.START5_ESSAY_ALERT_WEIGHT_MODERATE) || 20
+);
+const ESSAY_RUBRIC_VERSION = "enem-rubrica-local-v5";
+const ESSAY_PROMPT_VERSION = "essay-engine-local-v5";
 const ESSAY_THEMES = [
   {
     key: "desinformacao_juventude",
@@ -146,6 +178,12 @@ const ESSAY_EVALUATION_SCHEMA = {
           improvement: {
             type: "string",
           },
+          technicalJustification: {
+            type: "string",
+          },
+          technicalImprovement: {
+            type: "string",
+          },
         },
       },
     },
@@ -193,6 +231,191 @@ const ESSAY_EVALUATION_SCHEMA = {
       maxItems: 6,
       items: {
         type: "string",
+      },
+    },
+    diagnosticMessages: {
+      type: "array",
+      maxItems: 8,
+      items: {
+        type: "string",
+      },
+    },
+    criticalAlerts: {
+      type: "array",
+      maxItems: 6,
+      items: {
+        type: "string",
+      },
+    },
+    profileLabel: {
+      type: "string",
+    },
+    confidenceLevel: {
+      type: "string",
+    },
+    confidenceNote: {
+      type: "string",
+    },
+    themeStatus: {
+      type: "string",
+    },
+    evidenceMap: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        thesis: {
+          type: "string",
+        },
+        repertoire: {
+          type: "string",
+        },
+        cohesion: {
+          type: "string",
+        },
+        intervention: {
+          type: "string",
+        },
+        problemExcerpt: {
+          type: "string",
+        },
+      },
+    },
+    calibrationMeta: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        enabled: {
+          type: "boolean",
+        },
+        recommendedHumanReview: {
+          type: "boolean",
+        },
+        scoreProfile: {
+          type: "string",
+        },
+        checkpoints: {
+          type: "array",
+          maxItems: 8,
+          items: {
+            type: "string",
+          },
+        },
+      },
+    },
+    preAnalysis: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        primaryLanguage: { type: "string" },
+        dissertativeCompatible: { type: "boolean" },
+        incompleteText: { type: "boolean" },
+        looseSentences: { type: "boolean" },
+        missingParagraphing: { type: "boolean" },
+        listLike: { type: "boolean" },
+        noteLike: { type: "boolean" },
+        poemLike: { type: "boolean" },
+        narrativeLike: { type: "boolean" },
+        messages: {
+          type: "array",
+          maxItems: 8,
+          items: { type: "string" },
+        },
+      },
+    },
+    introductionDiagnosis: {
+      type: "array",
+      maxItems: 6,
+      items: { type: "string" },
+    },
+    conclusionDiagnosis: {
+      type: "array",
+      maxItems: 6,
+      items: { type: "string" },
+    },
+    riskNotes: {
+      type: "array",
+      maxItems: 8,
+      items: { type: "string" },
+    },
+    ceilingAnalysis: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        currentCeiling: { type: "integer" },
+        explanation: { type: "string" },
+        bandReadings: {
+          type: "array",
+          maxItems: 4,
+          items: { type: "string" },
+        },
+        locks: {
+          type: "array",
+          maxItems: 8,
+          items: { type: "string" },
+        },
+      },
+    },
+    improvementLadder: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        quickFixes: {
+          type: "array",
+          maxItems: 5,
+          items: { type: "string" },
+        },
+        competenceImprovements: {
+          type: "array",
+          maxItems: 5,
+          items: { type: "string" },
+        },
+        bandLeapSteps: {
+          type: "array",
+          maxItems: 5,
+          items: { type: "string" },
+        },
+      },
+    },
+    feedbackModes: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        studentSummary: { type: "string" },
+        technicalSummary: { type: "string" },
+      },
+    },
+    rewritingGuidance: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        introduction: { type: "string" },
+        topicSentence: { type: "string" },
+        repertoire: { type: "string" },
+        argumentativeLink: { type: "string" },
+        intervention: { type: "string" },
+      },
+    },
+    auditTrail: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        rubricVersion: { type: "string" },
+        promptVersion: { type: "string" },
+        rulesApplied: {
+          type: "array",
+          maxItems: 16,
+          items: { type: "string" },
+        },
+        locksTriggered: {
+          type: "array",
+          maxItems: 12,
+          items: { type: "string" },
+        },
+        evidenceUsed: {
+          type: "array",
+          maxItems: 10,
+          items: { type: "string" },
+        },
       },
     },
   },
@@ -348,6 +571,103 @@ const ESSAY_LOCAL_INFORMAL_MARKERS = [
   "mano",
   "né",
   "ne",
+];
+const ESSAY_LOCAL_REPERTOIRE_SUPPORT_MARKERS = [
+  "demonstra",
+  "evidencia",
+  "explica",
+  "revela",
+  "mostra",
+  "comprova",
+  "denuncia",
+  "ilustra",
+  "exemplifica",
+  "dialoga",
+  "reforca",
+  "relaciona",
+];
+const ESSAY_LOCAL_POCKET_REPERTOIRE_MARKERS = [
+  "constituicao federal",
+  "declaracao universal",
+  "paulo freire",
+  "zygmunt bauman",
+  "milton santos",
+  "sartre",
+  "aristoteles",
+  "platao",
+  "durkheim",
+  "foucault",
+  "simone de beauvoir",
+  "george orwell",
+];
+const ESSAY_LOCAL_VAGUE_INTERVENTION_AGENTS = [
+  "todos",
+  "todo mundo",
+  "a sociedade",
+  "nossa sociedade",
+  "nos",
+  "nÃ³s",
+  "o povo",
+  "a populacao",
+];
+const ESSAY_LOCAL_HUMAN_RIGHTS_VIOLATION_MARKERS = [
+  "matar",
+  "morte",
+  "exterminar",
+  "eliminar",
+  "banir",
+  "expulsar",
+  "torturar",
+  "linchar",
+  "fuzilar",
+  "aniquilar",
+  "esterilizar",
+  "castrar",
+];
+const ESSAY_LOCAL_NON_ARGUMENTATIVE_MARKERS = [
+  "era uma vez",
+  "querido diario",
+  "querido diÃ¡rio",
+  "oi",
+  "ola",
+  "olÃ¡",
+];
+const ESSAY_LOCAL_ENGLISH_STOPWORDS = [
+  "the", "and", "that", "with", "from", "this", "have", "will", "would", "there", "their",
+  "about", "which", "should", "into", "because", "people", "school", "student", "students",
+];
+const ESSAY_LOCAL_ABSTRACT_MARKERS = [
+  "sociedade",
+  "realidade",
+  "cenario",
+  "cenario",
+  "problemática",
+  "problematica",
+  "contexto",
+  "panorama",
+  "questao",
+  "questão",
+  "ambito",
+  "âmbito",
+  "esfera",
+];
+const ESSAY_LOCAL_LIST_LINE_MARKERS = ["- ", "* ", "1.", "2.", "3.", "I.", "II."];
+const ESSAY_LOCAL_NOTE_MARKERS = ["prezado", "atenciosamente", "querido", "olá", "ola"];
+const ESSAY_LOCAL_NARRATIVE_MARKERS = ["era uma vez", "de repente", "certo dia", "entao eu", "então eu"];
+const ESSAY_LOCAL_FORMULAIC_OPENINGS = [
+  "diante desse cenario",
+  "diante desse cenário",
+  "sob essa otica",
+  "sob essa ótica",
+  "nesse contexto",
+  "hodiernamente",
+];
+const ESSAY_LOCAL_FORMULAIC_PROPOSALS = [
+  "e preciso conscientizar",
+  "é preciso conscientizar",
+  "faz-se necessario",
+  "faz-se necessário",
+  "deve-se promover campanhas",
 ];
 const ALLOWED_ACTIVITIES = new Set([
   "serie",
@@ -1749,6 +2069,10 @@ function normalizeEssayEvaluation(rawEvaluation) {
       score,
       justification,
       improvement,
+      technicalJustification:
+        sanitizeEssayFeedbackText(rawCompetency.technicalJustification, 620) || justification,
+      technicalImprovement:
+        sanitizeEssayFeedbackText(rawCompetency.technicalImprovement, 420) || improvement,
     };
   });
 
@@ -1770,6 +2094,69 @@ function normalizeEssayEvaluation(rawEvaluation) {
     interventionFeedback,
     highlightedExcerpts: sanitizeEssayFeedbackList(rawEvaluation.highlightedExcerpts, 4, 220),
     analysisIndicators: sanitizeEssayFeedbackList(rawEvaluation.analysisIndicators, 6, 180),
+    diagnosticMessages: sanitizeEssayFeedbackList(rawEvaluation.diagnosticMessages, 8, 220),
+    criticalAlerts: sanitizeEssayFeedbackList(rawEvaluation.criticalAlerts, 6, 220),
+    profileLabel: sanitizeEssayFeedbackText(rawEvaluation.profileLabel, 60),
+    confidenceLevel: sanitizeEssayFeedbackText(rawEvaluation.confidenceLevel, 40).toLowerCase(),
+    confidenceNote: sanitizeEssayFeedbackText(rawEvaluation.confidenceNote, 240),
+    themeStatus: sanitizeEssayFeedbackText(rawEvaluation.themeStatus, 80),
+    evidenceMap: {
+      thesis: sanitizeEssayFeedbackText(rawEvaluation?.evidenceMap?.thesis, 220),
+      repertoire: sanitizeEssayFeedbackText(rawEvaluation?.evidenceMap?.repertoire, 220),
+      cohesion: sanitizeEssayFeedbackText(rawEvaluation?.evidenceMap?.cohesion, 220),
+      intervention: sanitizeEssayFeedbackText(rawEvaluation?.evidenceMap?.intervention, 220),
+      problemExcerpt: sanitizeEssayFeedbackText(rawEvaluation?.evidenceMap?.problemExcerpt, 220),
+    },
+    calibrationMeta: {
+      enabled: Boolean(rawEvaluation?.calibrationMeta?.enabled),
+      recommendedHumanReview: Boolean(rawEvaluation?.calibrationMeta?.recommendedHumanReview),
+      scoreProfile: sanitizeEssayFeedbackText(rawEvaluation?.calibrationMeta?.scoreProfile, 120),
+      checkpoints: sanitizeEssayFeedbackList(rawEvaluation?.calibrationMeta?.checkpoints, 8, 180),
+    },
+    preAnalysis: {
+      primaryLanguage: sanitizeEssayFeedbackText(rawEvaluation?.preAnalysis?.primaryLanguage, 40),
+      dissertativeCompatible: Boolean(rawEvaluation?.preAnalysis?.dissertativeCompatible),
+      incompleteText: Boolean(rawEvaluation?.preAnalysis?.incompleteText),
+      looseSentences: Boolean(rawEvaluation?.preAnalysis?.looseSentences),
+      missingParagraphing: Boolean(rawEvaluation?.preAnalysis?.missingParagraphing),
+      listLike: Boolean(rawEvaluation?.preAnalysis?.listLike),
+      noteLike: Boolean(rawEvaluation?.preAnalysis?.noteLike),
+      poemLike: Boolean(rawEvaluation?.preAnalysis?.poemLike),
+      narrativeLike: Boolean(rawEvaluation?.preAnalysis?.narrativeLike),
+      messages: sanitizeEssayFeedbackList(rawEvaluation?.preAnalysis?.messages, 8, 180),
+    },
+    introductionDiagnosis: sanitizeEssayFeedbackList(rawEvaluation.introductionDiagnosis, 6, 200),
+    conclusionDiagnosis: sanitizeEssayFeedbackList(rawEvaluation.conclusionDiagnosis, 6, 200),
+    riskNotes: sanitizeEssayFeedbackList(rawEvaluation.riskNotes, 8, 220),
+    ceilingAnalysis: {
+      currentCeiling: clampInteger(rawEvaluation?.ceilingAnalysis?.currentCeiling, 0, 1000),
+      explanation: sanitizeEssayFeedbackText(rawEvaluation?.ceilingAnalysis?.explanation, 260),
+      bandReadings: sanitizeEssayFeedbackList(rawEvaluation?.ceilingAnalysis?.bandReadings, 4, 220),
+      locks: sanitizeEssayFeedbackList(rawEvaluation?.ceilingAnalysis?.locks, 8, 180),
+    },
+    improvementLadder: {
+      quickFixes: sanitizeEssayFeedbackList(rawEvaluation?.improvementLadder?.quickFixes, 5, 180),
+      competenceImprovements: sanitizeEssayFeedbackList(rawEvaluation?.improvementLadder?.competenceImprovements, 5, 200),
+      bandLeapSteps: sanitizeEssayFeedbackList(rawEvaluation?.improvementLadder?.bandLeapSteps, 5, 220),
+    },
+    feedbackModes: {
+      studentSummary: sanitizeEssayFeedbackText(rawEvaluation?.feedbackModes?.studentSummary, 320),
+      technicalSummary: sanitizeEssayFeedbackText(rawEvaluation?.feedbackModes?.technicalSummary, 480),
+    },
+    rewritingGuidance: {
+      introduction: sanitizeEssayFeedbackText(rawEvaluation?.rewritingGuidance?.introduction, 220),
+      topicSentence: sanitizeEssayFeedbackText(rawEvaluation?.rewritingGuidance?.topicSentence, 220),
+      repertoire: sanitizeEssayFeedbackText(rawEvaluation?.rewritingGuidance?.repertoire, 220),
+      argumentativeLink: sanitizeEssayFeedbackText(rawEvaluation?.rewritingGuidance?.argumentativeLink, 220),
+      intervention: sanitizeEssayFeedbackText(rawEvaluation?.rewritingGuidance?.intervention, 220),
+    },
+    auditTrail: {
+      rubricVersion: sanitizeEssayFeedbackText(rawEvaluation?.auditTrail?.rubricVersion, 80),
+      promptVersion: sanitizeEssayFeedbackText(rawEvaluation?.auditTrail?.promptVersion, 80),
+      rulesApplied: sanitizeEssayFeedbackList(rawEvaluation?.auditTrail?.rulesApplied, 16, 160),
+      locksTriggered: sanitizeEssayFeedbackList(rawEvaluation?.auditTrail?.locksTriggered, 12, 180),
+      evidenceUsed: sanitizeEssayFeedbackList(rawEvaluation?.auditTrail?.evidenceUsed, 10, 180),
+    },
   };
 }
 
@@ -1851,7 +2238,7 @@ function getEssayThemeKeywords(...values) {
 }
 
 function normalizeEssayBandScore(value) {
-  return clampInteger(Math.round((Number(value) || 0) / 20) * 20, 0, 200);
+  return clampInteger(Math.round((Number(value) || 0) / 40) * 40, 0, 200);
 }
 
 function getEssaySignificantWords(text, minLength = 4) {
@@ -1876,6 +2263,463 @@ function getEssayParagraphOpeningVariety(paragraphs) {
     .filter(Boolean);
 
   return new Set(openings).size;
+}
+
+function getEssayMarkerFrequencyMetrics(text, markers) {
+  const normalizedText = normalizeEssayAnalysisText(text);
+  const counts = new Map();
+  let total = 0;
+
+  markers.forEach((marker) => {
+    const normalizedMarker = normalizeEssayAnalysisText(marker);
+
+    if (!normalizedMarker) {
+      return;
+    }
+
+    const matches = normalizedText.match(
+      new RegExp(`(^|\\s)${escapeRegExp(normalizedMarker)}(?=\\s|$)`, "gu")
+    );
+    const count = Array.isArray(matches) ? matches.length : 0;
+
+    if (count > 0) {
+      counts.set(marker, count);
+      total += count;
+    }
+  });
+
+  const repeated = [...counts.entries()].filter(([, count]) => count >= 2);
+
+  return {
+    total,
+    unique: counts.size,
+    counts,
+    repeated,
+    highestCount: repeated.length ? Math.max(...repeated.map(([, count]) => count)) : 0,
+    dominantMarker: repeated.length
+      ? repeated.sort((left, right) => right[1] - left[1])[0][0]
+      : [...counts.keys()][0] || "",
+  };
+}
+
+function getEssayTopWordFrequency(text, limit = 6, excludedWords = []) {
+  const excluded = new Set(excludedWords.map((item) => normalizeEssayAnalysisText(item)));
+  const counts = new Map();
+
+  getEssaySignificantWords(text, 4).forEach((word) => {
+    if (!excluded.has(word)) {
+      counts.set(word, (counts.get(word) || 0) + 1);
+    }
+  });
+
+  return [...counts.entries()]
+    .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))
+    .slice(0, limit)
+    .map(([word]) => word);
+}
+
+function getEssayJaccardSimilarity(leftText, rightText) {
+  const leftWords = new Set(getEssaySignificantWords(leftText, 4));
+  const rightWords = new Set(getEssaySignificantWords(rightText, 4));
+
+  if (!leftWords.size || !rightWords.size) {
+    return 0;
+  }
+
+  let intersection = 0;
+
+  leftWords.forEach((word) => {
+    if (rightWords.has(word)) {
+      intersection += 1;
+    }
+  });
+
+  return intersection / new Set([...leftWords, ...rightWords]).size;
+}
+
+function buildEssayExcerpt(value, maxLength = 220) {
+  const excerpt = sanitizeEssayFeedbackText(value, maxLength + 6);
+
+  if (excerpt.length <= maxLength) {
+    return excerpt;
+  }
+
+  return `${excerpt.slice(0, maxLength - 3).trim()}...`;
+}
+
+function getEssayBestSentenceByMatches(sentences, terms, options = {}) {
+  const candidateTerms = Array.isArray(terms) ? terms.filter(Boolean) : [];
+  let bestSentence = "";
+  let bestScore = 0;
+
+  sentences.forEach((sentence) => {
+    const matchScore = countEssayAnalysisMatches(sentence, candidateTerms);
+    const wordBonus = Math.min(6, countWords(sentence) / 12);
+    const score = matchScore * 10 + wordBonus;
+
+    if (
+      score > bestScore ||
+      (score === bestScore && countWords(sentence) > countWords(bestSentence))
+    ) {
+      bestSentence = sentence;
+      bestScore = score;
+    }
+  });
+
+  if (!bestSentence && options.fallbackToFirst && sentences[0]) {
+    bestSentence = sentences[0];
+  }
+
+  return buildEssayExcerpt(bestSentence, options.maxLength || 220);
+}
+
+function getEssayCopyMetrics(essayText, sourceText) {
+  const essayNormalized = normalizeEssayAnalysisText(essayText);
+  const sourceWords = getEssaySignificantWords(sourceText, 4);
+
+  if (sourceWords.length < 4 || !essayNormalized) {
+    return {
+      totalMatches: 0,
+      ratio: 0,
+      fragments: [],
+      excerpt: "",
+      excessive: false,
+      copiedWordCount: 0,
+    };
+  }
+
+  const fragments = [];
+  const ngramSet = new Set();
+
+  for (let index = 0; index <= sourceWords.length - 4; index += 1) {
+    ngramSet.add(sourceWords.slice(index, index + 4).join(" "));
+  }
+
+  ngramSet.forEach((fragment) => {
+    if (essayNormalized.includes(fragment)) {
+      fragments.push(fragment);
+    }
+  });
+
+  const ratio = ngramSet.size ? fragments.length / ngramSet.size : 0;
+
+  return {
+    totalMatches: fragments.length,
+    ratio,
+    fragments,
+    excerpt: buildEssayExcerpt(fragments[0] || "", 180),
+    excessive: fragments.length >= 2 || ratio >= 0.35,
+    copiedWordCount: Math.min(
+      countWords(essayText),
+      new Set(fragments.flatMap((fragment) => fragment.split(/\s+/g))).size
+    ),
+  };
+}
+
+function getEssayDisconnectedParagraphMetrics(paragraphs, themeKeywords) {
+  const items = paragraphs
+    .map((paragraph, index) => {
+      const restText = paragraphs.filter((_, innerIndex) => innerIndex !== index).join(" ");
+
+      return {
+        paragraph,
+        index,
+        wordCount: countWords(paragraph),
+        themeHits: countEssayAnalysisMatches(paragraph, themeKeywords),
+        similarityToRest: getEssayJaccardSimilarity(paragraph, restText),
+        argumentSignals:
+          countEssayAnalysisMatches(paragraph, ESSAY_LOCAL_CAUSAL_MARKERS) +
+          countEssayAnalysisMatches(paragraph, ESSAY_LOCAL_EXAMPLE_MARKERS) +
+          countEssayAnalysisMatches(paragraph, ESSAY_LOCAL_CONNECTIVES) +
+          countEssayAnalysisMatches(paragraph, ESSAY_LOCAL_REPERTOIRE_MARKERS),
+      };
+    })
+    .filter((item) =>
+      item.index > 0 &&
+      item.index < paragraphs.length - 1 &&
+      item.wordCount >= 18 &&
+      item.themeHits === 0 &&
+      item.similarityToRest <= ESSAY_DISCONNECTED_SECTION_LIMIT &&
+      item.argumentSignals === 0
+    );
+
+  return {
+    count: items.length,
+    items,
+    excerpt: buildEssayExcerpt(items[0]?.paragraph || "", 180),
+  };
+}
+
+function getEssayParagraphDensityMetrics(paragraphs, themeKeywords, introText) {
+  const items = paragraphs.map((paragraph) => {
+    const wordCount = countWords(paragraph);
+    const themeHits = countEssayAnalysisMatches(paragraph, themeKeywords);
+    const causeHits = countEssayAnalysisMatches(paragraph, ESSAY_LOCAL_CAUSAL_MARKERS);
+    const exampleHits = countEssayAnalysisMatches(paragraph, ESSAY_LOCAL_EXAMPLE_MARKERS);
+    const connectiveHits = countEssayAnalysisMatches(paragraph, ESSAY_LOCAL_CONNECTIVES);
+    const repertoireHits = countEssayAnalysisMatches(paragraph, ESSAY_LOCAL_REPERTOIRE_MARKERS);
+    const abstractHits = countEssayAnalysisMatches(paragraph, ESSAY_LOCAL_ABSTRACT_MARKERS);
+    const introSimilarity = getEssayJaccardSimilarity(paragraph, introText);
+    const ideaUnits =
+      (themeHits > 0 ? 1 : 0) +
+      (causeHits > 0 ? 1 : 0) +
+      (exampleHits > 0 ? 1 : 0) +
+      (repertoireHits > 0 ? 1 : 0);
+    const hollow = wordCount >= 40 && ideaUnits <= 1;
+    let maturity = "descritivo";
+
+    if ((causeHits > 0 || exampleHits > 0) && (repertoireHits > 0 || themeHits > 1)) {
+      maturity = "analitico";
+    } else if (causeHits > 0 || exampleHits > 0) {
+      maturity = "explicativo";
+    }
+
+    return {
+      paragraph,
+      wordCount,
+      themeHits,
+      causeHits,
+      exampleHits,
+      connectiveHits,
+      repertoireHits,
+      abstractHits,
+      introSimilarity,
+      ideaUnits,
+      hollow,
+      maturity,
+    };
+  });
+
+  const hollowParagraphs = items.filter((item) => item.hollow);
+  const maturityCounts = items.reduce(
+    (accumulator, item) => {
+      accumulator[item.maturity] += 1;
+      return accumulator;
+    },
+    { descritivo: 0, explicativo: 0, analitico: 0 }
+  );
+
+  return {
+    items,
+    hollowCount: hollowParagraphs.length,
+    hollowExcerpt: buildEssayExcerpt(hollowParagraphs[0]?.paragraph || "", 180),
+    maturityCounts,
+    overallMaturity:
+      maturityCounts.analitico > 0 ? "analitico" : maturityCounts.explicativo > 0 ? "explicativo" : "descritivo",
+    abstractOverload:
+      items.filter((item) => item.abstractHits >= 2 && item.repertoireHits === 0 && item.exampleHits === 0).length > 0,
+  };
+}
+
+function getEssayCeilingAnalysis(context) {
+  const locks = [];
+  const bandReadings = [];
+  let currentCeiling = 600;
+
+  if (context.textualTypeInvalid || context.totalThemeVoid) {
+    currentCeiling = 0;
+    locks.push("Estrutura incompatível ou fuga total ao tema.");
+    bandReadings.push("Esta redação não alcança 600 porque o tipo textual ou o tema não foram atendidos com segurança.");
+  } else {
+    const passes600 =
+      !context.tangenciamento &&
+      context.scores.competency2 >= 80 &&
+      context.scores.competency3 >= 80 &&
+      context.scores.competency5 >= 80;
+
+    if (passes600) {
+      currentCeiling = 800;
+      bandReadings.push("Esta redaÃ§Ã£o jÃ¡ supera com seguranÃ§a a faixa de 600 porque tema, argumentaÃ§Ã£o e intervenÃ§Ã£o aparecem de forma funcional.");
+    } else {
+      currentCeiling = 600;
+      bandReadings.push("Esta redaÃ§Ã£o ainda fica perto da faixa de 600 porque tema, projeto argumentativo ou intervenÃ§Ã£o ainda nÃ£o se sustentam com regularidade.");
+    }
+
+    if (
+      context.tangenciamento ||
+      context.thesisVague ||
+      context.missingPromises.length > 0 ||
+      context.proposalNeedsSpecificAgent ||
+      context.interventionComponentCount < 4
+    ) {
+      locks.push("C3 ou C5 ainda travam a passagem segura para 800.");
+      bandReadings.push("Esta redação não passa com segurança de 800 porque a argumentação e a proposta de intervenção ainda estão limitadas.");
+    } else {
+      currentCeiling = 800;
+      bandReadings.push("Esta redaÃ§Ã£o jÃ¡ entra na faixa de 800 porque a tese, os desenvolvimentos e a conclusÃ£o comeÃ§am a trabalhar de forma coordenada.");
+    }
+
+    if (
+      context.scores.competency2 < 160 ||
+      context.scores.competency3 < 160 ||
+      context.scores.competency4 < 160 ||
+      context.scores.competency5 < 160 ||
+      context.repertoireAnalysis.productive === 0 ||
+      context.connectiveRepetitionIssue ||
+      context.repeatedArgumentPairs > 0
+    ) {
+      locks.push("C2, C3, C4 ou C5 ainda não sustentam uma faixa quase excelente.");
+      bandReadings.push("Esta redação não passa com segurança de 960 porque repertório, progressão lógica ou intervenção ainda não chegaram ao topo.");
+    } else {
+      currentCeiling = 960;
+      bandReadings.push("Esta redaÃ§Ã£o jÃ¡ encosta na faixa de 960 porque repertÃ³rio, progressÃ£o argumentativa, coesÃ£o e intervenÃ§Ã£o operam em nÃ­vel alto.");
+    }
+
+    if (
+      context.scores.competency1 < 200 ||
+      context.scores.competency2 < 200 ||
+      context.scores.competency3 < 200 ||
+      context.scores.competency4 < 200 ||
+      context.scores.competency5 < 200
+    ) {
+      locks.push("Ainda há competências fora do teto máximo.");
+      bandReadings.push("Para chegar ao 1000, todas as competências precisariam operar no nível máximo com muito mais refinamento.");
+    } else {
+      currentCeiling = 1000;
+    }
+  }
+
+  const explanation =
+    currentCeiling === 0
+      ? "A correção foi interrompida por bloqueio estrutural ou temático."
+      : `O teto atual estimado desta redação está em torno de ${currentCeiling} pontos, considerando as travas de competência ainda ativas.`;
+
+  return {
+    currentCeiling,
+    explanation,
+    bandReadings,
+    locks,
+  };
+}
+
+function getEssayRepertoireAnalysis(sentences, themeKeywords) {
+  const result = {
+    total: 0,
+    productive: 0,
+    generic: 0,
+    decorated: 0,
+    productiveExcerpt: "",
+    genericExcerpt: "",
+    decoratedExcerpt: "",
+  };
+
+  sentences.forEach((sentence) => {
+    const repertoireHits = countEssayAnalysisMatches(sentence, ESSAY_LOCAL_REPERTOIRE_MARKERS);
+
+    if (!repertoireHits) {
+      return;
+    }
+
+    result.total += 1;
+    const themeHits = countEssayAnalysisMatches(sentence, themeKeywords);
+    const supportHits =
+      countEssayAnalysisMatches(sentence, ESSAY_LOCAL_REPERTOIRE_SUPPORT_MARKERS) +
+      countEssayAnalysisMatches(sentence, ESSAY_LOCAL_CAUSAL_MARKERS) +
+      countEssayAnalysisMatches(sentence, ESSAY_LOCAL_EXAMPLE_MARKERS);
+    const pocketHits = countEssayAnalysisMatches(sentence, ESSAY_LOCAL_POCKET_REPERTOIRE_MARKERS);
+
+    if (themeHits > 0 && supportHits > 0 && countWords(sentence) >= 12) {
+      result.productive += 1;
+      if (!result.productiveExcerpt) {
+        result.productiveExcerpt = buildEssayExcerpt(sentence, 180);
+      }
+      return;
+    }
+
+    if (pocketHits > 0 || themeHits === 0 || countWords(sentence) < 10) {
+      result.decorated += 1;
+      if (!result.decoratedExcerpt) {
+        result.decoratedExcerpt = buildEssayExcerpt(sentence, 180);
+      }
+      return;
+    }
+
+    result.generic += 1;
+    if (!result.genericExcerpt) {
+      result.genericExcerpt = buildEssayExcerpt(sentence, 180);
+    }
+  });
+
+  return result;
+}
+
+function getEssayProfileLabel(totalScore) {
+  if (totalScore >= 980) return "excelente";
+  if (totalScore >= 900) return "quase excelente";
+  if (totalScore >= 800) return "forte";
+  if (totalScore >= 680) return "boa";
+  if (totalScore >= 520) return "mediana";
+  return "muito generica";
+}
+
+function detectEssayPrimaryLanguage(text) {
+  const normalizedText = normalizeEssayAnalysisText(text);
+  const portugueseHits = [...ESSAY_LOCAL_STOPWORDS].reduce(
+    (total, term) => total + (containsEssayAnalysisTerm(normalizedText, term) ? 1 : 0),
+    0
+  );
+  const englishHits = ESSAY_LOCAL_ENGLISH_STOPWORDS.reduce(
+    (total, term) => total + (containsEssayAnalysisTerm(normalizedText, term) ? 1 : 0),
+    0
+  );
+
+  if (englishHits > portugueseHits + 3) {
+    return { code: "en", label: "ingles", portugueseHits, englishHits };
+  }
+
+  return { code: "pt", label: "portugues", portugueseHits, englishHits };
+}
+
+function getEssayPreAnalysis(input) {
+  const paragraphs = Array.isArray(input?.paragraphs) ? input.paragraphs : [];
+  const sentences = Array.isArray(input?.sentences) ? input.sentences : [];
+  const essayText = String(input?.essayText || "");
+  const effectiveWordCount = Number(input?.effectiveWordCount) || 0;
+  const language = detectEssayPrimaryLanguage(essayText);
+  const listLike =
+    essayText.split(/\n+/g).filter((line) => ESSAY_LOCAL_LIST_LINE_MARKERS.some((marker) => line.trim().startsWith(marker))).length >= 2;
+  const noteLike = countEssayAnalysisMatches(essayText, ESSAY_LOCAL_NOTE_MARKERS) >= 2;
+  const poemLike = paragraphs.length >= 5 && sentences.length >= 5 && paragraphs.every((paragraph) => countWords(paragraph) <= 12);
+  const narrativeLike = countEssayAnalysisMatches(essayText, ESSAY_LOCAL_NARRATIVE_MARKERS) >= 1;
+  const missingParagraphing = paragraphs.length < ESSAY_MIN_PARAGRAPHS;
+  const shortSentenceCount = sentences.filter((sentence) => countWords(sentence) <= 6).length;
+  const looseSentences = sentences.length > 0 && shortSentenceCount / sentences.length >= 0.45;
+  const incompleteText =
+    effectiveWordCount < ESSAY_MIN_WORDS ||
+    sentences.length < ESSAY_MIN_SENTENCES ||
+    !/[.!?]\s*$/.test(String(essayText).trim());
+  const dissertativeCompatible =
+    language.code === "pt" &&
+    !listLike &&
+    !noteLike &&
+    !poemLike &&
+    !narrativeLike &&
+    !missingParagraphing;
+
+  const messages = [];
+
+  if (language.code !== "pt") messages.push("O idioma principal nao parece ser o portugues.");
+  if (incompleteText) messages.push("O texto aparenta estar incompleto ou insuficiente.");
+  if (looseSentences) messages.push("Ha excesso de frases soltas ou curtas demais.");
+  if (missingParagraphing) messages.push("Ha ausencia ou fragilidade de paragrafacao.");
+  if (listLike) messages.push("O formato ficou proximo de lista.");
+  if (noteLike) messages.push("O formato ficou proximo de bilhete ou mensagem.");
+  if (poemLike) messages.push("O formato ficou proximo de poema.");
+  if (narrativeLike) messages.push("O texto apresenta traços narrativos fortes.");
+
+  return {
+    primaryLanguage: language.label,
+    dissertativeCompatible,
+    incompleteText,
+    looseSentences,
+    missingParagraphing,
+    listLike,
+    noteLike,
+    poemLike,
+    narrativeLike,
+    messages,
+    stopNormalCorrection: !dissertativeCompatible,
+  };
 }
 
 function getEssayMarkerMetrics(text, markers) {
@@ -2135,6 +2979,820 @@ function buildLocalEssayEvaluation(submission, sourceError) {
   });
 }
 
+function buildAdvancedLocalEssayEvaluation(submission, sourceError) {
+  const essayText = String(submission?.essayText || "");
+  const normalizedText = normalizeEssayAnalysisText(essayText);
+  const paragraphs = splitEssayParagraphs(essayText);
+  const sentences = splitEssaySentences(essayText);
+  const wordCount = Number(submission?.wordCount) || countWords(essayText);
+  const introText = paragraphs[0] || "";
+  const bodyParagraphs = paragraphs.length > 2 ? paragraphs.slice(1, -1) : paragraphs.slice(1);
+  const bodyText = bodyParagraphs.join(" ");
+  const conclusionText = paragraphs[paragraphs.length - 1] || essayText;
+  const avgSentenceWords = sentences.length ? wordCount / sentences.length : wordCount;
+  const uppercaseMatches = essayText.match(/\p{Lu}/gu) || [];
+  const letterMatches = essayText.match(/\p{L}/gu) || [];
+  const uppercaseRatio = letterMatches.length ? uppercaseMatches.length / letterMatches.length : 0;
+  const exclamationCount = (essayText.match(/!/g) || []).length;
+  const questionCount = (essayText.match(/\?/g) || []).length;
+  const repeatedPunctuationCount = (essayText.match(/([!?.,;:])\1{1,}/g) || []).length;
+  const informalMetrics = getEssayMarkerMetrics(normalizedText, ESSAY_LOCAL_INFORMAL_MARKERS);
+  const connectivePresence = getEssayMarkerMetrics(normalizedText, ESSAY_LOCAL_CONNECTIVES);
+  const connectiveMetrics = getEssayMarkerFrequencyMetrics(normalizedText, ESSAY_LOCAL_CONNECTIVES);
+  const causalMetrics = getEssayMarkerMetrics(normalizedText, ESSAY_LOCAL_CAUSAL_MARKERS);
+  const exampleMetrics = getEssayMarkerMetrics(normalizedText, ESSAY_LOCAL_EXAMPLE_MARKERS);
+  const thesisMarkerCount = countEssayAnalysisMatches(introText || essayText, ESSAY_LOCAL_THESIS_MARKERS);
+  const conclusionMarkerCount = countEssayAnalysisMatches(
+    conclusionText || essayText,
+    ESSAY_LOCAL_CONCLUSION_MARKERS
+  );
+  const themeCoverage = getEssayThemeCoverageMetrics(submission, paragraphs);
+  const titleKeywords = getEssayThemeKeywords(submission?.themeTitle);
+  const broadTopicKeywords = titleKeywords.slice(0, Math.min(3, titleKeywords.length));
+  const titleCoverageHits = countEssayAnalysisMatches(essayText, titleKeywords);
+  const titleCoverageRatio = titleKeywords.length ? titleCoverageHits / titleKeywords.length : themeCoverage.coverage;
+  const subjectHits = countEssayAnalysisMatches(essayText, broadTopicKeywords);
+  const interventionMetrics = getEssayInterventionMetrics(conclusionText);
+  const interventionComponentCount = countEssayPresentComponents(interventionMetrics);
+  const vagueAgentCount = countEssayAnalysisMatches(conclusionText, ESSAY_LOCAL_VAGUE_INTERVENTION_AGENTS);
+  const humanRightsViolationCount = countEssayAnalysisMatches(
+    conclusionText,
+    ESSAY_LOCAL_HUMAN_RIGHTS_VIOLATION_MARKERS
+  );
+  const uniqueWordRatio = getEssayUniqueWordRatio(essayText);
+  const paragraphOpeningVariety = getEssayParagraphOpeningVariety(paragraphs);
+  const bodyParagraphCount = bodyParagraphs.length;
+  const bodyParagraphsWithSubstance = bodyParagraphs.filter((paragraph) => countWords(paragraph) >= 45).length;
+  const veryShortParagraphCount = paragraphs.filter((paragraph) => countWords(paragraph) < 25).length;
+  const numericEvidenceCount = (essayText.match(/\b\d+(?:[.,]\d+)?\b|%/g) || []).length;
+  const nonArgumentativeMarkers = countEssayAnalysisMatches(normalizedText, ESSAY_LOCAL_NON_ARGUMENTATIVE_MARKERS);
+  const introKeyIdeas = getEssayTopWordFrequency(introText, 4, themeCoverage.keywords);
+  const promisedIdeas = introKeyIdeas.slice(0, 3);
+  const developedPromises = promisedIdeas.filter((idea) =>
+    bodyParagraphs.some((paragraph) => containsEssayAnalysisTerm(paragraph, idea))
+  );
+  const missingPromises = promisedIdeas.filter((idea) => !developedPromises.includes(idea));
+  let repeatedArgumentPairs = 0;
+  let repeatedArgumentExcerpt = "";
+
+  bodyParagraphs.forEach((paragraph, index) => {
+    bodyParagraphs.slice(index + 1).forEach((otherParagraph) => {
+      if (getEssayJaccardSimilarity(paragraph, otherParagraph) >= 0.55) {
+        repeatedArgumentPairs += 1;
+
+        if (!repeatedArgumentExcerpt) {
+          repeatedArgumentExcerpt = buildEssayExcerpt(paragraph, 180);
+        }
+      }
+    });
+  });
+
+  const conclusionSimilarity = getEssayJaccardSimilarity(conclusionText, bodyText);
+  const thesisSentence = getEssayBestSentenceByMatches(
+    splitEssaySentences(introText),
+    [...ESSAY_LOCAL_THESIS_MARKERS, ...themeCoverage.keywords],
+    { fallbackToFirst: true, maxLength: 220 }
+  );
+  const cohesionSentence = getEssayBestSentenceByMatches(
+    sentences,
+    [...ESSAY_LOCAL_CONNECTIVES, ...ESSAY_LOCAL_CAUSAL_MARKERS],
+    { fallbackToFirst: true, maxLength: 220 }
+  );
+  const interventionSentence = getEssayBestSentenceByMatches(
+    splitEssaySentences(conclusionText),
+    [
+      ...ESSAY_LOCAL_INTERVENTION_AGENTS,
+      ...ESSAY_LOCAL_VAGUE_INTERVENTION_AGENTS,
+      ...ESSAY_LOCAL_INTERVENTION_ACTIONS,
+      ...ESSAY_LOCAL_INTERVENTION_MEANS,
+      ...ESSAY_LOCAL_INTERVENTION_PURPOSE,
+    ],
+    { fallbackToFirst: true, maxLength: 220 }
+  );
+  const repertoireAnalysis = getEssayRepertoireAnalysis(sentences, themeCoverage.keywords);
+  const copyMetrics = getEssayCopyMetrics(
+    essayText,
+    `${submission?.themeTitle || ""} ${submission?.themePrompt || ""}`
+  );
+  const effectiveWordCount = Math.max(0, wordCount - copyMetrics.copiedWordCount);
+  const preAnalysis = getEssayPreAnalysis({
+    essayText,
+    paragraphs,
+    sentences,
+    effectiveWordCount,
+  });
+  const disconnectedParagraphMetrics = getEssayDisconnectedParagraphMetrics(paragraphs, themeCoverage.keywords);
+  const paragraphDensityMetrics = getEssayParagraphDensityMetrics(bodyParagraphs, themeCoverage.keywords, introText);
+  const hasExplicitProposal =
+    interventionMetrics.actions.total > 0 &&
+    (interventionMetrics.agents.total > 0 || vagueAgentCount > 0) &&
+    interventionMetrics.purposes.total > 0;
+  const proposalNeedsSpecificAgent =
+    interventionMetrics.agents.total === 0 && vagueAgentCount >= ESSAY_VAGUE_PROPOSAL_LIMIT;
+  const thesisVague =
+    themeCoverage.introHits === 0 ||
+    (thesisMarkerCount === 0 && promisedIdeas.length < 2) ||
+    countWords(introText) < 28;
+  const conclusionDisconnected =
+    countWords(conclusionText) > 0 &&
+    conclusionSimilarity < 0.08 &&
+    themeCoverage.conclusionHits === 0 &&
+    interventionComponentCount < 3;
+  const connectiveRepetitionIssue = connectiveMetrics.highestCount >= 3;
+  const artificialConnectiveChain =
+    connectiveMetrics.total >= Math.max(5, Math.round(sentences.length / 2)) &&
+    connectiveMetrics.unique <= 2;
+  const textualTypeSignals = [
+    effectiveWordCount >= ESSAY_MIN_WORDS,
+    paragraphs.length >= ESSAY_MIN_PARAGRAPHS,
+    sentences.length >= ESSAY_MIN_SENTENCES,
+    bodyParagraphCount >= 2,
+    bodyParagraphsWithSubstance >= 2,
+    thesisMarkerCount > 0 || promisedIdeas.length >= 2,
+    conclusionMarkerCount > 0 || hasExplicitProposal,
+  ].filter(Boolean).length;
+  const textualTypeInvalid =
+    preAnalysis.stopNormalCorrection ||
+    effectiveWordCount < Math.max(70, Math.floor(ESSAY_MIN_WORDS * 0.55)) ||
+    paragraphs.length < 2 ||
+    sentences.length < Math.max(3, Math.floor(ESSAY_MIN_SENTENCES * 0.5)) ||
+    bodyParagraphCount === 0 ||
+    (textualTypeSignals <= 1 && bodyParagraphsWithSubstance === 0) ||
+    nonArgumentativeMarkers >= 2;
+  const broadSubjectOnly =
+    subjectHits > 0 &&
+    themeCoverage.coverage < ESSAY_TANGENCY_LIMIT &&
+    titleCoverageRatio < 0.45 &&
+    themeCoverage.introHits < 2;
+  const totalThemeVoid =
+    !textualTypeInvalid &&
+    subjectHits === 0 &&
+    themeCoverage.totalHits === 0 &&
+    textualTypeSignals <= 3;
+  const tangenciamento = !textualTypeInvalid && !totalThemeVoid && broadSubjectOnly;
+  const themeStatus = textualTypeInvalid
+    ? "estrutura incompatível"
+    : totalThemeVoid
+      ? "fuga total ao tema"
+      : tangenciamento
+        ? "tangenciamento"
+        : "aderente ao recorte";
+  const formulaicOpeningHits = countEssayAnalysisMatches(introText, ESSAY_LOCAL_FORMULAIC_OPENINGS);
+  const formulaicProposalHits = countEssayAnalysisMatches(conclusionText, ESSAY_LOCAL_FORMULAIC_PROPOSALS);
+  const decoratedEssayRisk =
+    formulaicOpeningHits > 0 ||
+    formulaicProposalHits > 0 ||
+    connectiveRepetitionIssue ||
+    repertoireAnalysis.decorated >= ESSAY_DECORATED_REPERTOIRE_LIMIT;
+
+  let competency1Score = 80;
+  if (effectiveWordCount >= ESSAY_MIN_WORDS) competency1Score += 20;
+  if (paragraphs.length >= ESSAY_MIN_PARAGRAPHS) competency1Score += 20;
+  if (sentences.length >= ESSAY_MIN_SENTENCES) competency1Score += 20;
+  if (avgSentenceWords >= 10 && avgSentenceWords <= 28) competency1Score += 20;
+  if (informalMetrics.total === 0) competency1Score += 20;
+  if (exclamationCount === 0 && repeatedPunctuationCount === 0 && uppercaseRatio < 0.08) competency1Score += 20;
+  if (uniqueWordRatio >= 0.45) competency1Score += 20;
+  if (informalMetrics.total >= 1) competency1Score -= 20;
+  if (avgSentenceWords < 8 || avgSentenceWords > 34) competency1Score -= 20;
+  if (exclamationCount > 1 || questionCount > 2 || repeatedPunctuationCount > 0) competency1Score -= 20;
+  if (veryShortParagraphCount >= 2) competency1Score -= 20;
+  if (nonArgumentativeMarkers > 0) competency1Score -= 20;
+  if (copyMetrics.excessive) competency1Score -= 20;
+  competency1Score = normalizeEssayBandScore(competency1Score);
+
+  let competency2Score = 40;
+  if (!textualTypeInvalid && !totalThemeVoid) {
+    if (themeCoverage.coverage >= 0.75) competency2Score += 120;
+    else if (themeCoverage.coverage >= 0.55) competency2Score += 100;
+    else if (themeCoverage.coverage >= 0.4) competency2Score += 80;
+    else if (themeCoverage.coverage >= 0.25) competency2Score += 60;
+    else if (themeCoverage.totalHits > 0 || subjectHits > 0) competency2Score += 40;
+    else competency2Score += 20;
+    if (themeCoverage.introHits > 0) competency2Score += 20;
+    if (themeCoverage.bodyHits >= 2) competency2Score += 20;
+    if (repertoireAnalysis.productive > 0) competency2Score += 20;
+    else if (repertoireAnalysis.generic > 0) competency2Score += 10;
+    if (repertoireAnalysis.decorated >= ESSAY_DECORATED_REPERTOIRE_LIMIT) competency2Score -= 20;
+    if (formulaicOpeningHits > 0) competency2Score -= 20;
+    if (thesisVague) competency2Score -= 20;
+    if (copyMetrics.excessive) competency2Score -= ESSAY_ALERT_WEIGHT_MODERATE;
+    if (disconnectedParagraphMetrics.count > 0) competency2Score -= ESSAY_ALERT_WEIGHT_MODERATE;
+    competency2Score = normalizeEssayBandScore(competency2Score);
+    if (tangenciamento) {
+      competency2Score = Math.min(40, Math.max(20, competency2Score));
+    }
+  } else {
+    competency2Score = 0;
+  }
+
+  let competency3Score = 40;
+  if (!textualTypeInvalid && !totalThemeVoid) {
+    if (paragraphs.length >= ESSAY_MIN_PARAGRAPHS) competency3Score += 20;
+    if (bodyParagraphCount >= 2) competency3Score += 20;
+    if (bodyParagraphsWithSubstance >= 2) competency3Score += 20;
+    if (thesisMarkerCount > 0 || promisedIdeas.length >= 2) competency3Score += 20;
+    if (causalMetrics.total >= 2) competency3Score += 20;
+    if (exampleMetrics.total >= 1 || numericEvidenceCount > 0) competency3Score += 20;
+    if (repertoireAnalysis.productive > 0) competency3Score += 20;
+    if (developedPromises.length >= Math.min(2, promisedIdeas.length || 1)) competency3Score += 20;
+    if (paragraphDensityMetrics.overallMaturity === "analitico") competency3Score += 20;
+    if (thesisVague) competency3Score -= 20;
+    if (missingPromises.length > 0) competency3Score -= 20;
+    if (repeatedArgumentPairs > 0) competency3Score -= 20;
+    if (conclusionDisconnected) competency3Score -= 20;
+    if (paragraphDensityMetrics.hollowCount > 0) competency3Score -= 20;
+    if (paragraphDensityMetrics.abstractOverload) competency3Score -= 20;
+    if (copyMetrics.excessive) competency3Score -= ESSAY_ALERT_WEIGHT_MODERATE;
+    if (disconnectedParagraphMetrics.count > 0) competency3Score -= ESSAY_ALERT_WEIGHT_MODERATE;
+    competency3Score = normalizeEssayBandScore(competency3Score);
+    if (tangenciamento) {
+      competency3Score = Math.min(40, Math.max(20, competency3Score));
+    }
+  } else {
+    competency3Score = 0;
+  }
+
+  let competency4Score = 40;
+  if (!textualTypeInvalid && !totalThemeVoid) {
+    if (connectivePresence.total >= 3) competency4Score += 20;
+    if (connectiveMetrics.unique >= 3) competency4Score += 20;
+    if (connectiveMetrics.unique >= 5) competency4Score += 20;
+    if (paragraphOpeningVariety >= Math.min(3, paragraphs.length)) competency4Score += 20;
+    if (avgSentenceWords >= 10 && avgSentenceWords <= 28) competency4Score += 20;
+    if (conclusionMarkerCount > 0) competency4Score += 20;
+    if (paragraphs.length >= ESSAY_MIN_PARAGRAPHS) competency4Score += 20;
+    if (connectiveRepetitionIssue) competency4Score -= 20;
+    if (artificialConnectiveChain) competency4Score -= 20;
+    if (repeatedArgumentPairs > 0) competency4Score -= 20;
+    competency4Score = normalizeEssayBandScore(competency4Score);
+  } else {
+    competency4Score = 0;
+  }
+
+  let competency5Score = 0;
+  if (!textualTypeInvalid && !totalThemeVoid) {
+    if (humanRightsViolationCount > 0) {
+      competency5Score = 0;
+    } else {
+      if (conclusionMarkerCount > 0) competency5Score += 20;
+      if (interventionMetrics.actions.total > 0) competency5Score += 40;
+      if (interventionMetrics.agents.total > 0) competency5Score += 40;
+      if (interventionMetrics.means.total > 0) competency5Score += 40;
+      if (interventionMetrics.purposes.total > 0) competency5Score += 20;
+      if (interventionMetrics.details.total > 0) competency5Score += 20;
+      if (countWords(conclusionText) >= 45) competency5Score += 20;
+      if (hasExplicitProposal) competency5Score += 20;
+      if (proposalNeedsSpecificAgent) competency5Score -= 40;
+      if (!hasExplicitProposal) competency5Score -= 20;
+      if (interventionComponentCount < 4) competency5Score -= 20;
+      if (formulaicProposalHits > 0) competency5Score -= 20;
+      competency5Score = normalizeEssayBandScore(competency5Score);
+    }
+    if (tangenciamento) {
+      competency5Score = Math.min(40, Math.max(20, competency5Score));
+    }
+  }
+
+  const quotaOrConfigIssue =
+    Number(sourceError?.statusCode) === 429 ||
+    /quota|billing|rate limit|OPENAI_API_KEY|OPENAI_MODEL/i.test(String(sourceError?.message || ""));
+  const fallbackPrefix = quotaOrConfigIssue
+    ? "Avaliacao local automatica usada porque a IA nao estava disponivel agora."
+    : "Avaliacao local automatica usada como plano de seguranca.";
+
+  if (textualTypeInvalid || totalThemeVoid) {
+    competency1Score = 0;
+    competency2Score = 0;
+    competency3Score = 0;
+    competency4Score = 0;
+    competency5Score = 0;
+  }
+
+  const competencies = [
+    {
+      id: 1,
+      name: "Competência 1",
+      score: competency1Score,
+      justification: textualTypeInvalid || totalThemeVoid
+        ? "Como a redação foi classificada com fuga total ao tema ou estrutura textual incompatível, a nota total foi zerada e esta competência não foi aproveitada."
+        : `O texto trouxe ${wordCount} palavras em ${paragraphs.length} parágrafo(s), com média de ${Math.max(1, Math.round(avgSentenceWords))} palavras por frase. A leitura formal ficou melhor quando a pontuação, a extensão dos períodos e o registro se mantiveram estáveis.`,
+      technicalJustification: textualTypeInvalid || totalThemeVoid
+        ? "Bloqueio estrutural aplicado antes da correção por competência."
+        : `Norma-padrão observada por extensão textual, regularidade sintática, proporção de caixa alta (${Math.round(uppercaseRatio * 100)}%), oralidade (${informalMetrics.total}) e estabilidade de pontuação.`,
+      improvement: informalMetrics.total > 0
+        ? "Retire marcas de oralidade e revise ortografia, acentuação e pontuação frase por frase."
+        : "Faça uma revisão final de ortografia, concordância e pontuação para sustentar um registro formal do começo ao fim.",
+      technicalImprovement: "Revisar ortografia, concordância, pontuação e registro formal com foco em microdesvios recorrentes.",
+    },
+    {
+      id: 2,
+      name: "Competência 2",
+      score: competency2Score,
+      justification: textualTypeInvalid
+        ? "A estrutura textual não atendeu de forma segura ao tipo dissertativo-argumentativo, por isso a avaliação foi zerada."
+        : totalThemeVoid
+          ? "Foi identificada fuga total ao tema: o texto não enfrentou de forma suficiente o assunto nem o recorte temático esperado."
+          : tangenciamento
+            ? `O texto abordou o assunto amplo, mas ficou no tangenciamento do recorte. A leitura temática encontrou ${themeCoverage.totalHits} aproximações com o tema, porém com cobertura estimada de apenas ${Math.round(themeCoverage.coverage * 100)}% das palavras-chave analisadas.`
+            : `A leitura temática encontrou ${themeCoverage.totalHits} aproximações com o tema, com cobertura estimada de ${Math.round(themeCoverage.coverage * 100)}% das palavras-chave analisadas. O repertório apareceu em ${repertoireAnalysis.total} trecho(s), sendo ${repertoireAnalysis.productive} produtivo(s).`,
+      technicalJustification: `Cobertura temática: ${Math.round(themeCoverage.coverage * 100)}%. Hits no título: ${titleCoverageHits}. Repertório produtivo/genérico/decorado: ${repertoireAnalysis.productive}/${repertoireAnalysis.generic}/${repertoireAnalysis.decorated}.`,
+      improvement: tangenciamento || themeCoverage.coverage < 0.35
+        ? "Retome o recorte exato do tema já na introdução e faça os desenvolvimentos voltarem explicitamente a esse foco."
+        : repertoireAnalysis.decorated >= ESSAY_DECORATED_REPERTOIRE_LIMIT
+          ? "Use menos referência decorativa e mais repertório realmente conectado ao argumento e ao recorte temático."
+          : "Aprofunde o recorte do tema com repertório produtivo e explicite melhor como cada argumento conversa com a proposta.",
+      technicalImprovement: "Aumentar aderência ao recorte e substituir repertório apenas válido por repertório forte, contextualizado e probatório.",
+    },
+    {
+      id: 3,
+      name: "Competência 3",
+      score: competency3Score,
+      justification: textualTypeInvalid || totalThemeVoid
+        ? "Como a redação foi zerada, não houve aproveitamento seguro da progressão argumentativa."
+        : `A argumentação foi estimada pela presença de tese na introdução, ${bodyParagraphsWithSubstance} desenvolvimento(s) com bom corpo textual, ${causalMetrics.total} marca(s) de causa, ${exampleMetrics.total + numericEvidenceCount} sinal(is) de exemplo ou dado e ${developedPromises.length}/${Math.max(1, promisedIdeas.length)} ideia(s) prometidas na abertura realmente desenvolvidas.`,
+      technicalJustification: `Maturidade do desenvolvimento: ${paragraphDensityMetrics.overallMaturity}. Parágrafos ocos: ${paragraphDensityMetrics.hollowCount}. Promessas desenvolvidas: ${developedPromises.length}/${Math.max(1, promisedIdeas.length)}.`,
+      improvement: repeatedArgumentPairs > 0 || missingPromises.length > 0
+        ? "Evite repetir o mesmo argumento e desenvolva, no corpo do texto, tudo o que foi prometido na introdução."
+        : bodyParagraphsWithSubstance < 2
+          ? "Fortaleça os parágrafo(s) de desenvolvimento com ideia central, explicação, repercussão e fechamento."
+          : "Refine a progressão dos argumentos para que cada desenvolvimento avance a tese com mais precisão.",
+      technicalImprovement: "Aumentar densidade argumentativa, substituir descrição por análise e eliminar parágrafo oco ou repetitivo.",
+    },
+    {
+      id: 4,
+      name: "Competência 4",
+      score: competency4Score,
+      justification: textualTypeInvalid || totalThemeVoid
+        ? "Com a redação zerada, a coesão não foi aproveitada para composição da nota."
+        : `Foram identificados ${connectiveMetrics.total} conectivo(s), com diversidade de ${connectiveMetrics.unique}, variedade de abertura em ${paragraphOpeningVariety} parágrafo(s) e dominância de "${connectiveMetrics.dominantMarker || "nenhum"}" em ${connectiveMetrics.highestCount || 0} ocorrência(s).`,
+      technicalJustification: `Encadeamento avaliado por conectivos distintos, repetição máxima, variedade de abertura e relação lógica entre os parágrafos.`,
+      improvement: connectiveRepetitionIssue || artificialConnectiveChain
+        ? "Os conectivos existem, mas precisam fazer mais sentido no contexto. Varie os encadeamentos e evite costura artificial."
+        : connectiveMetrics.unique < 3
+          ? "Use conectivos mais variados entre frases e parágrafos para deixar a progressão das ideias mais fluida."
+          : "Mantenha a coesão, mas refine a transição entre um argumento e outro para o texto soar mais orgânico.",
+      technicalImprovement: "Reduzir conectivos em série, aumentar amarração lógica real e impedir cola artificial entre períodos.",
+    },
+    {
+      id: 5,
+      name: "Competência 5",
+      score: competency5Score,
+      justification: textualTypeInvalid || totalThemeVoid
+        ? "Como o texto foi zerado, a proposta de intervenção não foi aproveitada."
+        : humanRightsViolationCount > 0
+          ? "A proposta de intervenção apresentou sinal de desrespeito aos direitos humanos. Nesse caso, a Competência 5 foi zerada, com transparência sobre o motivo."
+          : `Na parte final apareceram ${interventionComponentCount} componente(s) da proposta de intervenção, considerando agente, ação, meio, finalidade e detalhamento. Houve ${vagueAgentCount} referência(s) a agente genérico.`,
+      technicalJustification: `Intervenção medida por ação/agente/meio/finalidade/detalhamento (${interventionComponentCount}/5), agente genérico (${vagueAgentCount}) e risco de violação de direitos humanos (${humanRightsViolationCount}).`,
+      improvement: humanRightsViolationCount > 0
+        ? "Reescreva a proposta com respeito aos direitos humanos e troque soluções punitivas ou violentas por medidas legítimas e viáveis."
+        : interventionComponentCount < 4 || proposalNeedsSpecificAgent
+          ? "A conclusão apresenta solução, mas ainda precisa de agente específico, meio de execução e detalhamento mais claros."
+          : "Sua proposta já aparece de forma válida, mas ainda pode ganhar mais detalhamento operacional para subir a nota.",
+      technicalImprovement: "Completar a cadeia interventiva, evitar agente genérico e garantir articulação direta com a tese debatida.",
+    },
+  ];
+
+  const sortedCompetencies = [...competencies].sort((left, right) => left.score - right.score);
+  const weakestCompetency = sortedCompetencies[0];
+  const strongestCompetency = sortedCompetencies[sortedCompetencies.length - 1];
+  const totalScore = competencies.reduce((sum, item) => sum + item.score, 0);
+  const profileLabel = getEssayProfileLabel(totalScore);
+  const confidencePenalty =
+    (effectiveWordCount < ESSAY_MIN_WORDS ? 1 : 0) +
+    (paragraphs.length < ESSAY_MIN_PARAGRAPHS ? 1 : 0) +
+    (sentences.length < ESSAY_MIN_SENTENCES ? 1 : 0) +
+    (tangenciamento ? 2 : 0) +
+    (textualTypeInvalid || totalThemeVoid ? 3 : 0) +
+    (copyMetrics.excessive ? 1 : 0) +
+    (repertoireAnalysis.decorated >= ESSAY_DECORATED_REPERTOIRE_LIMIT ? 1 : 0) +
+    (disconnectedParagraphMetrics.count > 0 ? 1 : 0);
+  const confidenceLevel = confidencePenalty >= 4 ? "baixa" : confidencePenalty >= 2 ? "media" : "alta";
+  const confidenceNote =
+    confidenceLevel === "alta"
+      ? "Leitura automatica com bons sinais estruturais. Ainda assim, vale revisao humana em caso de prova real."
+      : confidenceLevel === "media"
+        ? "Leitura automatica com alguns pontos limitrofes. Vale revisar manualmente os trechos destacados."
+        : "Baixa confianca automatica. O texto pede revisao humana porque houve incerteza semantica relevante. Em correcao humana no modelo ENEM, casos assim exigiriam conferencia quando houvesse discrepancia superior a 100 pontos no total ou 80 em qualquer competencia.";
+  const highlightedExcerpts = [];
+
+  [thesisSentence, bodyParagraphs.find((paragraph) => countWords(paragraph) >= 45), interventionSentence, sentences[sentences.length - 1]]
+    .map((item) => sanitizeEssayFeedbackText(item, 220))
+    .forEach((item) => {
+      if (item && !highlightedExcerpts.includes(item) && highlightedExcerpts.length < 4) {
+        highlightedExcerpts.push(item);
+      }
+    });
+
+  const analysisIndicators = [
+    `Perfil da redacao: ${profileLabel}.`,
+    `Tema: ${themeStatus}, com cobertura aproximada de ${Math.round(themeCoverage.coverage * 100)}% do recorte analisado.`,
+    `Estrutura: ${wordCount} palavras totais, ${effectiveWordCount} aproveitaveis, ${paragraphs.length} paragrafo(s) e ${sentences.length} frase(s).`,
+    `Argumentacao: ${developedPromises.length}/${Math.max(1, promisedIdeas.length)} ideia(s) prometidas na abertura foram efetivamente desenvolvidas.`,
+    `Maturidade do desenvolvimento: ${paragraphDensityMetrics.overallMaturity}, com ${paragraphDensityMetrics.hollowCount} paragrafo(s) oco(s).`,
+    `Coesao: ${connectiveMetrics.total} conectivo(s), ${connectiveMetrics.unique} diferentes e repeticao maxima de ${connectiveMetrics.highestCount || 0}.`,
+    `Intervencao: ${interventionComponentCount} elemento(s) validos e confianca ${confidenceLevel}.`,
+    "Precisao: esta leitura e uma aproximacao automatizada, nao uma nota oficial do ENEM.",
+  ];
+  const diagnosticMessages = [];
+  const criticalAlerts = [];
+  const strengths = [];
+  const mainProblems = [];
+  const nextSteps = [];
+  const dedupeFeedbackList = (items, limit = 8) => [...new Set((items || []).filter(Boolean))].slice(0, limit);
+
+  if (tangenciamento) {
+    diagnosticMessages.push("Abordou o assunto, mas não o recorte temático.");
+    criticalAlerts.push("Tangenciamento identificado: C2 ficou limitada a 40 e C3/C5 não puderam ultrapassar 40.");
+  }
+
+  if (totalThemeVoid) {
+    diagnosticMessages.push("Houve fuga total ao tema.");
+    criticalAlerts.push("Fuga total ao tema: a nota foi zerada conforme a regra configurada.");
+  }
+
+  if (textualTypeInvalid) {
+    diagnosticMessages.push("O texto não atendeu com segurança ao tipo dissertativo-argumentativo.");
+    criticalAlerts.push("Estrutura incompatível com o formato esperado: a nota foi zerada.");
+  }
+
+  if (repertoireAnalysis.productive > 0) {
+    strengths.push("Há repertório produtivo, pertinente ao tema e ligado à argumentação.");
+  } else if (repertoireAnalysis.generic > 0) {
+    diagnosticMessages.push("Há repertório, mas ele ainda fica mais genérico do que produtivo.");
+  }
+
+  if (repertoireAnalysis.decorated >= ESSAY_DECORATED_REPERTOIRE_LIMIT) {
+    diagnosticMessages.push("Há repertório, mas ele funciona mais como enfeite do que como prova.");
+    mainProblems.push("O repertório apareceu de forma decorativa ou pouco contextualizada.");
+  }
+
+  if (repertoireAnalysis.total > 0 && repertoireAnalysis.productive === 0) {
+    diagnosticMessages.push("Repertorio famoso ou conhecido nao foi tratado como repertorio produtivo sem articulacao real ao argumento.");
+  }
+
+  if (copyMetrics.excessive) {
+    diagnosticMessages.push("Trechos copiados dos textos motivadores não contam como desenvolvimento autoral.");
+    criticalAlerts.push("Foi identificado trecho não aproveitável para avaliação argumentativa por proximidade excessiva com o enunciado.");
+    mainProblems.push("A autoria e o desenvolvimento perderam força porque houve reaproveitamento excessivo do texto-base.");
+  }
+
+  if (effectiveWordCount < ESSAY_MIN_WORDS || sentences.length < ESSAY_MIN_SENTENCES || paragraphs.length < ESSAY_MIN_PARAGRAPHS) {
+    diagnosticMessages.push("O texto ainda mostra insuficiência textual para um desempenho mais alto.");
+    mainProblems.push("A quantidade de conteúdo aproveitável ainda está abaixo do ideal para sustentar a nota.");
+  }
+
+  if (disconnectedParagraphMetrics.count > 0) {
+    diagnosticMessages.push("Há parte do texto desconectada do tema ou do projeto argumentativo.");
+    criticalAlerts.push("Foi detectado trecho possivelmente desconectado do tema, tratado como alerta grave para revisão.");
+  }
+
+  if (disconnectedParagraphMetrics.count === 1 && criticalAlerts.length) {
+    const lastAlert = criticalAlerts[criticalAlerts.length - 1] || "";
+
+    if (/trecho possivelmente desconectado/i.test(lastAlert)) {
+      criticalAlerts.pop();
+    }
+  }
+
+  if (thesisVague) {
+    diagnosticMessages.push("O texto tem estrutura de dissertação, porém com argumentação previsível.");
+    mainProblems.push("A tese ainda está vaga ou pouco delimitada na introdução.");
+  } else {
+    strengths.push("A introdução já indica um projeto argumentativo relativamente claro.");
+  }
+
+  if (repeatedArgumentPairs > 0) {
+    diagnosticMessages.push("Há argumento repetido, com pouca progressão entre os parágrafos.");
+    mainProblems.push("Os desenvolvimentos repetem ideias sem avançar o projeto argumentativo.");
+  } else if (bodyParagraphsWithSubstance >= 2) {
+    strengths.push("Os parágrafos de desenvolvimento acrescentam informação nova ao texto.");
+  }
+
+  if (missingPromises.length > 0) {
+    diagnosticMessages.push("Há causa prometida na introdução que não foi desenvolvida depois.");
+    mainProblems.push("Parte do que foi prometido na abertura não voltou com força suficiente no corpo do texto.");
+  }
+
+  if (conclusionDisconnected) {
+    diagnosticMessages.push("A conclusão se distancia do que foi discutido no desenvolvimento.");
+    mainProblems.push("A conclusão não conversa de forma orgânica com os argumentos anteriores.");
+  }
+
+  if (connectiveRepetitionIssue || artificialConnectiveChain) {
+    diagnosticMessages.push("Os conectivos existem, mas a progressão lógica ainda está fraca.");
+    mainProblems.push("A coesão ficou artificial ou repetitiva em alguns encadeamentos.");
+    mainProblems.push("Conectivo nao foi suficiente para garantir coesao real entre as ideias.");
+  } else if (connectiveMetrics.unique >= 4) {
+    strengths.push("Os conectivos ajudam a costurar bem as partes do texto.");
+  }
+
+  if (!hasExplicitProposal || interventionComponentCount < 4) {
+    diagnosticMessages.push("A conclusão apresenta solução, mas sem agente ou meio de execução suficientes.");
+    mainProblems.push("A proposta de intervenção ficou incompleta.");
+  } else {
+    strengths.push("A proposta de intervenção já apresenta vários elementos exigidos pela C5.");
+  }
+
+  if (!hasExplicitProposal || interventionComponentCount < 4) {
+    mainProblems.push("Proposta generica nao foi tratada como intervencao completa.");
+  }
+
+  if (proposalNeedsSpecificAgent) {
+    diagnosticMessages.push("O agente da proposta ficou genérico demais.");
+    mainProblems.push("Agentes como 'todos' ou 'a sociedade' enfraquecem a intervenção quando não são especificados.");
+  }
+
+  if (humanRightsViolationCount > 0) {
+    criticalAlerts.push("A proposta de intervenção feriu os direitos humanos e, por isso, a C5 foi zerada.");
+  }
+
+  nextSteps.push(weakestCompetency.improvement);
+
+  if (tangenciamento) {
+    nextSteps.push("Reescreva a introdução com o recorte exato do tema e faça cada desenvolvimento responder diretamente a ele.");
+  }
+
+  if (repertoireAnalysis.decorated >= ESSAY_DECORATED_REPERTOIRE_LIMIT) {
+    nextSteps.push("Troque referência decorativa por repertório contextualizado e realmente usado para provar a tese.");
+  }
+
+  if (repeatedArgumentPairs > 0 || missingPromises.length > 0) {
+    nextSteps.push("Planeje antes de escrever: defina a tese, as duas causas e o que cada desenvolvimento vai acrescentar de novo.");
+  }
+
+  if (!hasExplicitProposal || interventionComponentCount < 4 || proposalNeedsSpecificAgent) {
+    nextSteps.push("Feche a redação com ação, agente específico, meio de execução, finalidade e detalhamento.");
+  }
+
+  if (paragraphDensityMetrics.hollowCount > 0) {
+    diagnosticMessages.push("Ha paragrafo oco: existe volume textual com pouca entrega real de ideia.");
+    mainProblems.push("Pelo menos um desenvolvimento repete a tese ou gira em torno dela sem aprofundar.");
+  }
+
+  if (paragraphDensityMetrics.abstractOverload) {
+    diagnosticMessages.push("A argumentacao ficou abstrata demais em parte do texto.");
+    mainProblems.push("Ha frases amplas e bonitas, mas com pouca concretude probatoria.");
+  }
+
+  if (decoratedEssayRisk) {
+    diagnosticMessages.push("Ha sinais de redacao decorada ou artificial.");
+  }
+
+  const introHasTheme = themeCoverage.introHits > 0;
+  const introHasThesis = thesisMarkerCount > 0 || promisedIdeas.length >= 2;
+  const introDelimitsRecorte = promisedIdeas.length >= 2 || themeCoverage.introHits >= 2;
+  const introRepertoireHits = countEssayAnalysisMatches(introText, ESSAY_LOCAL_REPERTOIRE_MARKERS);
+  const introRepertoireSupport =
+    countEssayAnalysisMatches(introText, ESSAY_LOCAL_REPERTOIRE_SUPPORT_MARKERS) +
+    countEssayAnalysisMatches(introText, ESSAY_LOCAL_CAUSAL_MARKERS) +
+    countEssayAnalysisMatches(introText, ESSAY_LOCAL_EXAMPLE_MARKERS);
+  const introRepertoireQuality =
+    introRepertoireHits === 0
+      ? "sem repertorio inicial"
+      : introRepertoireSupport > 0 && themeCoverage.introHits > 0
+        ? "forte"
+        : themeCoverage.introHits > 0
+          ? "valido, mas superficial"
+          : "decorativo";
+  const conclusionRetakesProblem = themeCoverage.conclusionHits > 0 || conclusionSimilarity >= 0.12;
+  const conclusionHasProposal = hasExplicitProposal;
+  const conclusionExecutionDetailed = interventionComponentCount >= 4 && !proposalNeedsSpecificAgent;
+  const conclusionClosesReasoning = !conclusionDisconnected && (conclusionMarkerCount > 0 || interventionComponentCount >= 3);
+  const conclusionRepeatsOpening = conclusionSimilarity >= 0.45 && interventionComponentCount < 3;
+  const introductionDiagnosis = dedupeFeedbackList([
+    introHasTheme ? "A introducao apresenta o tema." : "A introducao ainda nao apresenta o tema com clareza.",
+    introHasThesis ? "A introducao ja traz uma tese identificavel." : "A introducao ainda nao firma uma tese clara.",
+    introDelimitsRecorte
+      ? "A abertura delimita recortes, causas ou eixos de desenvolvimento."
+      : "A abertura ainda nao delimita bem causas, efeitos ou recortes.",
+    introRepertoireQuality === "forte"
+      ? "O repertorio inicial funciona como apoio produtivo ao argumento."
+      : introRepertoireQuality === "valido, mas superficial"
+        ? "O repertorio inicial e valido, mas ainda superficial."
+        : introRepertoireQuality === "decorativo"
+          ? "O repertorio inicial aparece mais como enfeite do que como prova."
+          : "A introducao nao depende de repertorio inicial para existir, mas pode ganhar forca com um repertorio bem articulado.",
+  ], 6);
+  const conclusionDiagnosis = dedupeFeedbackList([
+    conclusionRetakesProblem
+      ? "A conclusao retoma o problema discutido no texto."
+      : "A conclusao ainda nao retoma com clareza o problema desenvolvido.",
+    conclusionHasProposal
+      ? "A conclusao apresenta proposta de intervencao."
+      : "A conclusao ainda nao apresenta proposta de intervencao explicita.",
+    conclusionExecutionDetailed
+      ? "A execucao da proposta aparece com agente, meio e finalidade mais bem definidos."
+      : "A proposta ainda precisa detalhar melhor execucao, agente ou finalidade.",
+    conclusionClosesReasoning
+      ? "A conclusao fecha o raciocinio com alguma organicidade."
+      : "A conclusao ainda nao fecha o raciocinio de forma organica.",
+    conclusionRepeatsOpening
+      ? "A conclusao corre o risco de apenas repetir a introducao."
+      : "A conclusao vai alem da simples repeticao da abertura.",
+  ], 6);
+  const riskNotes = dedupeFeedbackList([
+    tangenciamento || (!tangenciamento && themeCoverage.coverage < ESSAY_TANGENCY_LIMIT + 0.08)
+      ? "Texto limitrofe entre tangenciamento e abordagem parcial do recorte."
+      : "",
+    !conclusionHasProposal && interventionComponentCount >= 2
+      ? "Ha tracos de intervencao, mas a proposta ainda nao esta plenamente desenvolvida."
+      : "",
+    bodyParagraphsWithSubstance >= 2 &&
+    (repeatedArgumentPairs > 0 || paragraphDensityMetrics.overallMaturity === "descritivo" || decoratedEssayRisk)
+      ? "Ha organizacao, mas pouca autoria argumentativa."
+      : "",
+    decoratedEssayRisk ? "Ha sinais de artificialidade, com abertura pronta, repertorio mecanico ou proposta formulaica." : "",
+    confidenceLevel !== "alta" ? "A leitura automatica pede cautela e pode precisar de revisao humana." : "",
+    disconnectedParagraphMetrics.count > 0 ? "Ha mudanca de direcao ou trecho desconectado do projeto argumentativo." : "",
+    "A nota final e uma estimativa tecnica automatizada, nao uma correcao oficial do ENEM.",
+  ], 8);
+  const ceilingAnalysis = getEssayCeilingAnalysis({
+    textualTypeInvalid,
+    totalThemeVoid,
+    tangenciamento,
+    thesisVague,
+    missingPromises,
+    proposalNeedsSpecificAgent,
+    interventionComponentCount,
+    repertoireAnalysis,
+    connectiveRepetitionIssue,
+    repeatedArgumentPairs,
+    scores: {
+      competency1: competency1Score,
+      competency2: competency2Score,
+      competency3: competency3Score,
+      competency4: competency4Score,
+      competency5: competency5Score,
+    },
+  });
+  const improvementLadder = {
+    quickFixes: dedupeFeedbackList([
+      proposalNeedsSpecificAgent ? "Ajuste rapido: nomeie um agente especifico na intervencao." : "",
+      tangenciamento ? "Ajuste rapido: explicite o recorte exato do tema logo na introducao." : "",
+      connectiveRepetitionIssue ? "Ajuste rapido: corte a repeticao dos mesmos conectivos." : "",
+      copyMetrics.excessive ? "Ajuste rapido: substitua trechos copiados por formulacao autoral." : "",
+      thesisVague ? "Ajuste rapido: escreva uma tese mais objetiva na primeira parte do texto." : "",
+      "Ajuste rapido: revise a abertura e a conclusao para deixar a linha de raciocinio ainda mais nitida.",
+    ], 5),
+    competenceImprovements: dedupeFeedbackList([
+      weakestCompetency.improvement,
+      competency3Score < 160 ? "Melhora de competencia: aprofunde o segundo desenvolvimento com causa, efeito e exemplificacao." : "",
+      competency2Score < 160 ? "Melhora de competencia: troque repertorio apenas valido por repertorio forte e articulado." : "",
+      competency4Score < 160 ? "Melhora de competencia: melhore a progressao logica entre os paragrafos, nao so os conectivos." : "",
+      competency5Score < 160 ? "Melhora de competencia: complete a intervencao com acao, agente, meio, finalidade e detalhamento." : "",
+    ], 5),
+    bandLeapSteps: dedupeFeedbackList([
+      ceilingAnalysis.currentCeiling <= 600
+        ? "Salto de faixa: estabilize tema, tese e proposta para sair da zona mediana."
+        : "",
+      ceilingAnalysis.currentCeiling <= 800
+        ? "Salto de faixa: troque argumentacao previsivel por desenvolvimento analitico com mais densidade."
+        : "",
+      ceilingAnalysis.currentCeiling <= 960
+        ? "Salto de faixa: substitua repertorio decorativo por repertorio produtivo e refine a coesao real."
+        : "",
+      ceilingAnalysis.currentCeiling < 1000
+        ? "Salto de faixa: remova as travas finais das competencias e busque acabamento de topo em C1 a C5."
+        : "",
+    ], 5),
+  };
+  const feedbackModes = {
+    studentSummary: `${fallbackPrefix} Esta e uma estimativa automatizada. Sua redacao ficou em ${totalScore} pontos, com perfil ${profileLabel}. O teto atual estimado esta em ${ceilingAnalysis.currentCeiling} pontos, e o foco principal agora esta em ${weakestCompetency.name.toLowerCase()}.`,
+    technicalSummary: `${fallbackPrefix} Esta leitura e aproximativa, nao oficial. Perfil ${profileLabel}, confianca ${confidenceLevel}, tema ${themeStatus}. Placar tecnico: C1 ${competency1Score}, C2 ${competency2Score}, C3 ${competency3Score}, C4 ${competency4Score}, C5 ${competency5Score}. Teto atual estimado em ${ceilingAnalysis.currentCeiling}, travado por: ${ceilingAnalysis.locks.join(" | ") || "nenhuma trava estrutural relevante"}.`,
+  };
+  const rewritingGuidance = {
+    introduction: tangenciamento || thesisVague
+      ? "Reescreva a introducao com tema, tese e dois eixos claros de desenvolvimento, evitando abertura vaga."
+      : "Mantenha a introducao curta, mas deixe ainda mais nitidos o recorte e a tese prometida.",
+    topicSentence: paragraphDensityMetrics.hollowCount > 0 || repeatedArgumentPairs > 0
+      ? "Abra o desenvolvimento com um topico frasal que avance a tese e nao apenas repita a introducao."
+      : "Refine o topico frasal para que cada paragrafo entregue uma ideia nova e reconhecivel.",
+    repertoire: repertoireAnalysis.productive > 0
+      ? "Aprimore o repertorio que ja e valido, contextualizando melhor como ele prova o argumento."
+      : "Troque repertorio decorativo ou generico por referencia pertinente, contextualizada e util para provar algo.",
+    argumentativeLink: missingPromises.length > 0 || conclusionDisconnected || connectiveRepetitionIssue
+      ? "Amarre melhor a progressao: recupere o que foi prometido na introducao e faca a conclusao responder ao desenvolvimento."
+      : "Fortaleca a amarracao entre um desenvolvimento e outro, deixando a progressao mais organica.",
+    intervention: humanRightsViolationCount > 0
+      ? "Reescreva a intervencao com medida legitima, respeitosa e compativel com os direitos humanos."
+      : proposalNeedsSpecificAgent || interventionComponentCount < 4
+        ? "Complete a intervencao com agente especifico, acao, meio, finalidade e detalhamento operacional."
+        : "A proposta ja existe, mas pode ganhar mais precisao de execucao para subir a C5.",
+  };
+
+  const evidenceMap = {
+    thesis: thesisSentence,
+    repertoire: repertoireAnalysis.productiveExcerpt || repertoireAnalysis.genericExcerpt || repertoireAnalysis.decoratedExcerpt,
+    cohesion: cohesionSentence,
+    intervention: interventionSentence,
+    problemExcerpt: buildEssayExcerpt(
+      copyMetrics.excerpt ||
+        disconnectedParagraphMetrics.excerpt ||
+        repeatedArgumentExcerpt ||
+        repertoireAnalysis.decoratedExcerpt ||
+        interventionSentence,
+      220
+    ),
+  };
+  const calibrationMeta = {
+    enabled: ESSAY_CALIBRATION_MODE,
+    recommendedHumanReview: confidenceLevel !== "alta" || Boolean(criticalAlerts.length),
+    scoreProfile: `${profileLabel} | ${themeStatus} | confianca ${confidenceLevel}`,
+    checkpoints: [
+      `Tema e assunto: ${themeStatus}.`,
+      `Texto aproveitavel: ${effectiveWordCount}/${wordCount} palavras.`,
+      `Repertorio produtivo/generico/decorado: ${repertoireAnalysis.productive}/${repertoireAnalysis.generic}/${repertoireAnalysis.decorated}.`,
+      `Proposta de intervencao: ${interventionComponentCount} elemento(s) validos.`,
+      `Copia nao autoral detectada: ${copyMetrics.excessive ? "sim" : "nao"}.`,
+      `Discrepancia potencial para revisao humana: ${confidenceLevel === "baixa" ? "alta" : "controlada"}.`,
+    ].filter(Boolean),
+  };
+  const auditTrail = {
+    rubricVersion: ESSAY_RUBRIC_VERSION,
+    promptVersion: ESSAY_PROMPT_VERSION,
+    rulesApplied: dedupeFeedbackList([
+      "pre-analise textual",
+      "checagem de tipo dissertativo-argumentativo",
+      "contagem de texto aproveitavel",
+      "leitura de tangenciamento e fuga total",
+      "classificacao de repertorio produtivo/generico/decorado",
+      "organizacao formal nao equivale a forca argumentativa",
+      "repertorio famoso nao equivale a repertorio produtivo",
+      "densidade argumentativa por paragrafo",
+      "checagem de consistencia interna",
+      "cohesao por conectivos e progressao logica",
+      "conectivo nao equivale a coesao automatica",
+      "analise da proposta de intervencao",
+      "proposta generica nao equivale a intervencao completa",
+      "assunto amplo nao equivale a atendimento pleno ao tema",
+      "estimativa de teto por faixa",
+      "resultado aproximativo, nao oficial",
+    ], 16),
+    locksTriggered: dedupeFeedbackList([
+      ...criticalAlerts,
+      ...ceilingAnalysis.locks,
+      tangenciamento ? "trava de tangenciamento" : "",
+      textualTypeInvalid ? "bloqueio por estrutura incompatível" : "",
+      totalThemeVoid ? "bloqueio por fuga total ao tema" : "",
+      thesisVague ? "tese vaga" : "",
+      proposalNeedsSpecificAgent ? "proposta com agente generico" : "",
+      paragraphDensityMetrics.hollowCount > 0 ? "paragrafo oco" : "",
+      paragraphDensityMetrics.abstractOverload ? "argumentacao abstrata demais" : "",
+      decoratedEssayRisk ? "sinais de redacao decorada" : "",
+    ], 12),
+    evidenceUsed: dedupeFeedbackList([
+      evidenceMap.thesis ? `tese: ${evidenceMap.thesis}` : "",
+      evidenceMap.repertoire ? `repertorio: ${evidenceMap.repertoire}` : "",
+      evidenceMap.cohesion ? `coesao: ${evidenceMap.cohesion}` : "",
+      evidenceMap.intervention ? `intervencao: ${evidenceMap.intervention}` : "",
+      evidenceMap.problemExcerpt ? `problema: ${evidenceMap.problemExcerpt}` : "",
+      paragraphDensityMetrics.hollowExcerpt ? `paragrafo oco: ${paragraphDensityMetrics.hollowExcerpt}` : "",
+      disconnectedParagraphMetrics.excerpt ? `trecho desconectado: ${disconnectedParagraphMetrics.excerpt}` : "",
+    ], 10),
+  };
+
+  return normalizeEssayEvaluation({
+    competencies,
+    totalScore,
+    summaryFeedback: feedbackModes.studentSummary,
+    strengths: [
+      `${strongestCompetency.name} foi a competencia mais consistente nesta leitura automatizada.`,
+      ...strengths,
+    ],
+    mainProblems: [
+      `${weakestCompetency.name} ficou com a menor nota nesta estimativa.`,
+      ...mainProblems,
+    ],
+    nextSteps,
+    interventionFeedback:
+      humanRightsViolationCount > 0
+        ? "A proposta de intervencao feriu os direitos humanos. Reescreva a conclusao com medida legitima, viavel e socialmente responsavel."
+        : interventionComponentCount >= 4 && !proposalNeedsSpecificAgent
+          ? "A proposta de intervencao ja aparece de forma valida, mas ainda pode ganhar mais detalhamento para subir a nota."
+          : "A proposta de intervencao precisa ficar mais completa, com agente especifico, acao, meio, finalidade e detalhamento mais claros.",
+    highlightedExcerpts,
+    analysisIndicators,
+    diagnosticMessages,
+    criticalAlerts,
+    profileLabel,
+    confidenceLevel,
+    confidenceNote,
+    themeStatus,
+    evidenceMap,
+    calibrationMeta,
+    preAnalysis,
+    introductionDiagnosis,
+    conclusionDiagnosis,
+    riskNotes,
+    ceilingAnalysis,
+    improvementLadder,
+    feedbackModes,
+    rewritingGuidance,
+    auditTrail,
+  });
+}
+
 function evaluateEssayWithPythonEngine(submission, sourceError) {
   if (!existsSync(pythonEssayEngineEntry)) {
     throw createError(500, "Motor Python de redação não encontrado.");
@@ -2188,11 +3846,11 @@ function evaluateEssayLocally(submission, sourceError) {
     try {
       return evaluateEssayWithPythonEngine(submission, sourceError);
     } catch (pythonError) {
-      return buildLocalEssayEvaluation(submission, sourceError || pythonError);
+      return buildAdvancedLocalEssayEvaluation(submission, sourceError || pythonError);
     }
   }
 
-  return buildLocalEssayEvaluation(submission, sourceError);
+  return buildAdvancedLocalEssayEvaluation(submission, sourceError);
 }
 
 function sanitizeEssaySubmissionRow(row, options = {}) {
