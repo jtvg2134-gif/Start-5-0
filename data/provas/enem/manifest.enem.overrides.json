@@ -1,0 +1,58 @@
+{
+  "version": 1,
+  "updatedAt": "2026-03-20",
+  "entries": [
+    {
+      "match": {
+        "ano": 2024,
+        "dia": 1,
+        "caderno": "CD2"
+      },
+      "status": "review",
+      "notes": [
+        "Existe uma prova valida em data/provas/enem/2024/provas/2024_PV_impresso_D1_CD2.pdf.",
+        "O arquivo data/provas/enem/2024/gabarito/2024_PV_impresso_D1_CD2.pdf foi mantido como copia deslocada e nao deve ser tratado como gabarito.",
+        "Este conjunto continua pendente ate que o gabarito correto seja adicionado."
+      ],
+      "tags": [
+        "manual-review",
+        "folder-conflict"
+      ],
+      "ignoreReport": {
+        "duplicateKeys": [
+          "2024:prova:D1:CD2"
+        ],
+        "ambiguousKeys": [
+          "2024:prova:D1:CD2"
+        ],
+        "folderConflictFiles": [
+          "data/provas/enem/2024/gabarito/2024_PV_impresso_D1_CD2.pdf"
+        ],
+        "missingPairKeys": [],
+        "suspiciousKeys": []
+      }
+    },
+    {
+      "match": {
+        "ano": 2024,
+        "dia": 2,
+        "caderno": "CD6"
+      },
+      "status": "review",
+      "notes": [
+        "Existe gabarito para este conjunto, mas a prova correspondente ainda nao esta presente na arvore atual."
+      ],
+      "tags": [
+        "manual-review",
+        "missing-proof"
+      ],
+      "ignoreReport": {
+        "duplicateKeys": [],
+        "ambiguousKeys": [],
+        "folderConflictFiles": [],
+        "missingPairKeys": [],
+        "suspiciousKeys": []
+      }
+    }
+  ]
+}

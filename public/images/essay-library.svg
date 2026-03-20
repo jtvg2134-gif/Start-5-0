@@ -1,0 +1,75 @@
+<svg width="1600" height="900" viewBox="0 0 1600 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="skyEssay" x1="800" y1="0" x2="800" y2="420" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#8DC5EF"/>
+      <stop offset="0.5" stop-color="#F7D593"/>
+      <stop offset="1" stop-color="#E9C284"/>
+    </linearGradient>
+    <linearGradient id="stoneMain" x1="800" y1="180" x2="800" y2="690" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#E6D5B7"/>
+      <stop offset="1" stop-color="#B89E7E"/>
+    </linearGradient>
+    <linearGradient id="shadowEssay" x1="800" y1="500" x2="800" y2="900" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#9A8467"/>
+      <stop offset="1" stop-color="#665442"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1600" height="900" fill="url(#skyEssay)"/>
+  <rect width="1600" height="900" fill="#0E1319" fill-opacity="0.08"/>
+  <rect y="634" width="1600" height="266" fill="url(#shadowEssay)"/>
+
+  <rect x="230" y="232" width="1140" height="332" rx="10" fill="url(#stoneMain)"/>
+  <rect x="160" y="314" width="1280" height="252" rx="10" fill="#D9C5A6"/>
+  <rect x="430" y="176" width="740" height="140" rx="12" fill="#E9D8BC"/>
+
+  <polygon points="390,210 800,72 1210,210" fill="#E4D2B3"/>
+  <rect x="470" y="244" width="660" height="42" fill="#C8AB87"/>
+  <rect x="330" y="350" width="940" height="28" fill="#B89A74"/>
+
+  <g fill="#F4E6CF">
+    <rect x="522" y="276" width="54" height="290" rx="12"/>
+    <rect x="654" y="276" width="54" height="290" rx="12"/>
+    <rect x="786" y="276" width="54" height="290" rx="12"/>
+    <rect x="918" y="276" width="54" height="290" rx="12"/>
+    <rect x="1050" y="276" width="54" height="290" rx="12"/>
+  </g>
+
+  <g fill="#6B5E50" opacity="0.72">
+    <rect x="560" y="384" width="106" height="148" rx="8"/>
+    <rect x="734" y="384" width="132" height="178" rx="10"/>
+    <rect x="936" y="384" width="102" height="148" rx="8"/>
+  </g>
+
+  <g fill="#D1B28D" opacity="0.78">
+    <rect x="220" y="604" width="1160" height="28" rx="12"/>
+    <rect x="242" y="640" width="1116" height="20" rx="10"/>
+    <rect x="270" y="676" width="1060" height="18" rx="10"/>
+    <rect x="294" y="708" width="1012" height="16" rx="10"/>
+  </g>
+
+  <g fill="#D8C2A0">
+    <circle cx="278" cy="598" r="42"/>
+    <circle cx="1318" cy="598" r="42"/>
+    <rect x="246" y="590" width="64" height="88" rx="16"/>
+    <rect x="1286" y="590" width="64" height="88" rx="16"/>
+  </g>
+
+  <g opacity="0.18">
+    <rect x="262" y="360" width="164" height="134" rx="14" fill="#FFF6E3"/>
+    <rect x="1174" y="360" width="164" height="134" rx="14" fill="#FFF6E3"/>
+  </g>
+
+  <g opacity="0.8">
+    <rect x="122" y="170" width="36" height="248" fill="#4C5968"/>
+    <path d="M160 170L160 420" stroke="#DDE7EF" stroke-width="5"/>
+    <rect x="100" y="170" width="68" height="10" fill="#2F3742"/>
+    <path d="M156 176C206 204 204 282 156 308V176Z" fill="#F5F7F4"/>
+    <path d="M156 176C186 192 190 244 156 256V176Z" fill="#BA4E45"/>
+  </g>
+
+  <g opacity="0.28">
+    <rect x="1330" y="160" width="18" height="260" fill="#B9C8D6"/>
+    <rect x="1390" y="110" width="12" height="310" fill="#C9D8E4"/>
+  </g>
+</svg>

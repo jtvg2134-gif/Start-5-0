@@ -4,23 +4,38 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Start 5 | Reda&ccedil;&atilde;o</title>
+  <meta
+    name="description"
+    content="Area de redacao do Start 5 para escrever, revisar historico e acompanhar avaliacoes por competencia."
+  />
+  <meta name="theme-color" content="#05080d" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Fraunces:wght@500;600;700&family=Instrument+Sans:wght@400;500;600;700&display=swap"
     rel="stylesheet"
   />
 
   <link rel="stylesheet" href="css/redacao.css" />
 </head>
 <body class="dashboard-page protected-page essay-page">
+  <a class="skip-link" href="#mainContent">Pular para o conteudo principal</a>
+
   <div class="page-shell">
     <header class="header">
       <div class="header-inner">
-        <div class="header-account" aria-label="Conta conectada">
+        <section class="header-account" aria-label="Conta conectada">
           <div class="header-account-avatar" data-auth-avatar>
-            <img class="header-account-avatar-image" data-auth-avatar-image alt="Foto do perfil" hidden />
+            <img
+              class="header-account-avatar-image"
+              data-auth-avatar-image
+              alt="Foto do perfil"
+              width="42"
+              height="42"
+              decoding="async"
+              hidden
+            />
             <span class="header-account-avatar-fallback" data-auth-initials>U</span>
           </div>
           <div class="header-account-copy">
@@ -28,7 +43,7 @@
             <span class="header-account-email" data-auth-email>email@start5.app</span>
             <span class="header-account-month" data-auth-month-minutes>0 min no m&ecirc;s</span>
           </div>
-        </div>
+        </section>
 
         <button
           class="menu-toggle"
@@ -46,7 +61,7 @@
       </div>
     </header>
 
-    <div class="menu-panel" id="menuPanel">
+    <aside class="menu-panel" id="menuPanel" aria-label="Menu principal">
       <div class="menu-panel-inner">
         <nav class="menu-nav" aria-label="Navega&ccedil;&atilde;o principal">
           <div class="menu-user">
@@ -56,9 +71,11 @@
           </div>
 
           <div class="menu-column">
-            <a href="index.html" class="menu-link">In&iacute;cio</a>
+            <a href="index.html" class="menu-link">Inicio</a>
             <a href="dashboard.html" class="menu-link">Painel</a>
+            <a href="questoes.html" class="menu-link">Questoes</a>
             <a href="profile.html" class="menu-link">Perfil</a>
+            <a href="rotina.html" class="menu-link">Rotina</a>
           </div>
 
           <div class="menu-column">
@@ -68,20 +85,37 @@
           </div>
         </nav>
       </div>
-    </div>
+    </aside>
+
+    <main id="mainContent">
+    <section class="essay-page-hero">
+      <div class="essay-page-hero-copy">
+        <p class="section-label">Prestigio intelectual</p>
+        <h1 class="progress-title">Redacao com clima de grande biblioteca e foco de alto nivel</h1>
+        <p class="dashboard-copy">
+          Um espaco para escrever com calma, revisar com seriedade e acompanhar sua evolucao com mais prestigio, clareza e concentracao.
+        </p>
+      </div>
+    </section>
 
     <section class="essay-layout essay-layout-centered">
       <article class="essay-card essay-editor-card">
-        <div class="essay-card-head essay-editor-head">
+        <header class="essay-card-head essay-editor-head">
           <div>
-            <h1 class="essay-card-title">Sua reda&ccedil;&atilde;o</h1>
+            <h2 class="essay-card-title">Sua reda&ccedil;&atilde;o</h2>
           </div>
 
-          <button type="button" class="essay-history-toggle" id="essayHistoryToggle">
+          <button
+            type="button"
+            class="essay-history-toggle"
+            id="essayHistoryToggle"
+            aria-controls="essayHistoryDrawer"
+            aria-expanded="false"
+          >
             Hist&oacute;rico
             <span class="essay-history-toggle-count" id="essayHistoryToggleCount">0</span>
           </button>
-        </div>
+        </header>
 
         <div class="essay-history-drawer is-hidden" id="essayHistoryDrawer">
           <div class="essay-history-drawer-head">
@@ -95,7 +129,8 @@
         </div>
 
         <form class="essay-form" id="essayForm">
-          <div class="essay-mode-toggle" role="tablist" aria-label="Modo do tema">
+          <fieldset class="essay-mode-toggle" role="tablist" aria-label="Modo do tema">
+            <legend class="visually-hidden">Modo do tema</legend>
             <button
               type="button"
               class="essay-mode-button is-active"
@@ -112,13 +147,13 @@
             >
               Tema livre
             </button>
-          </div>
+          </fieldset>
 
           <div class="essay-field-group" id="presetThemeField">
             <label class="auth-field">
               <span class="auth-label">Tema sugerido</span>
               <div class="subject-select-shell">
-                <select id="essayThemeSelect" class="subject-select">
+                <select id="essayThemeSelect" name="themeKey" class="subject-select">
                   <option value="">Carregando temas...</option>
                 </select>
               </div>
@@ -132,6 +167,8 @@
                 class="auth-input"
                 id="essayCustomThemeTitle"
                 type="text"
+                name="themeTitle"
+                autocomplete="off"
                 maxlength="140"
                 placeholder="Ex: Desafios para..."
               />
@@ -143,8 +180,11 @@
             <textarea
               class="modal-textarea essay-editor-input"
               id="essayTextInput"
+              name="essayText"
               rows="16"
+              minlength="20"
               placeholder="Escreva sua reda&ccedil;&atilde;o aqui..."
+              required
             ></textarea>
           </label>
 
@@ -239,6 +279,7 @@
         </section>
       </article>
     </section>
+    </main>
   </div>
 
   <script src="js/main.js"></script>
@@ -246,3 +287,4 @@
   <script src="js/redacao.js"></script>
 </body>
 </html>
+

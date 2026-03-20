@@ -1,6 +1,7 @@
 ﻿const body = document.body;
 const menuToggle = document.getElementById("menuToggle");
 const menuPanel = document.getElementById("menuPanel");
+const sidebarNavigationManaged = Boolean(window.Start5Main?.sidebarNavigation?.isManaged);
 const profileForm = document.getElementById("profileForm");
 const profileFirstNameInput = document.getElementById("profileFirstNameInput");
 const profileLastNameInput = document.getElementById("profileLastNameInput");
@@ -488,13 +489,15 @@ async function handleSubmit(event) {
 }
 
 function bindEvents() {
-  menuToggle?.addEventListener("click", toggleMenu);
+  if (!sidebarNavigationManaged) {
+    menuToggle?.addEventListener("click", toggleMenu);
 
-  menuPanel?.addEventListener("click", (event) => {
-    if (event.target === menuPanel) {
-      closeMenu();
-    }
-  });
+    menuPanel?.addEventListener("click", (event) => {
+      if (event.target === menuPanel) {
+        closeMenu();
+      }
+    });
+  }
 
   profilePhotoInput?.addEventListener("change", handlePhotoSelection);
   profileRemovePhotoButton?.addEventListener("click", handleRemovePhoto);
@@ -510,11 +513,13 @@ function bindEvents() {
     });
   });
 
-  document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && body.classList.contains("menu-open")) {
-      closeMenu();
-    }
-  });
+  if (!sidebarNavigationManaged) {
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && body.classList.contains("menu-open")) {
+        closeMenu();
+      }
+    });
+  }
 }
 
 async function initializeProfilePage() {

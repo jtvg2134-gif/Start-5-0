@@ -1,6 +1,7 @@
 const body = document.body;
 const menuToggle = document.getElementById("menuToggle");
 const menuPanel = document.getElementById("menuPanel");
+const sidebarNavigationManaged = Boolean(window.Start5Main?.sidebarNavigation?.isManaged);
 
 const essayForm = document.getElementById("essayForm");
 const essayFeedback = document.getElementById("essayFeedback");
@@ -1261,13 +1262,15 @@ async function handleSubmit(event) {
   }
 }
 
-menuToggle?.addEventListener("click", toggleMenu);
+if (!sidebarNavigationManaged) {
+  menuToggle?.addEventListener("click", toggleMenu);
 
-menuPanel?.addEventListener("click", (event) => {
-  if (event.target === menuPanel) {
-    closeMenu();
-  }
-});
+  menuPanel?.addEventListener("click", (event) => {
+    if (event.target === menuPanel) {
+      closeMenu();
+    }
+  });
+}
 
 themeModeButtons.forEach((button) => {
   button.addEventListener("click", () => {
@@ -1284,11 +1287,13 @@ essayReuseButton?.addEventListener("click", () => populateFormFromSubmission(cur
 essayHistoryToggle?.addEventListener("click", () => toggleHistoryDrawer());
 essayForm?.addEventListener("submit", handleSubmit);
 
-document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape" && body.classList.contains("menu-open")) {
-    closeMenu();
-  }
-});
+if (!sidebarNavigationManaged) {
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && body.classList.contains("menu-open")) {
+      closeMenu();
+    }
+  });
+}
 
 (async function initializeEssayPage() {
   try {

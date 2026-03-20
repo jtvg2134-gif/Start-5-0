@@ -4,28 +4,35 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Start 5 | Entrar</title>
+  <meta
+    name="description"
+    content="Tela de acesso do Start 5 para entrar ou criar conta e continuar a jornada de estudos."
+  />
+  <meta name="theme-color" content="#05080d" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Fraunces:wght@500;600;700&family=Instrument+Sans:wght@400;500;600;700&display=swap"
     rel="stylesheet"
   />
 
   <link rel="stylesheet" href="css/login.css" />
 </head>
 <body class="auth-page">
+  <a class="skip-link" href="#mainContent">Pular para o conteudo principal</a>
   <div class="auth-background" aria-hidden="true"></div>
   <div class="auth-overlay" aria-hidden="true"></div>
 
   <div class="page-shell auth-shell">
-    <main class="auth-stage">
-      <section class="auth-card">
+    <main class="auth-stage" id="mainContent">
+      <section class="auth-card" aria-labelledby="authTitle">
         <div class="auth-switch" role="tablist" aria-label="Modo de acesso">
           <button
             type="button"
             class="auth-switch-button is-active"
             data-auth-view="login"
+            aria-controls="authForm"
             aria-pressed="true"
           >
             Entrar
@@ -34,27 +41,31 @@
             type="button"
             class="auth-switch-button"
             data-auth-view="register"
+            aria-controls="authForm"
             aria-pressed="false"
           >
             Criar conta
           </button>
         </div>
 
-        <div class="auth-card-head">
-          <h2 class="auth-title" id="authTitle">Acesse sua conta</h2>
+        <header class="auth-card-head">
+          <h1 class="auth-title" id="authTitle">Acesse sua conta</h1>
           <p class="auth-subtitle" id="authSubtitle"></p>
-        </div>
+        </header>
 
-        <form class="auth-form" id="authForm" novalidate autocomplete="off">
+        <form class="auth-form" id="authForm" autocomplete="on">
           <div class="auth-name-grid is-hidden" id="authNameRow">
             <div class="auth-field">
               <label for="authFirstNameInput" class="auth-label">Nome</label>
               <input
                 type="text"
                 id="authFirstNameInput"
+                name="firstName"
                 class="auth-input"
                 autocomplete="given-name"
+                minlength="2"
                 placeholder="Seu nome"
+                required
               />
             </div>
 
@@ -63,9 +74,12 @@
               <input
                 type="text"
                 id="authLastNameInput"
+                name="lastName"
                 class="auth-input"
                 autocomplete="family-name"
+                minlength="2"
                 placeholder="Seu sobrenome"
+                required
               />
             </div>
           </div>
@@ -75,7 +89,9 @@
             <input
               type="email"
               id="authEmailInput"
+              name="email"
               class="auth-input"
+              inputmode="email"
               autocomplete="email"
               placeholder="voce@exemplo.com"
               required
@@ -87,9 +103,11 @@
             <input
               type="password"
               id="authPasswordInput"
+              name="password"
               class="auth-input"
-              autocomplete="off"
-              placeholder="Mínimo de 6 caracteres"
+              autocomplete="current-password"
+              minlength="6"
+              placeholder="Minimo de 6 caracteres"
               required
             />
           </div>
@@ -99,9 +117,12 @@
             <input
               type="password"
               id="authConfirmInput"
+              name="confirmPassword"
               class="auth-input"
-              autocomplete="off"
+              autocomplete="new-password"
+              minlength="6"
               placeholder="Repita sua senha"
+              required
             />
           </div>
 
@@ -119,3 +140,4 @@
   <script src="js/auth.js"></script>
 </body>
 </html>
+

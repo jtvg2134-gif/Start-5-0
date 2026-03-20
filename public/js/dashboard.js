@@ -4,23 +4,21 @@ const menuToggle = document.getElementById("menuToggle");
 const menuPanel = document.getElementById("menuPanel");
 
 const modalBackdrop = document.getElementById("sessionModalBackdrop");
-const sessionModalModeLabel = document.getElementById("sessionModalModeLabel");
+const sessionForm = document.getElementById("sessionForm");
 const sessionModalTitle = document.getElementById("sessionModalTitle");
+const sessionModalActions = document.getElementById("sessionModalActions");
 const startSessionButtons = [...document.querySelectorAll("#startSessionButton")];
 const closeSessionModalButtons = [...document.querySelectorAll("[data-close-session-modal]")];
 const saveSessionButton = document.getElementById("saveSessionButton");
 const sessionHelper = document.getElementById("sessionHelper");
 
-const stateButtons = [...document.querySelectorAll("[data-state]")];
-const durationButtons = [...document.querySelectorAll("[data-duration]")];
 const subjectSelect = document.getElementById("subjectSelect");
 const customSubjectField = document.getElementById("customSubjectField");
 const customSubjectInput = document.getElementById("customSubjectInput");
 const customSubjectSuggestions = document.getElementById("customSubjectSuggestions");
 const topicInput = document.getElementById("topicInput");
 
-const extraMinutesBox = document.getElementById("extraMinutesBox");
-const extraMinutesInput = document.getElementById("extraMinutesInput");
+const studyMinutesInput = document.getElementById("studyMinutesInput");
 const verbDetailsField = document.getElementById("verbDetailsField");
 const phraseDetailsField = document.getElementById("phraseDetailsField");
 const verbsEntryInput = document.getElementById("verbsEntryInput");
@@ -31,9 +29,9 @@ const verbPickerStatus = document.getElementById("verbPickerStatus");
 const verbSuggestions = document.getElementById("verbSuggestions");
 const phrasesEntryInput = document.getElementById("phrasesEntryInput");
 const phrasesTokenList = document.getElementById("phrasesTokenList");
-const notesInput = document.getElementById("notesInput");
 
 const deleteSessionBackdrop = document.getElementById("deleteSessionBackdrop");
+const deleteSessionForm = document.getElementById("deleteSessionForm");
 const deleteSessionSummary = document.getElementById("deleteSessionSummary");
 const confirmDeleteSessionButton = document.getElementById("confirmDeleteSessionButton");
 const closeDeleteModalButtons = [...document.querySelectorAll("[data-close-delete-modal]")];
@@ -50,6 +48,12 @@ const focusSubjectMinutesValue = document.getElementById("focusSubjectMinutesVal
 const focusSubjectDaysValue = document.getElementById("focusSubjectDaysValue");
 const focusSubjectTopicValue = document.getElementById("focusSubjectTopicValue");
 const focusSubjectInsightText = document.getElementById("focusSubjectInsightText");
+const routineWeekLabel = document.getElementById("routineWeekLabel");
+const routineExecutionValue = document.getElementById("routineExecutionValue");
+const routinePriorityValue = document.getElementById("routinePriorityValue");
+const routineReinforcementValue = document.getElementById("routineReinforcementValue");
+const routineMinutesValue = document.getElementById("routineMinutesValue");
+const routineSummaryText = document.getElementById("routineSummaryText");
 
 const todayDateLabel = document.getElementById("todayDateLabel");
 const todayMinutesValue = document.getElementById("todayMinutesValue");
@@ -94,24 +98,92 @@ const monthlyEssayAverageValue = document.getElementById("monthlyEssayAverageVal
 const monthlyEssayLatestValue = document.getElementById("monthlyEssayLatestValue");
 const monthlyEssayList = document.getElementById("monthlyEssayList");
 const monthlyEssayCompetencyList = document.getElementById("monthlyEssayCompetencyList");
-
-const DAILY_GOALS = {
-  cansado: 10,
-  normal: 15,
-  focado: 20,
+const panelTabButtons = [...document.querySelectorAll("[data-panel-tab]")];
+const panelSections = [...document.querySelectorAll("[data-panel-section]")];
+const dashboardViewCopy = document.getElementById("dashboardViewCopy");
+const analyticsRangeButtons = [...document.querySelectorAll("[data-analytics-range]")];
+const analyticsDom = {
+  analysisPulseLabel: document.getElementById("analysisPulseLabel"),
+  analysisWindowLabel: document.getElementById("analysisWindowLabel"),
+  analysisCoverageLabel: document.getElementById("analysisCoverageLabel"),
+  overviewTotalMinutesValue: document.getElementById("overviewTotalMinutesValue"),
+  overviewTotalMinutesHelper: document.getElementById("overviewTotalMinutesHelper"),
+  overviewStreakValue: document.getElementById("overviewStreakValue"),
+  overviewStreakHelper: document.getElementById("overviewStreakHelper"),
+  overviewQuestionCountValue: document.getElementById("overviewQuestionCountValue"),
+  overviewQuestionCountHelper: document.getElementById("overviewQuestionCountHelper"),
+  overviewEssayCountValue: document.getElementById("overviewEssayCountValue"),
+  overviewEssayCountHelper: document.getElementById("overviewEssayCountHelper"),
+  overviewAveragePerformanceValue: document.getElementById("overviewAveragePerformanceValue"),
+  overviewAveragePerformanceHelper: document.getElementById("overviewAveragePerformanceHelper"),
+  overviewStrongAreaValue: document.getElementById("overviewStrongAreaValue"),
+  overviewStrongAreaHelper: document.getElementById("overviewStrongAreaHelper"),
+  overviewWeakAreaValue: document.getElementById("overviewWeakAreaValue"),
+  overviewWeakAreaHelper: document.getElementById("overviewWeakAreaHelper"),
+  overviewConsistencyValue: document.getElementById("overviewConsistencyValue"),
+  overviewConsistencyHelper: document.getElementById("overviewConsistencyHelper"),
+  routineDaysStudiedValue: document.getElementById("routineDaysStudiedValue"),
+  routineDaysStudiedHelper: document.getElementById("routineDaysStudiedHelper"),
+  routineBestHourValue: document.getElementById("routineBestHourValue"),
+  routineBestHourHelper: document.getElementById("routineBestHourHelper"),
+  routineAverageDayValue: document.getElementById("routineAverageDayValue"),
+  routineAverageDayHelper: document.getElementById("routineAverageDayHelper"),
+  routineAverageSessionValue: document.getElementById("routineAverageSessionValue"),
+  routineAverageSessionHelper: document.getElementById("routineAverageSessionHelper"),
+  routineFrequencyValue: document.getElementById("routineFrequencyValue"),
+  routineFrequencyHelper: document.getElementById("routineFrequencyHelper"),
+  routineGapValue: document.getElementById("routineGapValue"),
+  routineGapHelper: document.getElementById("routineGapHelper"),
+  routineWeekChart: document.getElementById("routineWeekChart"),
+  routineHourChart: document.getElementById("routineHourChart"),
+  routineBehaviorList: document.getElementById("routineBehaviorList"),
+  questionAnsweredValue: document.getElementById("questionAnsweredValue"),
+  questionAnsweredHelper: document.getElementById("questionAnsweredHelper"),
+  questionCorrectValue: document.getElementById("questionCorrectValue"),
+  questionCorrectHelper: document.getElementById("questionCorrectHelper"),
+  questionWrongValue: document.getElementById("questionWrongValue"),
+  questionWrongHelper: document.getElementById("questionWrongHelper"),
+  questionAccuracyValue: document.getElementById("questionAccuracyValue"),
+  questionAccuracyHelper: document.getElementById("questionAccuracyHelper"),
+  questionExamList: document.getElementById("questionExamList"),
+  questionSubjectList: document.getElementById("questionSubjectList"),
+  questionTrendChart: document.getElementById("questionTrendChart"),
+  questionInsightList: document.getElementById("questionInsightList"),
+  essayTotalValue: document.getElementById("essayTotalValue"),
+  essayTotalHelper: document.getElementById("essayTotalHelper"),
+  essayAverageValue: document.getElementById("essayAverageValue"),
+  essayAverageHelper: document.getElementById("essayAverageHelper"),
+  essayLastScoreValue: document.getElementById("essayLastScoreValue"),
+  essayLastScoreHelper: document.getElementById("essayLastScoreHelper"),
+  essayBestScoreValue: document.getElementById("essayBestScoreValue"),
+  essayBestScoreHelper: document.getElementById("essayBestScoreHelper"),
+  essayWeakCompetencyValue: document.getElementById("essayWeakCompetencyValue"),
+  essayWeakCompetencyHelper: document.getElementById("essayWeakCompetencyHelper"),
+  essayStableCompetencyValue: document.getElementById("essayStableCompetencyValue"),
+  essayStableCompetencyHelper: document.getElementById("essayStableCompetencyHelper"),
+  essayTrendChart: document.getElementById("essayTrendChart"),
+  essayCompetencyBoard: document.getElementById("essayCompetencyBoard"),
+  essayThemeList: document.getElementById("essayThemeList"),
+  essayInsightList: document.getElementById("essayInsightList"),
+  englishPracticeCountValue: document.getElementById("englishPracticeCountValue"),
+  englishPracticeCountHelper: document.getElementById("englishPracticeCountHelper"),
+  englishMinutesValue: document.getElementById("englishMinutesValue"),
+  englishMinutesHelper: document.getElementById("englishMinutesHelper"),
+  englishVerbCountValue: document.getElementById("englishVerbCountValue"),
+  englishVerbCountHelper: document.getElementById("englishVerbCountHelper"),
+  englishObservationValue: document.getElementById("englishObservationValue"),
+  englishObservationHelper: document.getElementById("englishObservationHelper"),
+  englishConsistencyValue: document.getElementById("englishConsistencyValue"),
+  englishConsistencyHelper: document.getElementById("englishConsistencyHelper"),
+  englishVerbList: document.getElementById("englishVerbList"),
+  englishObservationList: document.getElementById("englishObservationList"),
+  englishTrendChart: document.getElementById("englishTrendChart"),
+  englishInsightList: document.getElementById("englishInsightList"),
+  dashboardRecommendationsList: document.getElementById("dashboardRecommendationsList"),
+  recentEssayTimeline: document.getElementById("recentEssayTimeline"),
 };
 
-const AUTO_DURATION_BY_STATE = {
-  cansado: 10,
-  normal: 15,
-  focado: 20,
-};
-
-const ALLOWED_DURATIONS_BY_STATE = {
-  cansado: ["10", "15", "extra"],
-  normal: ["10", "15", "20", "extra"],
-  focado: ["15", "20", "extra"],
-};
+const MIN_SESSION_MINUTES = 10;
 
 const ACTIVITY_DEFINITIONS = [
   { key: "serie", label: "S\u00e9rie em ingl\u00eas", color: "#f3f6fa" },
@@ -140,7 +212,7 @@ const SUBJECT_DEFINITIONS = [
 
 const ACTIVITY_MAP = new Map(ACTIVITY_DEFINITIONS.map((activity) => [activity.key, activity]));
 const SUBJECT_MAP = new Map(SUBJECT_DEFINITIONS.map((subject) => [subject.key, subject]));
-const VALID_STATES = new Set(Object.keys(DAILY_GOALS));
+const VALID_STATES = new Set(["cansado", "normal", "focado"]);
 const VALID_ACTIVITIES = new Set(ACTIVITY_DEFINITIONS.map((activity) => activity.key));
 const VALID_SUBJECTS = new Set(SUBJECT_DEFINITIONS.map((subject) => subject.key));
 const LEGACY_IMPORT_PREFIX = "start5:legacy-imported";
@@ -293,16 +365,113 @@ const ESSAY_COMPETENCY_DEFINITIONS = [
 
 let sessions = [];
 let essaySubmissions = [];
-let selectedState = "normal";
-let selectedDuration = AUTO_DURATION_BY_STATE.normal;
+let questionAttempts = [];
+let routinePlan = null;
 let selectedSubjectKey = DEFAULT_SUBJECT_KEY;
 let selectedVerbs = [];
 let selectedPhrases = [];
+let selectedNotes = "";
 let editingSessionId = null;
 let pendingDeleteSessionId = null;
 let isSavingSession = false;
 let isDeletingSession = false;
 let isCustomVerbMode = false;
+let analyticsRange = "30d";
+
+function isDialogElement(element) {
+  return typeof HTMLDialogElement !== "undefined" && element instanceof HTMLDialogElement;
+}
+
+function isModalLayerOpen(element) {
+  if (!element) {
+    return false;
+  }
+
+  if (isDialogElement(element)) {
+    return element.open;
+  }
+
+  return element.classList.contains("is-visible");
+}
+
+function showModalLayer(element) {
+  if (!element) {
+    return;
+  }
+
+  if (isDialogElement(element)) {
+    if (!element.open) {
+      element.showModal();
+    }
+
+    return;
+  }
+
+  element.classList.add("is-visible");
+}
+
+function hideModalLayer(element) {
+  if (!element) {
+    return;
+  }
+
+  if (isDialogElement(element)) {
+    if (element.open) {
+      element.close();
+    }
+
+    return;
+  }
+
+  element.classList.remove("is-visible");
+}
+
+function setSessionActionsRevealed(isRevealed) {
+  if (!sessionModalActions) {
+    return;
+  }
+
+  sessionModalActions.classList.toggle("is-revealed", isRevealed);
+  sessionModalActions.toggleAttribute("inert", !isRevealed);
+  sessionModalActions.setAttribute("aria-hidden", String(!isRevealed));
+}
+
+function updateSessionActionsVisibility() {
+  if (!sessionForm || !sessionModalActions) {
+    return;
+  }
+
+  const canScroll = sessionForm.scrollHeight > sessionForm.clientHeight + 16;
+  const isAtBottom =
+    sessionForm.scrollTop + sessionForm.clientHeight >= sessionForm.scrollHeight - 16;
+
+  setSessionActionsRevealed(!canScroll || isAtBottom);
+}
+
+function refreshSessionActionsVisibility() {
+  window.requestAnimationFrame(updateSessionActionsVisibility);
+}
+
+function updateStudyMinutesValidity() {
+  if (!studyMinutesInput) {
+    return;
+  }
+
+  const minutes = Number(studyMinutesInput.value);
+  const isEmpty = String(studyMinutesInput.value || "").trim() === "";
+
+  if (isEmpty) {
+    studyMinutesInput.setCustomValidity("Informe quanto tempo voce estudou hoje.");
+    return;
+  }
+
+  if (!Number.isFinite(minutes) || minutes < MIN_SESSION_MINUTES) {
+    studyMinutesInput.setCustomValidity(`Informe pelo menos ${MIN_SESSION_MINUTES} minutos.`);
+    return;
+  }
+
+  studyMinutesInput.setCustomValidity("");
+}
 
 function pad(value) {
   return String(value).padStart(2, "0");
@@ -368,6 +537,11 @@ function formatNumber(value) {
 
 function formatMinutesOnly(value) {
   return `${formatNumber(value)} min`;
+}
+
+function formatPercent(value) {
+  const safeValue = Math.max(0, Math.round(Number(value) || 0));
+  return `${safeValue}%`;
 }
 
 function formatSignedMinutes(value) {
@@ -445,6 +619,23 @@ function formatFullDate(dateKey) {
   });
 }
 
+function formatWeekRangeLabel(weekStartKey, weekEndKey) {
+  const startDate = parseDateKey(weekStartKey);
+  const endDate = parseDateKey(weekEndKey);
+
+  if (!isValidDate(startDate) || !isValidDate(endDate)) {
+    return "Semana atual";
+  }
+
+  return `${startDate.toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "short",
+  })} - ${endDate.toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "short",
+  })}`;
+}
+
 function capitalize(value) {
   const safeValue = String(value || "").trim();
 
@@ -453,6 +644,16 @@ function capitalize(value) {
   }
 
   return safeValue.charAt(0).toUpperCase() + safeValue.slice(1);
+}
+
+function truncateText(value, maxLength = 48) {
+  const safeValue = String(value || "").trim();
+
+  if (safeValue.length <= maxLength) {
+    return safeValue;
+  }
+
+  return `${safeValue.slice(0, Math.max(0, maxLength - 3)).trimEnd()}...`;
 }
 
 function parseStructuredItems(value) {
@@ -861,10 +1062,6 @@ function getPreviousMonthEssaySubmissions() {
   );
 }
 
-function getCurrentState(list = sessions) {
-  return sortSessionsByStartDesc(list)[0]?.state || "normal";
-}
-
 function getStreak() {
   const uniqueDates = new Set(sessions.map((session) => session.dateKey));
   let streak = 0;
@@ -1037,6 +1234,216 @@ function describeEssayComparison(currentAverage, previousAverage, periodLabel) {
   }
 
   return `Sua m\u00e9dia de reda\u00e7\u00e3o caiu ${formatEssayScore(Math.abs(difference))} ${periodLabel}.`;
+}
+
+const ANALYTICS_RANGE_DEFINITIONS = {
+  "7d": { label: "ultimos 7 dias", days: 7 },
+  "30d": { label: "ultimos 30 dias", days: 30 },
+  "90d": { label: "ultimos 90 dias", days: 90 },
+  all: { label: "todo o historico", days: null },
+};
+
+function getAnalyticsRangeConfig(range = analyticsRange) {
+  return ANALYTICS_RANGE_DEFINITIONS[range] || ANALYTICS_RANGE_DEFINITIONS["30d"];
+}
+
+function getRangeEndDate() {
+  const endDate = new Date();
+  endDate.setHours(23, 59, 59, 999);
+  return endDate;
+}
+
+function getRangeStartDate(range = analyticsRange) {
+  const config = getAnalyticsRangeConfig(range);
+
+  if (!config.days) {
+    return null;
+  }
+
+  const startDate = new Date();
+  startDate.setHours(0, 0, 0, 0);
+  startDate.setDate(startDate.getDate() - (config.days - 1));
+  return startDate;
+}
+
+function getRangeDayCount(range = analyticsRange) {
+  const config = getAnalyticsRangeConfig(range);
+
+  if (config.days) {
+    return config.days;
+  }
+
+  const datedValues = [
+    ...sessions.map((session) => getSessionStartDate(session)),
+    ...getEvaluatedEssaySubmissions().map((submission) => getEssayReferenceDate(submission)),
+    ...questionAttempts.map((attempt) => getQuestionAttemptDate(attempt)),
+  ].filter(isValidDate);
+
+  if (!datedValues.length) {
+    return 1;
+  }
+
+  const firstDate = datedValues.sort((left, right) => left.getTime() - right.getTime())[0];
+  const today = getRangeEndDate();
+  const milliseconds = today.getTime() - firstDate.getTime();
+  return Math.max(1, Math.floor(milliseconds / 86400000) + 1);
+}
+
+function filterItemsByRange(list, getDate, range = analyticsRange) {
+  const startDate = getRangeStartDate(range);
+  const endDate = getRangeEndDate();
+
+  return list.filter((item) => {
+    const itemDate = getDate(item);
+
+    if (!isValidDate(itemDate)) {
+      return false;
+    }
+
+    if (!startDate) {
+      return itemDate <= endDate;
+    }
+
+    return itemDate >= startDate && itemDate <= endDate;
+  });
+}
+
+function getSessionsForRange(range = analyticsRange) {
+  return sortSessionsByStartDesc(
+    filterItemsByRange(sessions, (session) => getSessionStartDate(session), range)
+  );
+}
+
+function getEssaySubmissionsForRange(range = analyticsRange) {
+  return sortEssaySubmissionsByDate(
+    filterItemsByRange(getEvaluatedEssaySubmissions(), (submission) => getEssayReferenceDate(submission), range)
+  );
+}
+
+function getRangePreviousWindow(range = analyticsRange) {
+  const config = getAnalyticsRangeConfig(range);
+
+  if (!config.days) {
+    return null;
+  }
+
+  const currentStart = getRangeStartDate(range);
+  const previousEnd = new Date(currentStart);
+  previousEnd.setDate(previousEnd.getDate() - 1);
+  previousEnd.setHours(23, 59, 59, 999);
+  const previousStart = new Date(previousEnd);
+  previousStart.setDate(previousStart.getDate() - (config.days - 1));
+  previousStart.setHours(0, 0, 0, 0);
+
+  return {
+    startDate: previousStart,
+    endDate: previousEnd,
+  };
+}
+
+function filterItemsByWindow(list, getDate, windowRange) {
+  if (!windowRange) {
+    return [];
+  }
+
+  return list.filter((item) => {
+    const itemDate = getDate(item);
+    return isValidDate(itemDate) && itemDate >= windowRange.startDate && itemDate <= windowRange.endDate;
+  });
+}
+
+function getSessionsForPreviousRange(range = analyticsRange) {
+  const previousWindow = getRangePreviousWindow(range);
+  return sortSessionsByStartDesc(
+    filterItemsByWindow(sessions, (session) => getSessionStartDate(session), previousWindow)
+  );
+}
+
+function getEssaySubmissionsForPreviousRange(range = analyticsRange) {
+  const previousWindow = getRangePreviousWindow(range);
+  return sortEssaySubmissionsByDate(
+    filterItemsByWindow(
+      getEvaluatedEssaySubmissions(),
+      (submission) => getEssayReferenceDate(submission),
+      previousWindow
+    )
+  );
+}
+
+function getQuestionAttemptDate(attempt) {
+  const directDate = new Date(
+    attempt?.answeredAt || attempt?.createdAt || attempt?.updatedAt || attempt?.timestamp || ""
+  );
+
+  if (isValidDate(directDate)) {
+    return directDate;
+  }
+
+  const parsedDate = parseDateKey(attempt?.dateKey || attempt?.date || "");
+  return isValidDate(parsedDate) ? parsedDate : null;
+}
+
+function normalizeQuestionAttempt(rawAttempt) {
+  const createdAt = getQuestionAttemptDate(rawAttempt) || new Date();
+  const examName = String(
+    rawAttempt?.examName || rawAttempt?.vestibular || rawAttempt?.vestibularNome || rawAttempt?.nomeVestibular || ""
+  )
+    .trim()
+    .replace(/\s+/g, " ");
+  const subjectName = String(
+    rawAttempt?.subjectName || rawAttempt?.materia || rawAttempt?.materiaNome || rawAttempt?.disciplina || ""
+  )
+    .trim()
+    .replace(/\s+/g, " ");
+  const topicName = String(rawAttempt?.topic || rawAttempt?.assunto || rawAttempt?.assuntoNome || "")
+    .trim()
+    .replace(/\s+/g, " ");
+  const year = Number(rawAttempt?.year || rawAttempt?.ano) || null;
+  const isCorrect = Boolean(
+    rawAttempt?.isCorrect ?? rawAttempt?.correct ?? rawAttempt?.acertou ?? rawAttempt?.correta
+  );
+
+  return {
+    id: rawAttempt?.id || null,
+    examName: examName || "Vestibular nao informado",
+    subjectName: subjectName || "Materia nao informada",
+    topicName,
+    year,
+    isCorrect,
+    createdAt: createdAt.toISOString(),
+  };
+}
+
+function loadQuestionAttemptsFromStorage() {
+  const currentUser = window.Start5Auth?.getSession?.();
+  const candidateKeys = [
+    `start5:question-attempts:${currentUser?.id || ""}`,
+    `start5:questionAttempts:${currentUser?.id || ""}`,
+    `start5:questoes:tentativas:${currentUser?.id || ""}`,
+    "start5:question-attempts",
+    "start5:questionAttempts",
+    "start5:questoes:tentativas",
+  ].filter(Boolean);
+
+  const collected = [];
+
+  candidateKeys.forEach((key) => {
+    const value = readStoredJson(key);
+
+    if (Array.isArray(value)) {
+      value.forEach((attempt) => collected.push(attempt));
+    }
+  });
+
+  questionAttempts = collected
+    .map((attempt) => normalizeQuestionAttempt(attempt))
+    .sort((left, right) => (getQuestionAttemptDate(right)?.getTime() || 0) - (getQuestionAttemptDate(left)?.getTime() || 0));
+}
+
+function getQuestionAttemptsForRange(range = analyticsRange) {
+  return filterItemsByRange(questionAttempts, (attempt) => getQuestionAttemptDate(attempt), range).sort(
+    (left, right) => (getQuestionAttemptDate(right)?.getTime() || 0) - (getQuestionAttemptDate(left)?.getTime() || 0)
+  );
 }
 
 function findActivityStat(stats, key) {
@@ -1237,11 +1644,6 @@ function createSessionCard(session) {
   const main = document.createElement("div");
   main.className = "session-main";
 
-  const stateBadge = document.createElement("span");
-  stateBadge.className = `session-state ${session.state}`;
-  stateBadge.textContent = capitalize(session.state);
-  main.appendChild(stateBadge);
-
   const dayNode = document.createElement("span");
   dayNode.className = "session-day";
   dayNode.textContent = formatShortDate(session.dateKey);
@@ -1294,11 +1696,11 @@ function createSessionCard(session) {
   }
 
   if (session.phrases.length) {
-    detailLines.push(`Frases: ${formatCompactList(session.phrases, 4)}`);
+    detailLines.push(`Observacao: ${formatCompactList(session.phrases, 4)}`);
   }
 
-  if (session.notes) {
-    detailLines.push(`Observa\u00e7\u00e3o: ${session.notes}`);
+  if (session.notes && !session.phrases.length) {
+    detailLines.push(`Observacao: ${session.notes}`);
   }
 
   if (detailLines.length) {
@@ -1611,6 +2013,356 @@ function buildMonthlyWeekPoints(list) {
   return points;
 }
 
+function setTextContent(element, value) {
+  if (element) {
+    element.textContent = value;
+  }
+}
+
+function createInsightCard(title, copy) {
+  const card = document.createElement("article");
+  card.className = "insight-card";
+
+  const titleNode = document.createElement("strong");
+  titleNode.textContent = title;
+
+  const copyNode = document.createElement("p");
+  copyNode.textContent = copy;
+
+  card.appendChild(titleNode);
+  card.appendChild(copyNode);
+  return card;
+}
+
+function renderInsightCards(container, items, emptyMessage) {
+  if (!container) {
+    return;
+  }
+
+  container.replaceChildren();
+
+  if (!items.length) {
+    container.appendChild(createEmptyMessage(emptyMessage));
+    return;
+  }
+
+  items.forEach((item) => {
+    container.appendChild(createInsightCard(item.title, item.copy));
+  });
+}
+
+function renderListRows(container, rows, emptyMessage) {
+  if (!container) {
+    return;
+  }
+
+  container.replaceChildren();
+
+  if (!rows.length) {
+    container.appendChild(createEmptyMessage(emptyMessage));
+    return;
+  }
+
+  rows.forEach((row) => {
+    container.appendChild(createListRow(row.title, row.subtitle, row.meta));
+  });
+}
+
+function renderAnalyticsBarChart(container, points, emptyMessage, formatValue = (value) => String(value)) {
+  if (!container) {
+    return;
+  }
+
+  container.replaceChildren();
+
+  if (!points.length || points.every((point) => point.value <= 0)) {
+    container.appendChild(createEmptyMessage(emptyMessage));
+    return;
+  }
+
+  const maxValue = Math.max(...points.map((point) => point.value), 1);
+  const chart = document.createElement("div");
+  chart.className = "bar-chart";
+
+  points.forEach((point) => {
+    const column = document.createElement("div");
+    column.className = "bar-chart-column";
+
+    const valueNode = document.createElement("span");
+    valueNode.className = "bar-chart-value";
+    valueNode.textContent = point.value > 0 ? formatValue(point.value, point) : "0";
+
+    const track = document.createElement("div");
+    track.className = "bar-chart-track";
+
+    const fill = document.createElement("div");
+    fill.className = "bar-chart-fill";
+    fill.style.height = `${Math.max((point.value / maxValue) * 100, point.value > 0 ? 12 : 0)}%`;
+    track.appendChild(fill);
+
+    const labelNode = document.createElement("span");
+    labelNode.className = "bar-chart-label";
+    labelNode.textContent = point.label;
+
+    column.appendChild(valueNode);
+    column.appendChild(track);
+    column.appendChild(labelNode);
+    chart.appendChild(column);
+  });
+
+  container.appendChild(chart);
+}
+
+function getConsistencyLabel(percent) {
+  if (percent >= 75) {
+    return "Alta";
+  }
+
+  if (percent >= 45) {
+    return "Media";
+  }
+
+  return "Baixa";
+}
+
+function getLargestGapDays(list) {
+  const uniqueDates = [...new Set(list.map((item) => toDateKey(getSessionStartDate(item))))].sort();
+
+  if (uniqueDates.length <= 1) {
+    return 0;
+  }
+
+  let largestGap = 0;
+
+  for (let index = 1; index < uniqueDates.length; index += 1) {
+    const currentDate = parseDateKey(uniqueDates[index]);
+    const previousDate = parseDateKey(uniqueDates[index - 1]);
+
+    if (!isValidDate(currentDate) || !isValidDate(previousDate)) {
+      continue;
+    }
+
+    const difference = Math.round((currentDate.getTime() - previousDate.getTime()) / 86400000) - 1;
+    largestGap = Math.max(largestGap, difference);
+  }
+
+  return largestGap;
+}
+
+function buildWeekdayAggregatePoints(list) {
+  return WEEKDAY_LABELS.map((label, index) => {
+    const value = sumMinutes(
+      list.filter((session) => {
+        const date = getSessionStartDate(session);
+        const weekdayIndex = date.getDay() === 0 ? 6 : date.getDay() - 1;
+        return weekdayIndex === index;
+      })
+    );
+
+    return { label, value };
+  });
+}
+
+function getMostActiveWeekday(list) {
+  return buildWeekdayAggregatePoints(list)
+    .sort((left, right) => right.value - left.value)
+    .find((point) => point.value > 0) || null;
+}
+
+function buildHourBucketPoints(list) {
+  const buckets = [
+    { label: "Madr", min: 0, max: 5, value: 0, count: 0 },
+    { label: "Manha", min: 6, max: 11, value: 0, count: 0 },
+    { label: "Tarde", min: 12, max: 17, value: 0, count: 0 },
+    { label: "Noite", min: 18, max: 23, value: 0, count: 0 },
+  ];
+
+  list.forEach((session) => {
+    const hour = getSessionStartDate(session).getHours();
+    const bucket = buckets.find((item) => hour >= item.min && hour <= item.max);
+
+    if (!bucket) {
+      return;
+    }
+
+    bucket.value += Number(session.minutes) || 0;
+    bucket.count += 1;
+  });
+
+  return buckets.map((bucket) => ({
+    label: bucket.label,
+    value: roundOne(bucket.value),
+    count: bucket.count,
+  }));
+}
+
+function getDominantStudyWindow(list) {
+  return buildHourBucketPoints(list)
+    .sort((left, right) => {
+      if (right.value !== left.value) return right.value - left.value;
+      return right.count - left.count;
+    })
+    .find((bucket) => bucket.value > 0) || null;
+}
+
+function getAverageSessionMinutes(list) {
+  if (!list.length) {
+    return 0;
+  }
+
+  return roundOne(sumMinutes(list) / list.length);
+}
+
+function getLatestObservationText(session) {
+  if (!session) {
+    return "";
+  }
+
+  if (session.phrases.length) {
+    return session.phrases[0];
+  }
+
+  if (session.notes) {
+    return session.notes;
+  }
+
+  return session.topicText || "";
+}
+
+function buildQuestionDimensionStats(list, key, labelAccessor) {
+  const statsMap = new Map();
+
+  list.forEach((attempt) => {
+    const rawValue = String(attempt?.[key] || "").trim();
+    const statKey = rawValue || "nao-informado";
+    const current = statsMap.get(statKey) || {
+      key: statKey,
+      label: labelAccessor(attempt),
+      total: 0,
+      correct: 0,
+      wrong: 0,
+      topics: [],
+    };
+
+    current.total += 1;
+    current.correct += attempt.isCorrect ? 1 : 0;
+    current.wrong += attempt.isCorrect ? 0 : 1;
+
+    if (attempt.topicName) {
+      current.topics.push(attempt.topicName);
+    }
+
+    statsMap.set(statKey, current);
+  });
+
+  return [...statsMap.values()]
+    .map((item) => ({
+      ...item,
+      accuracy: item.total ? roundOne((item.correct / item.total) * 100) : 0,
+      topics: uniqueItems(item.topics),
+    }))
+    .sort((left, right) => {
+      if (right.total !== left.total) return right.total - left.total;
+      if (right.accuracy !== left.accuracy) return right.accuracy - left.accuracy;
+      return left.label.localeCompare(right.label);
+    });
+}
+
+function buildQuestionTrendPoints(list, limit = 8) {
+  const grouped = new Map();
+
+  [...list]
+    .sort((left, right) => (getQuestionAttemptDate(right)?.getTime() || 0) - (getQuestionAttemptDate(left)?.getTime() || 0))
+    .forEach((attempt) => {
+    const dateKey = toDateKey(getQuestionAttemptDate(attempt) || new Date());
+    const current = grouped.get(dateKey) || { total: 0, correct: 0 };
+    current.total += 1;
+    current.correct += attempt.isCorrect ? 1 : 0;
+    grouped.set(dateKey, current);
+    });
+
+  return [...grouped.entries()]
+    .sort((left, right) => left[0].localeCompare(right[0]))
+    .slice(-limit)
+    .map(([dateKey, data]) => ({
+      label: formatShortDate(dateKey),
+      value: data.total ? roundOne((data.correct / data.total) * 100) : 0,
+    }));
+}
+
+function buildEssayCompetencyMetrics(list) {
+  return ESSAY_COMPETENCY_DEFINITIONS.map((definition) => {
+    const scores = list.map((submission) => Number(submission?.scores?.[`competency${definition.id}`]) || 0);
+    const average = scores.length
+      ? roundOne(scores.reduce((total, score) => total + score, 0) / scores.length)
+      : 0;
+    const minScore = scores.length ? Math.min(...scores) : 0;
+    const maxScore = scores.length ? Math.max(...scores) : 0;
+
+    return {
+      ...definition,
+      average,
+      variation: maxScore - minScore,
+      latest: scores[0] || 0,
+      previous: scores[1] || 0,
+    };
+  }).sort((left, right) => {
+    if (right.average !== left.average) return right.average - left.average;
+    return left.id - right.id;
+  });
+}
+
+function buildEssayThemeStats(list) {
+  const statsMap = new Map();
+
+  list.forEach((submission) => {
+    const themeTitle = String(submission?.themeTitle || "").trim() || "Tema nao informado";
+    const current = statsMap.get(themeTitle) || {
+      title: themeTitle,
+      total: 0,
+      latestScore: 0,
+      latestDate: "",
+    };
+
+    current.total += 1;
+    current.latestScore = Number(submission?.totalScore) || 0;
+    current.latestDate = getEssayReferenceDate(submission)?.toISOString() || "";
+    statsMap.set(themeTitle, current);
+  });
+
+  return [...statsMap.values()].sort((left, right) => {
+    if (right.total !== left.total) return right.total - left.total;
+    return left.title.localeCompare(right.title);
+  });
+}
+
+function buildEnglishObservationRows(list, limit = 5) {
+  return sortSessionsByStartDesc(list)
+    .map((session) => {
+      const observation = getLatestObservationText(session);
+
+      if (!observation) {
+        return null;
+      }
+
+      return {
+        title: observation,
+        subtitle: `${session.subjectLabel} - ${session.topicText || "Pratica registrada"}`,
+        meta: formatShortDate(session.dateKey),
+      };
+    })
+    .filter(Boolean)
+    .slice(0, limit);
+}
+
+function getObservationKeyword(list) {
+  const observation = list
+    .map((session) => getLatestObservationText(session))
+    .find(Boolean);
+
+  return observation || "Nenhuma";
+}
+
 function readStoredJson(key) {
   try {
     const rawValue = window.localStorage.getItem(key);
@@ -1701,7 +2453,22 @@ async function loadEssaySubmissionsFromApi() {
   );
 }
 
+async function loadRoutinePlanFromApi() {
+  try {
+    const response = await window.Start5Auth.apiRequest("/api/routine/plans/current");
+    routinePlan = response?.plan || null;
+  } catch (error) {
+    console.error("Erro ao carregar rotina atual:", error);
+    routinePlan = null;
+  }
+}
+
 function openMenu() {
+  if (window.Start5Main?.sidebarNavigation?.isManaged) {
+    window.Start5Main.openSidebar();
+    return;
+  }
+
   body.classList.add("menu-open");
 
   if (menuToggle) {
@@ -1711,6 +2478,11 @@ function openMenu() {
 }
 
 function closeMenu() {
+  if (window.Start5Main?.sidebarNavigation?.isManaged) {
+    window.Start5Main.closeSidebar();
+    return;
+  }
+
   body.classList.remove("menu-open");
 
   if (menuToggle) {
@@ -1720,6 +2492,11 @@ function closeMenu() {
 }
 
 function toggleMenu() {
+  if (window.Start5Main?.sidebarNavigation?.isManaged) {
+    window.Start5Main.toggleSidebar();
+    return;
+  }
+
   if (body.classList.contains("menu-open")) {
     closeMenu();
     return;
@@ -1728,35 +2505,57 @@ function toggleMenu() {
   openMenu();
 }
 
-function updateStateButtons() {
-  stateButtons.forEach((button) => {
-    const isActive = button.dataset.state === selectedState;
-    button.classList.toggle("is-active", isActive);
-    button.setAttribute("aria-pressed", String(isActive));
-  });
+function getDashboardViewFromHash() {
+  const hash = String(window.location.hash || "").toLowerCase();
+
+  if (hash === "#semanal") {
+    return "weekly";
+  }
+
+  if (hash === "#mensal") {
+    return "monthly";
+  }
+
+  return "overview";
 }
 
-function updateDurationButtons() {
-  const allowedDurations = new Set(ALLOWED_DURATIONS_BY_STATE[selectedState] || []);
+function getDashboardViewCopy(view) {
+  if (view === "weekly") {
+    return "Leitura semanal do seu ritmo, da sua constancia e da pressao que mais puxou seus estudos.";
+  }
 
-  durationButtons.forEach((button) => {
-    const durationKey = button.dataset.duration || "";
-    const isDisabled = !allowedDurations.has(durationKey);
-    const isActive = durationKey === String(selectedDuration);
+  if (view === "monthly") {
+    return "Leitura mensal de evolucao, consistencia e como suas materias se comportaram no recorte maior.";
+  }
 
-    button.disabled = isDisabled;
-    button.classList.toggle("is-disabled", isDisabled);
-    button.classList.toggle("is-active", isActive && !isDisabled);
-    button.setAttribute("aria-pressed", String(isActive && !isDisabled));
+  return "Visao geral do agora: foco do dia, resumo de hoje, rotina ativa e o que esta realmente em movimento.";
+}
+
+function setDashboardView(view, { updateHash = true } = {}) {
+  const normalizedView = ["overview", "weekly", "monthly"].includes(view) ? view : "overview";
+
+  panelTabButtons.forEach((button) => {
+    const isActive = button.dataset.panelTab === normalizedView;
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-selected", String(isActive));
   });
 
-  if (!allowedDurations.has(String(selectedDuration))) {
-    selectedDuration = AUTO_DURATION_BY_STATE[selectedState];
-    updateDurationButtons();
+  panelSections.forEach((section) => {
+    section.hidden = section.dataset.panelSection !== normalizedView;
+  });
+
+  if (dashboardViewCopy) {
+    dashboardViewCopy.textContent = getDashboardViewCopy(normalizedView);
+  }
+
+  if (!updateHash) {
     return;
   }
 
-  extraMinutesBox?.classList.toggle("is-visible", String(selectedDuration) === "extra");
+  const nextHash =
+    normalizedView === "weekly" ? "#semanal" : normalizedView === "monthly" ? "#mensal" : "";
+  const nextUrl = `${window.location.pathname}${nextHash}`;
+  window.history.replaceState(null, "", nextUrl);
 }
 
 function updateSubjectSelectionUI() {
@@ -1871,6 +2670,7 @@ function renderTokenList(container, items, tokenType) {
 function updateTokenLists() {
   renderTokenList(verbsTokenList, selectedVerbs, "verb");
   renderTokenList(phrasesTokenList, selectedPhrases, "phrase");
+  refreshSessionActionsVisibility();
 }
 
 function addStructuredItems(kind, value) {
@@ -1982,18 +2782,14 @@ function getFilteredVerbSuggestions(query, limit = MAX_VERB_SUGGESTIONS) {
   return [...prefixMatches, ...partialMatches].slice(0, limit);
 }
 
-function getDefaultVerbPickerStatus() {
-  return isCustomVerbMode
-    ? "Modo manual ativo. Digite qualquer verbo em ingl\u00eas."
-    : "Sugest\u00f5es com os verbos mais conhecidos primeiro.";
-}
-
-function setVerbPickerStatus(message = "") {
+function setVerbPickerStatus() {
   if (!verbPickerStatus) {
     return;
   }
 
-  verbPickerStatus.textContent = message || getDefaultVerbPickerStatus();
+  verbPickerStatus.textContent = selectedVerbs.length
+    ? `Verbo estudado: ${formatCompactList(selectedVerbs, 3)}`
+    : "Verbo estudado";
 }
 
 function updateVerbModeButton() {
@@ -2012,14 +2808,14 @@ function updateVerbInputPlaceholder() {
 
   verbsEntryInput.placeholder = isCustomVerbMode
     ? "Digite o verbo que estiver estudando"
-    : "Busque um verbo comum";
+    : "Busque um Verbo comum";
 }
 
-function setCustomVerbMode(nextMode, message = "") {
+function setCustomVerbMode(nextMode) {
   isCustomVerbMode = Boolean(nextMode);
   updateVerbInputPlaceholder();
   updateVerbModeButton();
-  setVerbPickerStatus(message);
+  setVerbPickerStatus();
   renderVerbSuggestions();
 }
 
@@ -2054,7 +2850,7 @@ function renderVerbSuggestions() {
   if (!suggestions.length) {
     verbSuggestions.appendChild(
       createEmptyMessage(
-        "Nenhum verbo parecido apareceu na lista principal.",
+        "Nenhum verbo parecido apareceu na lista principal. Use Outro verbo para digitar manualmente.",
         "verb-suggestions-empty"
       )
     );
@@ -2067,6 +2863,8 @@ function renderVerbSuggestions() {
   verbSuggestions.appendChild(
     createVerbSuggestionButton("__custom__", "Outro verbo", "is-custom")
   );
+
+  refreshSessionActionsVisibility();
 }
 
 function addVerbFromPicker(value) {
@@ -2083,7 +2881,7 @@ function addVerbFromPicker(value) {
     verbsEntryInput.focus();
   }
 
-  setVerbPickerStatus("");
+  setVerbPickerStatus();
   renderVerbSuggestions();
 }
 
@@ -2100,7 +2898,7 @@ function commitVerbInput() {
 
   if (hasSelectedVerb(normalizedValue)) {
     verbsEntryInput.value = "";
-    setVerbPickerStatus(`"${normalizedValue}" ja foi adicionado.`);
+    setVerbPickerStatus();
     renderVerbSuggestions();
     return;
   }
@@ -2125,15 +2923,12 @@ function commitVerbInput() {
   }
 
   if (!prefixMatches.length) {
-    setCustomVerbMode(
-      true,
-      `"${normalizedValue}" n\u00e3o apareceu na lista principal. Agora voc\u00ea pode adicionar manualmente.`
-    );
+    setCustomVerbMode(true);
     verbsEntryInput.focus();
     return;
   }
 
-  setVerbPickerStatus("Escolha um verbo da lista ou use Outro verbo.");
+  setVerbPickerStatus();
   renderVerbSuggestions();
 }
 
@@ -2144,7 +2939,7 @@ function bindVerbInput() {
 
   updateVerbInputPlaceholder();
   updateVerbModeButton();
-  setVerbPickerStatus("");
+  setVerbPickerStatus();
   renderVerbSuggestions();
 
   verbsEntryInput.addEventListener("keydown", (event) => {
@@ -2158,24 +2953,17 @@ function bindVerbInput() {
     const normalizedValue = normalizeVerbValue(verbsEntryInput.value);
 
     if (!normalizedValue) {
-      setVerbPickerStatus("");
+      setVerbPickerStatus();
       renderVerbSuggestions();
       return;
     }
 
     if (isCustomVerbMode) {
-      setVerbPickerStatus("Modo manual ativo. Digite o verbo e clique em Adicionar.");
+      setVerbPickerStatus();
       return;
     }
 
-    const suggestions = getFilteredVerbSuggestions(normalizedValue);
-
-    if (!suggestions.length) {
-      setVerbPickerStatus("Esse verbo n\u00e3o est\u00e1 na lista principal. Use Outro verbo.");
-    } else {
-      setVerbPickerStatus("Escolha um verbo sugerido ou continue digitando.");
-    }
-
+    setVerbPickerStatus();
     renderVerbSuggestions();
   });
 
@@ -2230,26 +3018,19 @@ function updateDetailFieldsVisibility() {
   updateTokenLists();
   updateVerbInputPlaceholder();
   updateVerbModeButton();
-  setVerbPickerStatus("");
+  setVerbPickerStatus();
   renderVerbSuggestions();
   renderCustomSubjectSuggestions();
+  refreshSessionActionsVisibility();
 }
 
 function getMinutesToSave() {
-  if (String(selectedDuration) !== "extra") {
-    return Number(selectedDuration) || 0;
-  }
-
-  const value = Number(extraMinutesInput?.value);
+  const value = Number(studyMinutesInput?.value);
   return Number.isFinite(value) ? value : 0;
 }
 
 function setModalMode(mode) {
   const isEditing = mode === "edit";
-
-  if (sessionModalModeLabel) {
-    sessionModalModeLabel.textContent = isEditing ? "Edi\u00e7\u00e3o" : "Nova pr\u00e1tica";
-  }
 
   if (sessionModalTitle) {
     sessionModalTitle.textContent = isEditing ? "Editar pr\u00e1tica" : "Registrar pr\u00e1tica";
@@ -2266,44 +3047,33 @@ function updateSessionHelper() {
   }
 
   const minutes = getMinutesToSave();
+  const hasMinutesValue = String(studyMinutesInput?.value || "").trim() !== "";
   const customSubjectName = String(customSubjectInput?.value || "").trim();
   const subjectLabel = getSubjectLabel(selectedSubjectKey, customSubjectName);
   const topicText = String(topicInput?.value || "").trim();
 
+  if (!hasMinutesValue) {
+    sessionHelper.textContent = "Informe o tempo, a materia e o que voce estudou hoje.";
+    return;
+  }
+
+  if (!Number.isFinite(minutes) || minutes < MIN_SESSION_MINUTES) {
+    sessionHelper.textContent = `Informe pelo menos ${MIN_SESSION_MINUTES} min de estudo para salvar a pratica.`;
+    return;
+  }
+
   if (!topicText) {
-    sessionHelper.textContent = "Escolha a mat\u00e9ria e descreva o que voc\u00ea estudou hoje.";
+    sessionHelper.textContent = "Escolha a materia e descreva o que voce estudou hoje.";
     return;
   }
 
   if (selectedSubjectKey === "outras" && !customSubjectName) {
-    sessionHelper.textContent = "Digite o nome da mat\u00e9ria para continuar.";
-    return;
-  }
-
-  if (selectedSubjectKey === DEFAULT_SUBJECT_KEY && selectedVerbs.length) {
-    sessionHelper.textContent =
-      `${capitalize(selectedState)}, ${formatMinutesOnly(minutes || 0)} de ${subjectLabel}. Tema: ${topicText}.`;
+    sessionHelper.textContent = "Digite o nome da materia para continuar.";
     return;
   }
 
   sessionHelper.textContent =
-    `${capitalize(selectedState)}, ${formatMinutesOnly(minutes || 0)} de ${subjectLabel}. Tema: ${topicText}.`;
-}
-
-function setSelectedState(nextState) {
-  if (!VALID_STATES.has(nextState)) {
-    return;
-  }
-
-  selectedState = nextState;
-
-  if (!ALLOWED_DURATIONS_BY_STATE[selectedState].includes(String(selectedDuration))) {
-    selectedDuration = AUTO_DURATION_BY_STATE[selectedState];
-  }
-
-  updateStateButtons();
-  updateDurationButtons();
-  updateSessionHelper();
+    `${formatMinutesOnly(minutes)} de ${subjectLabel}. Tema: ${topicText}.`;
 }
 
 function setSelectedSubject(nextSubjectKey) {
@@ -2329,23 +3099,20 @@ function setSelectedSubject(nextSubjectKey) {
 
 function resetSessionForm() {
   editingSessionId = null;
-  selectedState = "normal";
-  selectedDuration = AUTO_DURATION_BY_STATE.normal;
   selectedSubjectKey = getFocusSubjectConfig().subjectKey;
   selectedVerbs = [];
   selectedPhrases = [];
+  selectedNotes = "";
   isCustomVerbMode = false;
 
-  if (extraMinutesInput) extraMinutesInput.value = "";
+  if (studyMinutesInput) studyMinutesInput.value = "";
   if (customSubjectInput) customSubjectInput.value = getFocusSubjectConfig().customSubjectName || "";
   if (topicInput) topicInput.value = "";
-  if (notesInput) notesInput.value = "";
   if (verbsEntryInput) verbsEntryInput.value = "";
   if (phrasesEntryInput) phrasesEntryInput.value = "";
 
+  updateStudyMinutesValidity();
   setModalMode("create");
-  updateStateButtons();
-  updateDurationButtons();
   updateSubjectSelectionUI();
   updateDetailFieldsVisibility();
   updateTokenLists();
@@ -2354,18 +3121,14 @@ function resetSessionForm() {
 
 function populateSessionForm(session) {
   editingSessionId = session.id;
-  selectedState = session.state;
   selectedSubjectKey = session.subjectKey || DEFAULT_SUBJECT_KEY;
   selectedVerbs = uniqueVerbItems(session.verbs);
   selectedPhrases = [...session.phrases];
+  selectedNotes = String(session.notes || "");
   isCustomVerbMode = false;
 
-  if (session.minutes > 20 || !["10", "15", "20"].includes(String(session.minutes))) {
-    selectedDuration = "extra";
-    if (extraMinutesInput) extraMinutesInput.value = String(session.minutes);
-  } else {
-    selectedDuration = String(session.minutes);
-    if (extraMinutesInput) extraMinutesInput.value = "";
+  if (studyMinutesInput) {
+    studyMinutesInput.value = String(Math.round(Number(session.minutes) || 0));
   }
 
   if (customSubjectInput) {
@@ -2376,16 +3139,11 @@ function populateSessionForm(session) {
     topicInput.value = session.topicText || "";
   }
 
-  if (notesInput) {
-    notesInput.value = session.notes || "";
-  }
-
   if (verbsEntryInput) verbsEntryInput.value = "";
   if (phrasesEntryInput) phrasesEntryInput.value = "";
 
+  updateStudyMinutesValidity();
   setModalMode("edit");
-  updateStateButtons();
-  updateDurationButtons();
   updateSubjectSelectionUI();
   updateDetailFieldsVisibility();
   updateTokenLists();
@@ -2404,9 +3162,12 @@ function openSessionModal(session = null) {
   }
 
   closeMenu();
-  modalBackdrop.classList.add("is-visible");
-  modalBackdrop.setAttribute("aria-hidden", "false");
+  showModalLayer(modalBackdrop);
+  if (sessionForm) {
+    sessionForm.scrollTop = 0;
+  }
   body.classList.add("modal-open");
+  refreshSessionActionsVisibility();
 }
 
 function closeSessionModal() {
@@ -2414,9 +3175,9 @@ function closeSessionModal() {
     return;
   }
 
-  modalBackdrop.classList.remove("is-visible");
-  modalBackdrop.setAttribute("aria-hidden", "true");
+  hideModalLayer(modalBackdrop);
   body.classList.remove("modal-open");
+  setSessionActionsRevealed(false);
 }
 
 function setSaveSessionLoading(isLoading) {
@@ -2449,8 +3210,7 @@ function openDeleteModal(session) {
       `${formatShortDate(session.dateKey)} • ${formatMinutesOnly(session.minutes)} • ${session.subjectLabel} • ${session.topicText}`;
   }
 
-  deleteSessionBackdrop.classList.add("is-visible");
-  deleteSessionBackdrop.setAttribute("aria-hidden", "false");
+  showModalLayer(deleteSessionBackdrop);
   body.classList.add("modal-open");
 }
 
@@ -2460,8 +3220,7 @@ function closeDeleteModal() {
   }
 
   pendingDeleteSessionId = null;
-  deleteSessionBackdrop.classList.remove("is-visible");
-  deleteSessionBackdrop.setAttribute("aria-hidden", "true");
+  hideModalLayer(deleteSessionBackdrop);
   body.classList.remove("modal-open");
 }
 
@@ -2491,14 +3250,13 @@ function renderProgress() {
   const yesterdayTotal = sumMinutes(getSessionsByDate(yesterdayKey));
   const currentWeekMinutes = sumMinutes(getCurrentWeekSessions());
   const previousWeekMinutes = sumMinutes(getPreviousWeekSessions());
-  const activeState = getCurrentState(todaySessions.length ? todaySessions : sessions);
-  const goal = DAILY_GOALS[activeState] || DAILY_GOALS.normal;
+  const goal = MIN_SESSION_MINUTES;
   const streak = getStreak();
 
   scoreNumber.textContent = `${goal > 0 ? Math.round((todayTotal / goal) * 100) : 0}%`;
   vsYesterdayValue.textContent = formatSignedMinutes(todayTotal - yesterdayTotal);
   vsMonthValue.textContent = formatSignedMinutes(currentWeekMinutes - previousWeekMinutes);
-  currentStateValue.textContent = capitalize(activeState);
+  currentStateValue.textContent = "Livre";
   goalValue.textContent = formatMinutesOnly(goal);
   doneValue.textContent = formatMinutesOnly(todayTotal);
   streakValue.textContent = `${streak} dia${streak === 1 ? "" : "s"}`;
@@ -2538,7 +3296,7 @@ function renderTodaySummary() {
   todayDateLabel.textContent = formatFullDate(todayKey);
   todayMinutesValue.textContent = formatMinutesOnly(todayMinutes);
   todayCountValue.textContent = String(todaySessions.length);
-  todayStateValue.textContent = capitalize(latestSession?.state || "normal");
+  todayStateValue.textContent = "Livre";
   todayActivitiesValue.textContent = subjectStats.length
     ? formatCompactList(subjectStats.slice(0, 2).map((item) => item.label), 2)
     : "Nenhuma";
@@ -2635,6 +3393,33 @@ function renderFocusSubject() {
 
   focusSubjectInsightText.textContent =
     `${focusSubject.label} somou ${formatMinutesOnly(focusMinutes)} em ${focusDays} dia${focusDays === 1 ? "" : "s"} ativo${focusDays === 1 ? "" : "s"}. ${comparisonText}`;
+}
+
+function renderRoutineSummary() {
+  if (!routineWeekLabel) {
+    return;
+  }
+
+  if (!routinePlan) {
+    routineWeekLabel.textContent = "Semana ainda não gerada";
+    routineExecutionValue.textContent = "0%";
+    routinePriorityValue.textContent = "Defina a rotina";
+    routineReinforcementValue.textContent = "Nenhum";
+    routineMinutesValue.textContent = "0 min • 0 min";
+    routineSummaryText.textContent =
+      "Monte sua rotina semanal para distribuir matérias, reforços e comparar o planejado com o que realmente foi estudado.";
+    return;
+  }
+
+  routineWeekLabel.textContent = formatWeekRangeLabel(routinePlan.weekStart, routinePlan.weekEnd);
+  routineExecutionValue.textContent = formatPercent(routinePlan.executionPercent);
+  routinePriorityValue.textContent = routinePlan.nextPriority?.subjectLabel || "Semana organizada";
+  routineReinforcementValue.textContent = routinePlan.reinforcementSubjects?.[0]?.subjectLabel || "Sem reforço extra";
+  routineMinutesValue.textContent =
+    `${formatMinutesOnly(routinePlan.totalPlannedMinutes)} • ${formatMinutesOnly(routinePlan.totalActualMinutes)}`;
+  routineSummaryText.textContent =
+    String(routinePlan.summaryText || "").trim() ||
+    "Sua rotina já está pronta para comparar o planejado com o realizado nesta semana.";
 }
 
 function renderWeeklyAnalysis() {
@@ -2871,12 +3656,666 @@ function renderMonthlyAnalysis() {
   );
 }
 
-function renderDashboard() {
-  renderProgress();
-  renderFocusSubject();
+function setAnalyticsRange(nextRange) {
+  if (!ANALYTICS_RANGE_DEFINITIONS[nextRange]) {
+    return;
+  }
+
+  analyticsRange = nextRange;
+  renderDashboard();
+}
+
+function updateAnalyticsRangeUI() {
+  analyticsRangeButtons.forEach((button) => {
+    const isActive = button.dataset.analyticsRange === analyticsRange;
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-selected", String(isActive));
+  });
+}
+
+function renderDashboardHero(rangeSessions, rangeEssays, rangeQuestions) {
+  const rangeConfig = getAnalyticsRangeConfig();
+  const previousSessions = getSessionsForPreviousRange();
+  const currentMinutes = sumMinutes(rangeSessions);
+  const previousMinutes = sumMinutes(previousSessions);
+  const difference = roundOne(currentMinutes - previousMinutes);
+  const modules = [];
+
+  if (rangeSessions.length) {
+    modules.push("rotina");
+  }
+
+  if (rangeEssays.length) {
+    modules.push("redacao");
+  }
+
+  if (rangeQuestions.length) {
+    modules.push("questoes");
+  }
+
+  if (rangeSessions.some((session) => session.subjectKey === DEFAULT_SUBJECT_KEY)) {
+    modules.push("ingles");
+  }
+
+  setTextContent(
+    analyticsDom.analysisWindowLabel,
+    analyticsRange === "all" ? `Leitura de ${rangeConfig.label}` : `Leitura dos ${rangeConfig.label}`
+  );
+  setTextContent(
+    analyticsDom.analysisCoverageLabel,
+    modules.length
+      ? `Cobertura ativa: ${formatCompactList(uniqueItems(modules), 4)}.`
+      : "Cobertura inicial: registre praticas para liberar as leituras."
+  );
+
+  if (!rangeSessions.length && !rangeEssays.length && !rangeQuestions.length) {
+    setTextContent(
+      analyticsDom.analysisPulseLabel,
+      "Seu painel esta pronto. Registre pratica, redacao e questoes para transformar uso em leitura de desempenho."
+    );
+    return;
+  }
+
+  if (difference > 0) {
+    setTextContent(
+      analyticsDom.analysisPulseLabel,
+      `Seu volume subiu ${formatMinutesOnly(difference)} em relacao ao recorte anterior, com ${countActiveDays(rangeSessions)} dia(s) ativo(s).`
+    );
+    return;
+  }
+
+  if (difference < 0) {
+    setTextContent(
+      analyticsDom.analysisPulseLabel,
+      `Seu ritmo caiu ${formatMinutesOnly(Math.abs(difference))} frente ao recorte anterior. Uma sessao curta hoje ja ajuda a retomar tracao.`
+    );
+    return;
+  }
+
+  setTextContent(
+    analyticsDom.analysisPulseLabel,
+    "Seu volume ficou estavel no recorte atual. Agora vale observar qualidade, constancia e onde o desempenho esta oscilando."
+  );
+}
+
+function renderOverviewAnalytics(rangeSessions, rangeEssays, rangeQuestions) {
+  const totalMinutes = sumMinutes(rangeSessions);
+  const streak = getStreak();
+  const questionCount = rangeQuestions.length;
+  const essayCount = rangeEssays.length;
+  const questionAccuracy = questionCount
+    ? roundOne((rangeQuestions.filter((attempt) => attempt.isCorrect).length / questionCount) * 100)
+    : 0;
+  const essayAverage = getEssayAverageScore(rangeEssays);
+  const performanceValues = [];
+  const subjectStats = buildSubjectStats(rangeSessions);
+  const weakestEssayCompetency = buildEssayCompetencyMetrics(rangeEssays).slice(-1)[0] || null;
+  const questionSubjectStats = buildQuestionDimensionStats(
+    rangeQuestions,
+    "subjectName",
+    (attempt) => attempt.subjectName
+  );
+  const weakestQuestionSubject = [...questionSubjectStats]
+    .filter((item) => item.total >= 2)
+    .sort((left, right) => {
+      if (left.accuracy !== right.accuracy) return left.accuracy - right.accuracy;
+      return right.total - left.total;
+    })[0] || null;
+  const activeDays = countActiveDays(rangeSessions);
+  const rangeDays = getRangeDayCount();
+  const consistencyPercent = roundOne((activeDays / rangeDays) * 100);
+
+  if (questionCount) {
+    performanceValues.push(questionAccuracy);
+  }
+
+  if (essayCount) {
+    performanceValues.push(roundOne(essayAverage / 10));
+  }
+
+  if (!performanceValues.length && rangeSessions.length) {
+    performanceValues.push(consistencyPercent);
+  }
+
+  const averagePerformance = performanceValues.length
+    ? roundOne(performanceValues.reduce((total, value) => total + value, 0) / performanceValues.length)
+    : 0;
+  const strongestArea = subjectStats[0] || null;
+  const strongestAreaLabel = strongestArea?.label || (essayCount ? "Redacao" : questionCount ? "Questoes" : "Sem leitura");
+  const strongestAreaHelper = strongestArea
+    ? `${strongestArea.count} registro(s) e ${formatMinutesOnly(strongestArea.minutes)} no recorte.`
+    : essayCount
+      ? `${essayCount} redacao(oes) avaliadas no recorte.`
+      : questionCount
+        ? `${questionCount} tentativa(s) de questao no periodo.`
+        : "O modulo dominante aparece aqui.";
+  const weakestAreaLabel = weakestQuestionSubject
+    ? weakestQuestionSubject.label
+    : weakestEssayCompetency
+      ? `${weakestEssayCompetency.shortLabel} | ${weakestEssayCompetency.label}`
+      : rangeSessions.length
+        ? "Constancia"
+        : "Sem leitura";
+
+  setTextContent(analyticsDom.overviewTotalMinutesValue, formatMinutesOnly(totalMinutes));
+  setTextContent(
+    analyticsDom.overviewTotalMinutesHelper,
+    totalMinutes ? `${rangeSessions.length} pratica(s) somando volume real neste recorte.` : "Sem minutos registrados ainda."
+  );
+  setTextContent(analyticsDom.overviewStreakValue, `${streak} dia${streak === 1 ? "" : "s"}`);
+  setTextContent(
+    analyticsDom.overviewStreakHelper,
+    streak ? "Sequencia atual considerando dias seguidos com estudo." : "Sua proxima sessao abre uma nova sequencia."
+  );
+  setTextContent(analyticsDom.overviewQuestionCountValue, String(questionCount));
+  setTextContent(
+    analyticsDom.overviewQuestionCountHelper,
+    questionCount ? `${formatPercent(questionAccuracy)} de acerto nas tentativas do recorte.` : "Estrutura pronta para integrar tentativas."
+  );
+  setTextContent(analyticsDom.overviewEssayCountValue, String(essayCount));
+  setTextContent(
+    analyticsDom.overviewEssayCountHelper,
+    essayCount ? `Media atual de ${formatEssayScore(essayAverage)} nas redacoes avaliadas.` : "Quando houver correcoes, o volume entra aqui."
+  );
+  setTextContent(analyticsDom.overviewAveragePerformanceValue, formatPercent(averagePerformance));
+  setTextContent(
+    analyticsDom.overviewAveragePerformanceHelper,
+    performanceValues.length ? "Combinando o que ja existe no sistema hoje." : "Assim que houver desempenho mensuravel, este indice sobe."
+  );
+  setTextContent(analyticsDom.overviewStrongAreaValue, strongestAreaLabel);
+  setTextContent(analyticsDom.overviewStrongAreaHelper, strongestAreaHelper);
+  setTextContent(analyticsDom.overviewWeakAreaValue, weakestAreaLabel);
+  setTextContent(
+    analyticsDom.overviewWeakAreaHelper,
+    weakestQuestionSubject
+      ? `${formatPercent(weakestQuestionSubject.accuracy)} de acerto em ${weakestQuestionSubject.total} tentativa(s).`
+      : weakestEssayCompetency
+        ? `Media de ${formatEssayScore(weakestEssayCompetency.average)} nesta competencia.`
+        : "O principal gargalo fica claro aqui."
+  );
+  setTextContent(analyticsDom.overviewConsistencyValue, getConsistencyLabel(consistencyPercent));
+  setTextContent(
+    analyticsDom.overviewConsistencyHelper,
+    rangeSessions.length ? `${activeDays} dia(s) ativos em ${rangeDays} dia(s) observados.` : "Leitura baseada em frequencia e ritmo."
+  );
+}
+
+function renderRoutineAnalytics(rangeSessions) {
+  const activeDays = countActiveDays(rangeSessions);
+  const rangeDays = getRangeDayCount();
+  const totalMinutes = sumMinutes(rangeSessions);
+  const averageDayMinutes = activeDays ? roundOne(totalMinutes / activeDays) : 0;
+  const averageSessionMinutes = getAverageSessionMinutes(rangeSessions);
+  const frequencyPercent = activeDays ? roundOne((activeDays / rangeDays) * 100) : 0;
+  const dominantWindow = getDominantStudyWindow(rangeSessions);
+  const weekdayPoints = buildWeekdayAggregatePoints(rangeSessions);
+  const hourPoints = buildHourBucketPoints(rangeSessions);
+  const strongestWeekday = getMostActiveWeekday(rangeSessions);
+  const largestGap = getLargestGapDays(rangeSessions);
+
+  setTextContent(analyticsDom.routineDaysStudiedValue, String(activeDays));
+  setTextContent(
+    analyticsDom.routineDaysStudiedHelper,
+    activeDays ? `Voce estudou em ${activeDays} dia(s) do recorte atual.` : "Nenhum dia ativo no recorte."
+  );
+  setTextContent(analyticsDom.routineBestHourValue, dominantWindow?.label || "Sem leitura");
+  setTextContent(
+    analyticsDom.routineBestHourHelper,
+    dominantWindow ? `${dominantWindow.count} sessao(oes) e ${formatMinutesOnly(dominantWindow.value)} nessa faixa.` : "Seu pico de atividade aparece aqui."
+  );
+  setTextContent(analyticsDom.routineAverageDayValue, formatMinutesOnly(averageDayMinutes));
+  setTextContent(analyticsDom.routineAverageDayHelper, activeDays ? "Carga media por dia realmente estudado." : "A carga media por dia estudado.");
+  setTextContent(analyticsDom.routineAverageSessionValue, formatMinutesOnly(averageSessionMinutes));
+  setTextContent(
+    analyticsDom.routineAverageSessionHelper,
+    rangeSessions.length ? `${rangeSessions.length} pratica(s) no recorte.` : "O tamanho tipico das suas praticas."
+  );
+  setTextContent(analyticsDom.routineFrequencyValue, formatPercent(frequencyPercent));
+  setTextContent(
+    analyticsDom.routineFrequencyHelper,
+    `Consistencia classificada como ${getConsistencyLabel(frequencyPercent).toLowerCase()}.`
+  );
+  setTextContent(analyticsDom.routineGapValue, `${largestGap} dia${largestGap === 1 ? "" : "s"}`);
+  setTextContent(
+    analyticsDom.routineGapHelper,
+    largestGap ? "Maior intervalo sem registros dentro do recorte." : "Sem pausas longas entre dias ativos."
+  );
+
+  renderAnalyticsBarChart(
+    analyticsDom.routineWeekChart,
+    weekdayPoints,
+    "Sem dados suficientes para o ritmo semanal.",
+    (value) => formatMinutesOnly(value)
+  );
+  renderAnalyticsBarChart(
+    analyticsDom.routineHourChart,
+    hourPoints,
+    "Sem horario dominante ainda.",
+    (value) => formatMinutesOnly(value)
+  );
+  renderListRows(
+    analyticsDom.routineBehaviorList,
+    [
+      strongestWeekday
+        ? {
+            title: `${strongestWeekday.label} concentra seu melhor volume`,
+            subtitle: "Dia da semana com maior carga acumulada.",
+            meta: formatMinutesOnly(strongestWeekday.value),
+          }
+        : null,
+      dominantWindow
+        ? {
+            title: `${dominantWindow.label} e sua janela mais ativa`,
+            subtitle: `${dominantWindow.count} sessao(oes) iniciadas nessa faixa.`,
+            meta: formatMinutesOnly(dominantWindow.value),
+          }
+        : null,
+      rangeSessions.length
+        ? {
+            title: `${formatMinutesOnly(averageSessionMinutes)} por sessao em media`,
+            subtitle: `${activeDays} dia(s) ativos no recorte selecionado.`,
+            meta: formatPercent(frequencyPercent),
+          }
+        : null,
+    ].filter(Boolean),
+    "Registre praticas para destravar a leitura da rotina."
+  );
+
+  renderRoutineSummary();
+}
+
+function renderQuestionAnalytics(rangeQuestions) {
+  const correctCount = rangeQuestions.filter((attempt) => attempt.isCorrect).length;
+  const wrongCount = Math.max(0, rangeQuestions.length - correctCount);
+  const accuracy = rangeQuestions.length ? roundOne((correctCount / rangeQuestions.length) * 100) : 0;
+  const examStats = buildQuestionDimensionStats(rangeQuestions, "examName", (attempt) => attempt.examName);
+  const subjectStats = buildQuestionDimensionStats(rangeQuestions, "subjectName", (attempt) => attempt.subjectName);
+  const weakestSubject = [...subjectStats]
+    .filter((item) => item.total >= 2)
+    .sort((left, right) => {
+      if (left.accuracy !== right.accuracy) return left.accuracy - right.accuracy;
+      return right.total - left.total;
+    })[0] || null;
+  const strongestExam = [...examStats]
+    .filter((item) => item.total >= 2)
+    .sort((left, right) => {
+      if (right.accuracy !== left.accuracy) return right.accuracy - left.accuracy;
+      return right.total - left.total;
+    })[0] || null;
+
+  setTextContent(analyticsDom.questionAnsweredValue, String(rangeQuestions.length));
+  setTextContent(
+    analyticsDom.questionAnsweredHelper,
+    rangeQuestions.length ? `${examStats.length} vestibular(es) no recorte atual.` : "Sem tentativas integradas ainda."
+  );
+  setTextContent(analyticsDom.questionCorrectValue, String(correctCount));
+  setTextContent(
+    analyticsDom.questionCorrectHelper,
+    correctCount ? `${formatPercent(accuracy)} do total resolvido.` : "O volume de acertos aparece aqui."
+  );
+  setTextContent(analyticsDom.questionWrongValue, String(wrongCount));
+  setTextContent(
+    analyticsDom.questionWrongHelper,
+    wrongCount ? "Os erros ajudam a revelar as materias mais sensiveis." : "Erros por recorte entram neste bloco."
+  );
+  setTextContent(analyticsDom.questionAccuracyValue, formatPercent(accuracy));
+  setTextContent(
+    analyticsDom.questionAccuracyHelper,
+    rangeQuestions.length ? "Comparando acertos e erros do recorte selecionado." : "Quando houver dados, a tendencia fica clara."
+  );
+
+  renderListRows(
+    analyticsDom.questionExamList,
+    examStats.slice(0, 6).map((item) => ({
+      title: item.label,
+      subtitle: `${item.correct} acerto(s) e ${item.wrong} erro(s)`,
+      meta: formatPercent(item.accuracy),
+    })),
+    "Sem dados de vestibular ainda."
+  );
+  renderListRows(
+    analyticsDom.questionSubjectList,
+    subjectStats.slice(0, 6).map((item) => ({
+      title: item.label,
+      subtitle: item.topics.length ? `Assuntos: ${formatCompactList(item.topics, 2)}` : `${item.total} tentativa(s) registradas`,
+      meta: formatPercent(item.accuracy),
+    })),
+    "As materias mais fortes e mais fracas aparecem aqui."
+  );
+  renderAnalyticsBarChart(
+    analyticsDom.questionTrendChart,
+    buildQuestionTrendPoints(rangeQuestions),
+    "Nenhuma serie de tentativas encontrada.",
+    (value) => formatPercent(value)
+  );
+  renderInsightCards(
+    analyticsDom.questionInsightList,
+    [
+      strongestExam
+        ? {
+            title: `${strongestExam.label} e seu vestibular mais forte`,
+            copy: `Sua taxa de acerto ficou em ${formatPercent(strongestExam.accuracy)} nesse recorte.`,
+          }
+        : null,
+      weakestSubject
+        ? {
+            title: `${weakestSubject.label} pede revisao`,
+            copy: `A materia tem ${formatPercent(weakestSubject.accuracy)} de acerto e concentra os principais erros atuais.`,
+          }
+        : null,
+      rangeQuestions.length
+        ? {
+            title: "Modulo pronto para analise mais profunda",
+            copy: "Quando o banco de questoes ganhar historico mais denso, este bloco vai cruzar vestibular, assunto e tendencia automaticamente.",
+          }
+        : null,
+    ].filter(Boolean),
+    "Modulo pronto para receber dados reais de questoes."
+  );
+}
+
+function renderEssayAnalytics(rangeEssays) {
+  const essayAverage = getEssayAverageScore(rangeEssays);
+  const previousAverage = getEssayAverageScore(getEssaySubmissionsForPreviousRange());
+  const latestEssay = rangeEssays[0] || null;
+  const bestEssay = [...rangeEssays].sort((left, right) => (Number(right.totalScore) || 0) - (Number(left.totalScore) || 0))[0] || null;
+  const competencyMetrics = buildEssayCompetencyMetrics(rangeEssays);
+  const weakestCompetency = competencyMetrics[competencyMetrics.length - 1] || null;
+  const stableCompetency = [...competencyMetrics]
+    .filter((item) => item.average > 0)
+    .sort((left, right) => {
+      if (left.variation !== right.variation) return left.variation - right.variation;
+      return right.average - left.average;
+    })[0] || null;
+  const themeStats = buildEssayThemeStats(rangeEssays);
+  const trendPoints = [...rangeEssays]
+    .slice(0, 6)
+    .reverse()
+    .map((essay) => ({
+      label: formatEssayDate(getEssayReferenceDate(essay)),
+      value: Number(essay.totalScore) || 0,
+    }));
+
+  setTextContent(analyticsDom.essayTotalValue, String(rangeEssays.length));
+  setTextContent(
+    analyticsDom.essayTotalHelper,
+    rangeEssays.length ? describeEssayComparison(essayAverage, previousAverage, "neste recorte") : "Nenhuma redacao corrigida ainda."
+  );
+  setTextContent(
+    analyticsDom.essayAverageValue,
+    rangeEssays.length ? `${Math.round(essayAverage)} / 1000` : "0 / 1000"
+  );
+  setTextContent(
+    analyticsDom.essayAverageHelper,
+    rangeEssays.length ? "Media geral das redacoes avaliadas no periodo atual." : "A media do recorte aparece aqui."
+  );
+  setTextContent(
+    analyticsDom.essayLastScoreValue,
+    latestEssay ? `${Math.round(Number(latestEssay.totalScore) || 0)} / 1000` : "Sem nota"
+  );
+  setTextContent(
+    analyticsDom.essayLastScoreHelper,
+    latestEssay ? `${latestEssay.themeTitle || "Redacao"} em ${formatEssayDate(getEssayReferenceDate(latestEssay))}.` : "A leitura mais recente do seu texto."
+  );
+  setTextContent(
+    analyticsDom.essayBestScoreValue,
+    bestEssay ? `${Math.round(Number(bestEssay.totalScore) || 0)} / 1000` : "Sem nota"
+  );
+  setTextContent(
+    analyticsDom.essayBestScoreHelper,
+    bestEssay ? `${bestEssay.themeTitle || "Redacao"} segue como seu teto atual.` : "Seu teto atual de desempenho."
+  );
+  setTextContent(
+    analyticsDom.essayWeakCompetencyValue,
+    weakestCompetency ? `${weakestCompetency.shortLabel} | ${weakestCompetency.label}` : "Sem leitura"
+  );
+  setTextContent(
+    analyticsDom.essayWeakCompetencyHelper,
+    weakestCompetency ? `Media de ${formatEssayScore(weakestCompetency.average)} nesse ponto.` : "O ponto que mais derruba sua nota."
+  );
+  setTextContent(
+    analyticsDom.essayStableCompetencyValue,
+    stableCompetency ? `${stableCompetency.shortLabel} | ${stableCompetency.label}` : "Sem leitura"
+  );
+  setTextContent(
+    analyticsDom.essayStableCompetencyHelper,
+    stableCompetency ? `Oscilacao de ${stableCompetency.variation} pontos nas ultimas redacoes do recorte.` : "A competencia que mais se sustenta."
+  );
+
+  renderAnalyticsBarChart(
+    analyticsDom.essayTrendChart,
+    trendPoints,
+    "Sem historico de redacoes para comparar.",
+    (value) => `${Math.round(value)}`
+  );
+  renderListRows(
+    analyticsDom.essayCompetencyBoard,
+    competencyMetrics.map((item) => ({
+      title: `${item.shortLabel} | ${item.label}`,
+      subtitle: item.variation <= 40 ? "Competencia mais estavel no recorte." : "Ainda oscila entre as redacoes avaliadas.",
+      meta: formatEssayScore(item.average),
+    })),
+    "As competencias avaliadas aparecem aqui."
+  );
+  renderListRows(
+    analyticsDom.essayThemeList,
+    themeStats.slice(0, 6).map((item) => ({
+      title: item.title,
+      subtitle: `${item.total} redacao(oes) com esse tema`,
+      meta: item.latestScore ? `${Math.round(item.latestScore)} pts` : "Sem nota",
+    })),
+    "Quando voce escrever, os temas entram aqui."
+  );
+  renderInsightCards(
+    analyticsDom.essayInsightList,
+    [
+      weakestCompetency
+        ? {
+            title: `Sua maior dificuldade atual esta em ${weakestCompetency.shortLabel}`,
+            copy: `${weakestCompetency.label} segue derrubando sua media neste recorte.`,
+          }
+        : null,
+      stableCompetency
+        ? {
+            title: `${stableCompetency.shortLabel} e sua area mais estavel`,
+            copy: `Essa competencia sustenta melhor a nota geral e oscila menos nas ultimas correcoes.`,
+          }
+        : null,
+      latestEssay && rangeEssays[1]
+        ? {
+            title: "Sua ultima redacao mudou o ritmo recente",
+            copy: `A nota mais recente ficou ${Number(latestEssay.totalScore) >= Number(rangeEssays[1].totalScore) ? "acima" : "abaixo"} da penultima avaliacao.`,
+          }
+        : null,
+    ].filter(Boolean),
+    "Envie redacoes para receber insights por competencia."
+  );
+}
+
+function renderEnglishAnalytics(rangeSessions) {
+  const englishSessions = rangeSessions.filter((session) => session.subjectKey === DEFAULT_SUBJECT_KEY);
+  const englishMinutes = sumMinutes(englishSessions);
+  const englishActiveDays = countActiveDays(englishSessions);
+  const englishConsistency = englishSessions.length
+    ? roundOne((englishActiveDays / getRangeDayCount()) * 100)
+    : 0;
+  const verbStats = buildWordStats(getVerbsFromSessions(englishSessions));
+  const latestObservation = getLatestObservationText(englishSessions[0]);
+  const trendMap = new Map();
+
+  englishSessions.forEach((session) => {
+    const dateKey = session.dateKey;
+    trendMap.set(dateKey, roundOne((trendMap.get(dateKey) || 0) + (Number(session.minutes) || 0)));
+  });
+
+  const trendPoints = [...trendMap.entries()]
+    .sort((left, right) => left[0].localeCompare(right[0]))
+    .slice(-7)
+    .map(([dateKey, minutes]) => ({
+      label: formatShortDate(dateKey),
+      value: minutes,
+    }));
+
+  setTextContent(analyticsDom.englishPracticeCountValue, String(englishSessions.length));
+  setTextContent(
+    analyticsDom.englishPracticeCountHelper,
+    englishSessions.length ? `${englishActiveDays} dia(s) com ingles no recorte.` : "Nenhuma pratica de ingles no recorte."
+  );
+  setTextContent(analyticsDom.englishMinutesValue, formatMinutesOnly(englishMinutes));
+  setTextContent(
+    analyticsDom.englishMinutesHelper,
+    englishSessions.length ? "Carga total dedicada ao idioma." : "Carga total dedicada ao ingles."
+  );
+  setTextContent(analyticsDom.englishVerbCountValue, String(verbStats.length));
+  setTextContent(
+    analyticsDom.englishVerbCountHelper,
+    verbStats.length ? `${verbStats[0].word} lidera as revisoes recentes.` : "Volume de verbos unicos revisados."
+  );
+  setTextContent(
+    analyticsDom.englishObservationValue,
+    latestObservation ? truncateText(latestObservation, 42) : "Sem observacao"
+  );
+  setTextContent(
+    analyticsDom.englishObservationHelper,
+    latestObservation ? "Ultima observacao ou nota curta registrada no modulo." : "O ultimo registro relevante da pratica."
+  );
+  setTextContent(analyticsDom.englishConsistencyValue, getConsistencyLabel(englishConsistency));
+  setTextContent(
+    analyticsDom.englishConsistencyHelper,
+    englishSessions.length ? `${englishActiveDays} dia(s) ativos de ingles no recorte.` : "Leitura simples da frequencia de ingles."
+  );
+
+  renderChipList(
+    analyticsDom.englishVerbList,
+    verbStats.slice(0, 10).map((item) => createDetailChip(item.word, `${item.count}x`)),
+    "Nenhum verbo registrado no recorte."
+  );
+  renderListRows(
+    analyticsDom.englishObservationList,
+    buildEnglishObservationRows(englishSessions),
+    "Sem observacoes recentes de ingles."
+  );
+  renderAnalyticsBarChart(
+    analyticsDom.englishTrendChart,
+    trendPoints,
+    "O ritmo de ingles aparece aqui quando houver dados.",
+    (value) => formatMinutesOnly(value)
+  );
+  renderInsightCards(
+    analyticsDom.englishInsightList,
+    [
+      englishSessions.length
+        ? {
+            title: `Seu ingles esta com consistencia ${getConsistencyLabel(englishConsistency).toLowerCase()}`,
+            copy: `O modulo apareceu em ${englishActiveDays} dia(s) e somou ${formatMinutesOnly(englishMinutes)} no recorte.`,
+          }
+        : null,
+      verbStats.length
+        ? {
+            title: `${verbStats[0].word} e o verbo mais recorrente`,
+            copy: "Os verbos registrados ajudam a revelar o tipo de pratica que mais se repete no seu dia a dia.",
+          }
+        : null,
+      englishSessions.length && getLargestGapDays(englishSessions) >= 3
+        ? {
+            title: "O ingles teve pausas longas",
+            copy: "Vale retomar sessoes curtas para nao deixar o idioma cair para segundo plano.",
+          }
+        : null,
+    ].filter(Boolean),
+    "Sem leitura suficiente para gerar insights de ingles."
+  );
+}
+
+function renderRecommendations(rangeSessions, rangeEssays, rangeQuestions) {
+  const englishSessions = rangeSessions.filter((session) => session.subjectKey === DEFAULT_SUBJECT_KEY);
+  const recommendations = [];
+  const routineFrequency = rangeSessions.length ? roundOne((countActiveDays(rangeSessions) / getRangeDayCount()) * 100) : 0;
+  const weakestCompetency = buildEssayCompetencyMetrics(rangeEssays).slice(-1)[0] || null;
+  const weakestQuestionSubject = buildQuestionDimensionStats(
+    rangeQuestions,
+    "subjectName",
+    (attempt) => attempt.subjectName
+  )
+    .filter((item) => item.total >= 2)
+    .sort((left, right) => {
+      if (left.accuracy !== right.accuracy) return left.accuracy - right.accuracy;
+      return right.total - left.total;
+    })[0] || null;
+
+  if (routineFrequency < 45) {
+    recommendations.push({
+      title: "Retome a constancia com sessoes menores",
+      copy: "Sua frequencia esta baixa no recorte atual. Priorize sessoes curtas e repetiveis para recolocar o ritmo no eixo.",
+    });
+  }
+
+  if (!rangeQuestions.length) {
+    recommendations.push({
+      title: "Ative o banco de questoes nesta semana",
+      copy: "O dashboard ja esta pronto para interpretar acertos, erros e vestibulares. Falta apenas volume real de tentativas.",
+    });
+  }
+
+  if (weakestQuestionSubject) {
+    recommendations.push({
+      title: `Reforce ${weakestQuestionSubject.label}`,
+      copy: `Essa materia concentra a menor taxa de acerto do recorte e merece revisao direcionada antes da proxima rodada de questoes.`,
+    });
+  }
+
+  if (weakestCompetency) {
+    recommendations.push({
+      title: `Revise ${weakestCompetency.shortLabel} na redacao`,
+      copy: `${weakestCompetency.label} segue como o principal freio da sua nota. Uma revisao focada nessa competencia tende a gerar ganho mais rapido.`,
+    });
+  }
+
+  if (englishSessions.length && getLargestGapDays(englishSessions) >= 3) {
+    recommendations.push({
+      title: "Nao deixe o ingles esfriar",
+      copy: "O idioma teve pausas longas. Retome com observacoes curtas e um verbo estudado por sessao para ganhar consistencia de novo.",
+    });
+  }
+
+  renderInsightCards(
+    analyticsDom.dashboardRecommendationsList,
+    recommendations.slice(0, 4),
+    "Assim que houver historico suficiente, o painel vai indicar prioridades reais de retomada e reforco."
+  );
+}
+
+function renderHistoryAnalytics(rangeEssays) {
   renderTodaySummary();
-  renderWeeklyAnalysis();
-  renderMonthlyAnalysis();
+
+  const todayKey = toDateKey(new Date());
+  const todaySessions = getSessionsByDate(todayKey);
+  const todayMinutes = sumMinutes(todaySessions);
+  const todayStateLabel = todayMinutes >= 120 ? "Forte" : todayMinutes >= 45 ? "Ativo" : todayMinutes > 0 ? "Leve" : "Livre";
+
+  setTextContent(todayStateValue, todayStateLabel);
+  setTextContent(todayPhraseCountValue, getObservationKeyword(todaySessions));
+  renderEssayRows(
+    analyticsDom.recentEssayTimeline,
+    rangeEssays.length ? rangeEssays.slice(0, 6) : getEssaySubmissionsForRange("all").slice(0, 6),
+    "Nenhuma redacao avaliada ate agora."
+  );
+}
+
+function renderDashboard() {
+  const rangeSessions = getSessionsForRange();
+  const rangeEssays = getEssaySubmissionsForRange();
+  const rangeQuestions = getQuestionAttemptsForRange();
+
+  updateAnalyticsRangeUI();
+  renderDashboardHero(rangeSessions, rangeEssays, rangeQuestions);
+  renderOverviewAnalytics(rangeSessions, rangeEssays, rangeQuestions);
+  renderRoutineAnalytics(rangeSessions);
+  renderQuestionAnalytics(rangeQuestions);
+  renderEssayAnalytics(rangeEssays);
+  renderEnglishAnalytics(rangeSessions);
+  renderRecommendations(rangeSessions, rangeEssays, rangeQuestions);
+  renderHistoryAnalytics(rangeEssays);
   window.Start5Auth?.setHeaderMonthlyMinutes?.(sumMinutes(getCurrentMonthSessions()));
 }
 
@@ -2888,7 +4327,6 @@ function getCurrentSessionPayload() {
   const customSubjectName = String(customSubjectInput?.value || "").trim();
   return {
     minutes: getMinutesToSave(),
-    state: selectedState,
     subjectKey: selectedSubjectKey,
     customSubjectName,
     topicText: String(topicInput?.value || "").trim(),
@@ -2898,7 +4336,7 @@ function getCurrentSessionPayload() {
       verbs: [...selectedVerbs],
       phrases: [...selectedPhrases],
     },
-    notes: String(notesInput?.value || "").trim(),
+    notes: selectedNotes,
   };
 }
 
@@ -2907,10 +4345,16 @@ async function saveSession() {
     return;
   }
 
+  updateStudyMinutesValidity();
+
+  if (!sessionForm?.reportValidity()) {
+    return;
+  }
+
   const payload = getCurrentSessionPayload();
 
-  if (!Number.isFinite(payload.minutes) || payload.minutes <= 0) {
-    sessionHelper.textContent = "Escolha um tempo v\u00e1lido para salvar a pr\u00e1tica.";
+  if (!Number.isFinite(payload.minutes) || payload.minutes < MIN_SESSION_MINUTES) {
+    sessionHelper.textContent = `Informe pelo menos ${MIN_SESSION_MINUTES} min para salvar a pratica.`;
     return;
   }
 
@@ -2940,6 +4384,7 @@ async function saveSession() {
     }
 
     await loadSessionsFromApi();
+    await loadRoutinePlanFromApi();
     renderDashboard();
     closeSessionModal();
   } catch (error) {
@@ -2962,6 +4407,7 @@ async function confirmDeleteSession() {
     });
 
     await loadSessionsFromApi();
+    await loadRoutinePlanFromApi();
     renderDashboard();
     closeDeleteModal();
   } catch (error) {
@@ -3001,11 +4447,11 @@ function handleSessionActionClick(event) {
 }
 
 function bindEvents() {
-  if (menuToggle) {
+  if (menuToggle && !window.Start5Main?.sidebarNavigation?.isManaged) {
     menuToggle.addEventListener("click", toggleMenu);
   }
 
-  if (menuPanel) {
+  if (menuPanel && !window.Start5Main?.sidebarNavigation?.isManaged) {
     menuPanel.addEventListener("click", (event) => {
       if (event.target === menuPanel) {
         closeMenu();
@@ -3013,21 +4459,20 @@ function bindEvents() {
     });
   }
 
-  stateButtons.forEach((button) => {
+  panelTabButtons.forEach((button) => {
     button.addEventListener("click", () => {
-      setSelectedState(button.dataset.state || "normal");
+      setDashboardView(button.dataset.panelTab || "overview");
     });
   });
 
-  durationButtons.forEach((button) => {
-    button.addEventListener("click", () => {
-      if (button.disabled) {
-        return;
-      }
+  window.addEventListener("hashchange", () => {
+    setDashboardView(getDashboardViewFromHash(), { updateHash: false });
+  });
+  window.addEventListener("resize", refreshSessionActionsVisibility);
 
-      selectedDuration = button.dataset.duration || AUTO_DURATION_BY_STATE[selectedState];
-      updateDurationButtons();
-      updateSessionHelper();
+  analyticsRangeButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      setAnalyticsRange(button.dataset.analyticsRange || "30d");
     });
   });
 
@@ -3069,14 +4514,17 @@ function bindEvents() {
     }
   });
 
-  extraMinutesInput?.addEventListener("input", updateSessionHelper);
+  studyMinutesInput?.addEventListener("input", () => {
+    updateStudyMinutesValidity();
+    updateSessionHelper();
+  });
   customSubjectInput?.addEventListener("input", () => {
     selectedSubjectKey = "outras";
     updateSubjectSelectionUI();
     updateSessionHelper();
   });
   topicInput?.addEventListener("input", updateSessionHelper);
-  notesInput?.addEventListener("input", updateSessionHelper);
+  sessionForm?.addEventListener("scroll", updateSessionActionsVisibility);
 
   startSessionButtons.forEach((button) => {
     button.addEventListener("click", () => {
@@ -3094,6 +4542,11 @@ function bindEvents() {
     }
   });
 
+  modalBackdrop?.addEventListener("cancel", (event) => {
+    event.preventDefault();
+    closeSessionModal();
+  });
+
   closeDeleteModalButtons.forEach((button) => {
     button.addEventListener("click", closeDeleteModal);
   });
@@ -3104,8 +4557,20 @@ function bindEvents() {
     }
   });
 
-  saveSessionButton?.addEventListener("click", saveSession);
-  confirmDeleteSessionButton?.addEventListener("click", confirmDeleteSession);
+  deleteSessionBackdrop?.addEventListener("cancel", (event) => {
+    event.preventDefault();
+    closeDeleteModal();
+  });
+
+  sessionForm?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    saveSession();
+  });
+
+  deleteSessionForm?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    confirmDeleteSession();
+  });
 
   todaySessionsList?.addEventListener("click", handleSessionActionClick);
   recentSessionsList?.addEventListener("click", handleSessionActionClick);
@@ -3115,12 +4580,12 @@ function bindEvents() {
       return;
     }
 
-    if (deleteSessionBackdrop?.classList.contains("is-visible")) {
+    if (isModalLayerOpen(deleteSessionBackdrop)) {
       closeDeleteModal();
       return;
     }
 
-    if (modalBackdrop?.classList.contains("is-visible")) {
+    if (isModalLayerOpen(modalBackdrop)) {
       closeSessionModal();
       return;
     }
@@ -3134,6 +4599,7 @@ function bindEvents() {
 async function initializeApp() {
   resetSessionForm();
   bindEvents();
+  setDashboardView(getDashboardViewFromHash(), { updateHash: false });
 
   if (!window.Start5Auth?.ready) {
     return;
@@ -3145,9 +4611,11 @@ async function initializeApp() {
     return;
   }
 
+  loadQuestionAttemptsFromStorage();
   await importLegacySessionsIfNeeded();
   await loadSessionsFromApi();
   await loadEssaySubmissionsFromApi();
+  await loadRoutinePlanFromApi();
   renderDashboard();
 }
 

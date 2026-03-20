@@ -1,6 +1,7 @@
 ﻿const body = document.body;
 const menuToggle = document.getElementById("menuToggle");
 const menuPanel = document.getElementById("menuPanel");
+const sidebarNavigationManaged = Boolean(window.Start5Main?.sidebarNavigation?.isManaged);
 
 const adminUsersValue = document.getElementById("adminUsersValue");
 const adminAdminsValue = document.getElementById("adminAdminsValue");
@@ -34,6 +35,54 @@ let openUserMenuId = null;
 let modalMode = "edit";
 let modalUserId = null;
 let selectedRole = "user";
+
+function isDialogElement(element) {
+  return typeof HTMLDialogElement !== "undefined" && element instanceof HTMLDialogElement;
+}
+
+function isModalLayerOpen(element) {
+  if (!element) {
+    return false;
+  }
+
+  if (isDialogElement(element)) {
+    return element.open;
+  }
+
+  return element.classList.contains("is-visible");
+}
+
+function showModalLayer(element) {
+  if (!element) {
+    return;
+  }
+
+  if (isDialogElement(element)) {
+    if (!element.open) {
+      element.showModal();
+    }
+
+    return;
+  }
+
+  element.classList.add("is-visible");
+}
+
+function hideModalLayer(element) {
+  if (!element) {
+    return;
+  }
+
+  if (isDialogElement(element)) {
+    if (element.open) {
+      element.close();
+    }
+
+    return;
+  }
+
+  element.classList.remove("is-visible");
+}
 
 function closeMenu() {
   body.classList.remove("menu-open");
@@ -210,6 +259,23 @@ function updateRoleOptionButtons() {
   });
 }
 
+function updateModalFieldAvailability() {
+  const isPermissionsMode = modalMode === "permissions";
+
+  if (adminEditEmailInput) {
+    adminEditEmailInput.disabled = isPermissionsMode;
+    adminEditEmailInput.required = !isPermissionsMode;
+  }
+
+  if (adminEditPasswordInput) {
+    adminEditPasswordInput.disabled = isPermissionsMode;
+  }
+
+  roleOptionButtons.forEach((button) => {
+    button.disabled = !isPermissionsMode;
+  });
+}
+
 function resetModalState() {
   modalMode = "edit";
   modalUserId = null;
@@ -223,6 +289,7 @@ function resetModalState() {
     adminModalSubmitButton.textContent = "Salvar";
   }
 
+  updateModalFieldAvailability();
   updateRoleOptionButtons();
   setModalFeedback("");
 }
@@ -230,16 +297,14 @@ function resetModalState() {
 function openAdminModal() {
   if (!adminModalBackdrop) return;
 
-  adminModalBackdrop.classList.add("is-visible");
-  adminModalBackdrop.setAttribute("aria-hidden", "false");
+  showModalLayer(adminModalBackdrop);
   body.classList.add("modal-open");
 }
 
 function closeAdminModal() {
   if (!adminModalBackdrop) return;
 
-  adminModalBackdrop.classList.remove("is-visible");
-  adminModalBackdrop.setAttribute("aria-hidden", "true");
+  hideModalLayer(adminModalBackdrop);
   body.classList.remove("modal-open");
   resetModalState();
 }
@@ -253,6 +318,10 @@ function setModalLoading(isLoading) {
   });
 
   adminModalSubmitButton.textContent = isLoading ? "Salvando..." : "Salvar";
+
+  if (!isLoading) {
+    updateModalFieldAvailability();
+  }
 }
 
 function closeUserMenus() {
@@ -312,6 +381,7 @@ async function openEditModal(userId) {
     if (adminEditEmailInput) adminEditEmailInput.value = user.email || "";
     if (adminEditPasswordInput) adminEditPasswordInput.value = "";
 
+    updateModalFieldAvailability();
     openAdminModal();
   } catch (error) {
     console.error("Erro ao abrir edi\u00e7\u00e3o:", error);
@@ -338,6 +408,7 @@ function openPermissionsModal(userId) {
 
   adminEditFields?.classList.add("is-hidden");
   adminPermissionsFields?.classList.remove("is-hidden");
+  updateModalFieldAvailability();
   updateRoleOptionButtons();
   openAdminModal();
 }
@@ -484,13 +555,15 @@ async function loadAdminData() {
   }
 }
 
-menuToggle?.addEventListener("click", toggleMenu);
+if (!sidebarNavigationManaged) {
+  menuToggle?.addEventListener("click", toggleMenu);
 
-menuPanel?.addEventListener("click", (event) => {
-  if (!event.target.closest(".menu-nav")) {
-    closeMenu();
-  }
-});
+  menuPanel?.addEventListener("click", (event) => {
+    if (!event.target.closest(".menu-nav")) {
+      closeMenu();
+    }
+  });
+}
 
 closeAdminModalButtons.forEach((button) => {
   button.addEventListener("click", closeAdminModal);
@@ -501,6 +574,11 @@ if (adminModalBackdrop) {
     if (event.target === adminModalBackdrop) {
       closeAdminModal();
     }
+  });
+
+  adminModalBackdrop.addEventListener("cancel", (event) => {
+    event.preventDefault();
+    closeAdminModal();
   });
 }
 
@@ -533,14 +611,14 @@ document.addEventListener("click", (event) => {
 document.addEventListener("keydown", (event) => {
   if (event.key !== "Escape") return;
 
-  if (adminModalBackdrop?.classList.contains("is-visible")) {
+  if (isModalLayerOpen(adminModalBackdrop)) {
     closeAdminModal();
     return;
   }
 
   closeUserMenus();
 
-  if (body.classList.contains("menu-open")) {
+  if (!sidebarNavigationManaged && body.classList.contains("menu-open")) {
     closeMenu();
   }
 });

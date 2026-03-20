@@ -1,0 +1,74 @@
+<svg width="1600" height="900" viewBox="0 0 1600 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="skyPanel" x1="800" y1="0" x2="800" y2="520" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#8BC4F0"/>
+      <stop offset="0.52" stop-color="#F0BF74"/>
+      <stop offset="1" stop-color="#A05834"/>
+    </linearGradient>
+    <linearGradient id="brickPanelLeft" x1="0" y1="50" x2="520" y2="760" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#773A26"/>
+      <stop offset="1" stop-color="#331D16"/>
+    </linearGradient>
+    <linearGradient id="brickPanelRight" x1="1080" y1="50" x2="1600" y2="760" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#8A472D"/>
+      <stop offset="1" stop-color="#321B15"/>
+    </linearGradient>
+    <radialGradient id="sunPanel" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(804 166) rotate(90) scale(180 220)">
+      <stop stop-color="#FFF7D5"/>
+      <stop offset="0.45" stop-color="#FFD88C" stop-opacity="0.52"/>
+      <stop offset="1" stop-color="#FFD88C" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1600" height="900" fill="url(#skyPanel)"/>
+  <rect width="1600" height="900" fill="#08111A" fill-opacity="0.18"/>
+  <ellipse cx="804" cy="166" rx="220" ry="180" fill="url(#sunPanel)"/>
+
+  <polygon points="0,92 530,118 530,736 0,806" fill="url(#brickPanelLeft)"/>
+  <polygon points="220,78 620,108 620,694 220,758" fill="#9E542F" fill-opacity="0.78"/>
+  <polygon points="1070,112 1600,86 1600,806 1070,738" fill="url(#brickPanelRight)"/>
+  <polygon points="975,102 1360,116 1360,700 975,756" fill="#A15935" fill-opacity="0.78"/>
+
+  <g opacity="0.9">
+    <rect x="44" y="180" width="120" height="162" fill="#1B2129"/>
+    <rect x="190" y="195" width="118" height="156" fill="#1D232C"/>
+    <rect x="338" y="214" width="120" height="152" fill="#1A2028"/>
+    <rect x="1146" y="176" width="120" height="164" fill="#1B2129"/>
+    <rect x="1294" y="190" width="118" height="156" fill="#1D232C"/>
+    <rect x="1438" y="208" width="104" height="150" fill="#1A2028"/>
+  </g>
+
+  <g opacity="0.92">
+    <rect x="512" y="0" width="16" height="690" fill="#6D7A86"/>
+    <rect x="1072" y="0" width="16" height="690" fill="#6D7A86"/>
+    <rect x="622" y="128" width="344" height="18" fill="#748391"/>
+    <rect x="622" y="258" width="344" height="18" fill="#748391"/>
+    <rect x="628" y="132" width="10" height="286" fill="#D8DDE1"/>
+    <rect x="948" y="132" width="10" height="286" fill="#D8DDE1"/>
+    <path d="M528 476H1072V526H528V476Z" fill="#596776"/>
+    <path d="M664 146L804 334L944 146" stroke="#D4DAE0" stroke-width="16"/>
+  </g>
+
+  <polygon points="662,900 938,900 862,540 738,540" fill="#765137"/>
+  <polygon points="0,900 662,900 738,540 0,760" fill="#5B3B2B"/>
+  <polygon points="938,900 1600,900 1600,760 862,540" fill="#694532"/>
+  <path d="M800 540V900" stroke="#E1BE8B" stroke-width="4" stroke-opacity="0.26"/>
+
+  <g opacity="0.86">
+    <rect x="472" y="640" width="68" height="32" rx="7" fill="#20262D"/>
+    <rect x="542" y="642" width="76" height="34" rx="8" fill="#1C222A"/>
+    <rect x="1040" y="646" width="88" height="36" rx="8" fill="#1C222A"/>
+    <rect x="1138" y="644" width="96" height="38" rx="8" fill="#20262D"/>
+    <circle cx="492" cy="676" r="10" fill="#0E141B"/>
+    <circle cx="526" cy="676" r="10" fill="#0E141B"/>
+    <circle cx="1066" cy="682" r="10" fill="#0E141B"/>
+    <circle cx="1108" cy="682" r="10" fill="#0E141B"/>
+    <circle cx="1166" cy="682" r="10" fill="#0E141B"/>
+    <circle cx="1208" cy="682" r="10" fill="#0E141B"/>
+  </g>
+
+  <g opacity="0.22" fill="#FFF1CC">
+    <rect x="86" y="212" width="252" height="146" rx="12"/>
+    <rect x="148" y="406" width="190" height="110" rx="12"/>
+  </g>
+</svg>

@@ -4,31 +4,46 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Start 5</title>
+  <meta
+    name="description"
+    content="Pagina inicial do Start 5 para registrar pratica diaria e acompanhar sua rotina de estudos."
+  />
+  <meta name="theme-color" content="#05080d" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Fraunces:wght@500;600;700&family=Instrument+Sans:wght@400;500;600;700&family=Nunito:wght@800;900&display=swap"
     rel="stylesheet"
   />
 
   <link rel="stylesheet" href="css/dashboard.css" />
 </head>
 <body class="home-page protected-page">
+  <a class="skip-link" href="#mainContent">Pular para o conteudo principal</a>
+
   <div class="page-shell landing-shell">
     <header class="header">
       <div class="header-inner">
-        <div class="header-account" aria-label="Conta conectada">
+        <section class="header-account" aria-label="Conta conectada">
           <div class="header-account-avatar" data-auth-avatar>
-            <img class="header-account-avatar-image" data-auth-avatar-image alt="Foto do perfil" hidden />
+            <img
+              class="header-account-avatar-image"
+              data-auth-avatar-image
+              alt="Foto do perfil"
+              width="42"
+              height="42"
+              decoding="async"
+              hidden
+            />
             <span class="header-account-avatar-fallback" data-auth-initials>U</span>
           </div>
           <div class="header-account-copy">
-            <strong class="header-account-name" data-auth-name>Usuário</strong>
+            <strong class="header-account-name" data-auth-name>Usuario</strong>
             <span class="header-account-email" data-auth-email>email@start5.app</span>
-            <span class="header-account-month" data-auth-month-minutes>0 min no mês</span>
+            <span class="header-account-month" data-auth-month-minutes>0 min no mes</span>
           </div>
-        </div>
+        </section>
 
         <button
           class="menu-toggle"
@@ -46,23 +61,25 @@
       </div>
     </header>
 
-    <div class="menu-panel" id="menuPanel">
+    <aside class="menu-panel" id="menuPanel" aria-label="Menu principal">
       <div class="menu-panel-inner">
-        <nav class="menu-nav" aria-label="Navegação principal">
+        <nav class="menu-nav" aria-label="Navegacao principal">
           <div class="menu-user">
             <span class="menu-user-label">Conectado como</span>
-            <strong class="menu-user-name" data-auth-name>Usuário</strong>
+            <strong class="menu-user-name" data-auth-name>Usuario</strong>
             <span class="menu-user-email" data-auth-email>email@start5.app</span>
           </div>
 
           <div class="menu-column">
-            <a href="index.html" class="menu-link">Início</a>
+            <a href="index.html" class="menu-link">Inicio</a>
             <a href="dashboard.html" class="menu-link">Painel</a>
+            <a href="questoes.html" class="menu-link">Questoes</a>
             <a href="profile.html" class="menu-link">Perfil</a>
+            <a href="rotina.html" class="menu-link">Rotina</a>
           </div>
 
           <div class="menu-column">
-            <a href="redacao.html" class="menu-link">Redação</a>
+            <a href="redacao.html" class="menu-link">Reda&ccedil;&atilde;o</a>
             <a href="dashboard.html#semanal" class="menu-link">Semanal</a>
             <a href="dashboard.html#mensal" class="menu-link">Mensal</a>
             <a href="admin.html" class="menu-link" data-admin-only hidden>Admin</a>
@@ -70,28 +87,27 @@
           </div>
         </nav>
       </div>
-    </div>
+    </aside>
 
-    <main class="hero landing-hero">
+    <main class="hero landing-hero" id="mainContent">
       <div class="hero-spotlight" aria-hidden="true"></div>
 
       <div class="hero-inner landing-hero-inner">
-        <h1 class="brand-hero">Start 5</h1>
-        <p class="tagline">Antes tarde, do que mais tarde.</p>
+        <h1 class="brand-hero" aria-label="Start5">
+          <span class="brand-hero-mark">Start</span><span class="brand-hero-mark brand-hero-mark-number">5</span>
+        </h1>
 
         <div class="hero-actions">
-          <button class="start-button" id="startSessionButton" type="button">
-            Registrar prática
+          <button class="start-button hero-action-button" id="startSessionButton" type="button">
+            Registrar pratica
           </button>
         </div>
       </div>
     </main>
-
-    <div class="support-copy"></div>
   </div>
 
-  <div class="modal-backdrop" id="sessionModalBackdrop" aria-hidden="true">
-    <div class="session-modal" role="dialog" aria-modal="true" aria-labelledby="sessionModalTitle">
+  <dialog class="modal-backdrop" id="sessionModalBackdrop" aria-labelledby="sessionModalTitle">
+    <form class="session-modal" id="sessionForm">
       <button
         class="modal-close"
         type="button"
@@ -101,76 +117,64 @@
         &times;
       </button>
 
-      <div class="session-modal-head">
-        <span class="session-modal-mode" id="sessionModalModeLabel">Nova prática</span>
-        <h2 class="session-modal-title" id="sessionModalTitle">Registrar prática</h2>
-      </div>
+      <header class="session-modal-head">
+        <h2 class="session-modal-title" id="sessionModalTitle">Registrar pratica</h2>
+      </header>
 
       <div class="modal-group">
-        <span class="modal-group-label">Seu dia</span>
-
-        <div class="modal-options state-options">
-          <button type="button" class="option-pill" data-state="cansado">Cansado</button>
-          <button type="button" class="option-pill" data-state="normal">Normal</button>
-          <button type="button" class="option-pill" data-state="focado">Focado</button>
-        </div>
-      </div>
-
-      <div class="modal-group">
-        <span class="modal-group-label">Tempo</span>
-
-        <div class="modal-options duration-options">
-          <button type="button" class="option-pill" data-duration="10">10 min</button>
-          <button type="button" class="option-pill" data-duration="15">15 min</button>
-          <button type="button" class="option-pill" data-duration="20">20 min</button>
-          <button type="button" class="option-pill" data-duration="extra">Horas extras</button>
-        </div>
-
-        <div class="extra-minutes-box" id="extraMinutesBox">
-          <label for="extraMinutesInput" class="extra-minutes-label">Acima de 20 min</label>
+        <label for="studyMinutesInput" class="modal-group-label">Tempo de estudo hoje</label>
+        <div class="study-minutes-shell">
           <input
             type="number"
-            id="extraMinutesInput"
+            id="studyMinutesInput"
+            name="minutes"
             class="extra-minutes-input"
-            min="21"
+            min="10"
             step="1"
-            placeholder="Ex: 35"
+            inputmode="numeric"
+            autocomplete="off"
+            placeholder="Minimo 10 min"
+            required
           />
+          <span class="study-minutes-unit" aria-hidden="true">min</span>
         </div>
+        <p class="modal-detail-hint">Defina quantos minutos voce estudou hoje. Minimo obrigatorio de 10 min.</p>
       </div>
 
       <div class="modal-group">
-        <label for="subjectSelect" class="modal-group-label">Matéria</label>
+        <label for="subjectSelect" class="modal-group-label">Materia</label>
         <div class="subject-select-shell">
-          <select id="subjectSelect" class="subject-select">
-            <option value="ingles">Inglês</option>
-            <option value="matematica">Matemática</option>
-            <option value="portugues">Português</option>
+          <select id="subjectSelect" name="subject" class="subject-select">
+            <option value="ingles">Ingles</option>
+            <option value="matematica">Matematica</option>
+            <option value="portugues">Portugues</option>
             <option value="geografia">Geografia</option>
-            <option value="historia">História</option>
+            <option value="historia">Historia</option>
             <option value="biologia">Biologia</option>
-            <option value="fisica">Física</option>
-            <option value="quimica">Química</option>
-            <option value="redacao">Redação</option>
+            <option value="fisica">Fisica</option>
+            <option value="quimica">Quimica</option>
+            <option value="redacao">Redacao</option>
             <option value="filosofia">Filosofia</option>
             <option value="sociologia">Sociologia</option>
-            <option value="outras">Outra matéria</option>
+            <option value="outras">Outra materia</option>
           </select>
         </div>
       </div>
 
       <div class="modal-detail-group is-hidden" id="customSubjectField">
-        <label for="customSubjectInput" class="extra-minutes-label">Qual matéria você estudou?</label>
+        <label for="customSubjectInput" class="extra-minutes-label">Qual materia voce estudou?</label>
         <input
           type="text"
           id="customSubjectInput"
+          name="customSubjectName"
           class="extra-minutes-input"
           maxlength="60"
-          placeholder="Ex: Espanhol, Direito, Programação"
+          autocomplete="off"
+          placeholder="Ex: Espanhol, Direito, Programacao"
         />
         <div class="subject-suggestions" id="customSubjectSuggestions">
           <div class="subject-suggestions-empty">
-            As matérias personalizadas que você salvar vão aparecer aqui.
+            As materias personalizadas que voce salvar vao aparecer aqui.
           </div>
         </div>
       </div>
@@ -180,24 +184,32 @@
         <input
           type="text"
           id="topicInput"
+          name="topicText"
           class="extra-minutes-input"
           maxlength="140"
-          placeholder="Ex: funções, concordância verbal, phrasal verbs"
+          minlength="2"
+          autocomplete="off"
+          placeholder="Ex: funcoes, concordancia verbal, phrasal verbs"
+          required
         />
-        <p class="modal-detail-hint">Uma sessão, uma matéria, um tema claro.</p>
+        <p class="modal-detail-hint">Uma sessao, uma materia, um tema claro.</p>
       </div>
 
       <div class="modal-detail-group is-hidden" id="verbDetailsField">
-        <label for="verbsEntryInput" class="extra-minutes-label">Verbos estudados</label>
+        <label for="verbsEntryInput" class="extra-minutes-label">Busque um Verbo comum</label>
         <div class="token-input token-input-vertical">
-          <div class="token-list" id="verbsTokenList"></div>
+          <div class="verb-study-shell">
+            <span class="verb-picker-status" id="verbPickerStatus">Verbo estudado</span>
+            <div class="token-list" id="verbsTokenList"></div>
+          </div>
           <div class="token-entry-row">
             <input
               type="text"
               id="verbsEntryInput"
+              name="verbsEntry"
               class="token-input-field"
               autocomplete="off"
-              placeholder="Busque um verbo comum"
+              placeholder="Busque um Verbo comum"
             />
             <button type="button" class="token-add-button" id="addVerbButton">
               Adicionar
@@ -205,58 +217,50 @@
           </div>
         </div>
         <div class="verb-picker-meta">
-          <span class="verb-picker-status" id="verbPickerStatus">
-            Sugestões com os verbos mais conhecidos primeiro.
-          </span>
           <button type="button" class="verb-mode-button" id="verbModeToggleButton">
             Outro verbo
           </button>
         </div>
-        <div class="verb-suggestions" id="verbSuggestions" aria-label="Sugestões de verbos"></div>
+        <div class="verb-suggestions" id="verbSuggestions" aria-label="Sugestoes de verbos"></div>
         <p class="modal-detail-hint">
           Escolha um verbo da lista ou use Outro verbo para digitar manualmente.
         </p>
       </div>
 
       <div class="modal-detail-group is-hidden" id="phraseDetailsField">
-        <label for="phrasesEntryInput" class="extra-minutes-label">Frases ou cenas registradas</label>
+        <label for="phrasesEntryInput" class="extra-minutes-label">Observacao</label>
         <div class="token-input token-input-vertical">
           <div class="token-list" id="phrasesTokenList"></div>
           <input
             type="text"
             id="phrasesEntryInput"
+            name="phrasesEntry"
             class="token-input-field"
-            placeholder="Digite uma frase e aperte Enter ou vírgula"
+            autocomplete="off"
+            placeholder="Digite uma observacao e aperte Enter"
           />
         </div>
-        <p class="modal-detail-hint">Cada item conta como uma frase registrada.</p>
+        <p class="modal-detail-hint">Use esse campo para registrar uma observacao curta da pratica.</p>
       </div>
 
-      <div class="modal-detail-group">
-        <label for="notesInput" class="extra-minutes-label">Observações</label>
-        <textarea
-          id="notesInput"
-          class="modal-textarea"
-          rows="3"
-          placeholder="Opcional: como foi a prática, o que você percebeu, em que contexto estudou..."
-        ></textarea>
-      </div>
+      <p class="session-helper" id="sessionHelper">Informe o tempo, a materia e o que voce estudou hoje.</p>
 
-      <p class="session-helper" id="sessionHelper">Escolha a matéria, o tempo e o tema estudado.</p>
-
-      <div class="modal-actions">
+      <div class="modal-actions session-modal-actions" id="sessionModalActions" inert aria-hidden="true">
         <button type="button" class="modal-button modal-button-secondary" data-close-session-modal>
           Cancelar
         </button>
-        <button type="button" class="modal-button modal-button-primary" id="saveSessionButton">
-          Salvar prática
+        <button type="submit" class="modal-button modal-button-primary" id="saveSessionButton">
+          Salvar pratica
         </button>
       </div>
-    </div>
-  </div>
+    </form>
+  </dialog>
 
   <script src="js/main.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/dashboard.js"></script>
 </body>
 </html>
+
+
+

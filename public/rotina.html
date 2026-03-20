@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Start 5 | Rotina</title>
+  <meta
+    name="description"
+    content="Pagina de rotina do Start 5 para configurar semana, prioridades, vestibulares e distribuicao de estudos."
+  />
+  <meta name="theme-color" content="#05080d" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Fraunces:wght@500;600;700&family=Instrument+Sans:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <link rel="stylesheet" href="css/rotina.css" />
+</head>
+<body class="dashboard-page protected-page routine-page">
+  <a class="skip-link" href="#mainContent">Pular para o conteudo principal</a>
+
+  <div class="page-shell">
+    <header class="header">
+      <div class="header-inner">
+        <section class="header-account" aria-label="Conta conectada">
+          <div class="header-account-avatar" data-auth-avatar>
+            <img
+              class="header-account-avatar-image"
+              data-auth-avatar-image
+              alt="Foto do perfil"
+              width="42"
+              height="42"
+              decoding="async"
+              hidden
+            />
+            <span class="header-account-avatar-fallback" data-auth-initials>U</span>
+          </div>
+          <div class="header-account-copy">
+            <strong class="header-account-name" data-auth-name>Usu&aacute;rio</strong>
+            <span class="header-account-email" data-auth-email>email@start5.app</span>
+            <span class="header-account-month" data-auth-month-minutes>0 min no m&ecirc;s</span>
+          </div>
+        </section>
+
+        <button
+          class="menu-toggle"
+          id="menuToggle"
+          type="button"
+          aria-label="Abrir menu"
+          aria-expanded="false"
+          aria-controls="menuPanel"
+        >
+          <span class="menu-icon" aria-hidden="true">
+            <span></span>
+            <span></span>
+          </span>
+        </button>
+      </div>
+    </header>
+
+    <aside class="menu-panel" id="menuPanel" aria-label="Menu principal">
+      <div class="menu-panel-inner">
+        <nav class="menu-nav" aria-label="Navega&ccedil;&atilde;o principal">
+          <div class="menu-user">
+            <span class="menu-user-label">Conectado como</span>
+            <strong class="menu-user-name" data-auth-name>Usu&aacute;rio</strong>
+            <span class="menu-user-email" data-auth-email>email@start5.app</span>
+          </div>
+
+          <div class="menu-column">
+            <a href="index.html" class="menu-link">Inicio</a>
+            <a href="dashboard.html" class="menu-link">Painel</a>
+            <a href="questoes.html" class="menu-link">Questoes</a>
+            <a href="profile.html" class="menu-link">Perfil</a>
+            <a href="rotina.html" class="menu-link">Rotina</a>
+          </div>
+
+          <div class="menu-column">
+            <a href="redacao.html" class="menu-link">Reda&ccedil;&atilde;o</a>
+            <a href="admin.html" class="menu-link" data-admin-only hidden>Admin</a>
+            <button type="button" class="menu-link menu-link-button" data-logout>Sair</button>
+          </div>
+        </nav>
+      </div>
+    </aside>
+
+    <main id="mainContent">
+    <section class="dashboard-intro">
+      <div class="dashboard-intro-inner">
+        <div>
+          <p class="section-label">Rotina</p>
+          <h1 class="progress-title">Sua semana com disciplina, constancia e vida real</h1>
+          <p class="dashboard-copy">
+            Monte uma rotina com alma americana real: organizada, funcional, humana e pronta para sustentar o corre do dia.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="routine-layout">
+      <article class="routine-card routine-config-card">
+        <div class="routine-card-head">
+          <div>
+            <p class="section-label">Configura&ccedil;&atilde;o</p>
+            <h2 class="routine-card-title">Base da sua rotina</h2>
+          </div>
+          <div class="routine-card-actions">
+            <button type="button" class="modal-button modal-button-secondary" id="routineSaveButton">
+              Salvar ajustes
+            </button>
+            <button type="button" class="start-button" id="routineGenerateButton">
+              Gerar semana
+            </button>
+          </div>
+        </div>
+
+        <div class="routine-course-focus">
+          <div class="routine-course-lead">
+            <p class="routine-course-eyebrow">Curso desejado</p>
+            <h3 class="routine-course-title">Comece pelo curso que voce quer passar</h3>
+            <p class="routine-course-copy">
+              Engenharia, Medicina, Fisioterapia, Psicologia e outros cursos entram primeiro aqui. A rotina usa esse objetivo para puxar as materias que mais pesam na sua semana.
+            </p>
+          </div>
+
+          <div class="routine-form-grid routine-form-grid-primary">
+            <div class="routine-field routine-field-wide">
+              <span class="routine-field-label">Curso alvo</span>
+              <div class="routine-picker" id="routineCoursePicker">
+                <button type="button" class="routine-picker-trigger" id="routineCourseTrigger" aria-expanded="false">
+                  <span class="routine-picker-trigger-copy">
+                    <strong class="routine-picker-value" id="routineCourseValue">Escolha o curso</strong>
+                    <span class="routine-picker-meta" id="routineCourseMeta">Engenharia, medicina, fisioterapia, psicologia e mais.</span>
+                  </span>
+                  <span class="routine-picker-trigger-icon" aria-hidden="true">+</span>
+                </button>
+                <div class="routine-picker-panel" id="routineCoursePanel" hidden>
+                  <div class="routine-picker-search-shell">
+                    <label class="visually-hidden" for="routineCourseSearch">Buscar curso</label>
+                    <input id="routineCourseSearch" type="text" name="courseSearch" autocomplete="off" placeholder="Buscar curso" />
+                  </div>
+                  <div class="routine-picker-list" id="routineCourseList"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="routine-field">
+              <span class="routine-field-label">Categoria de ingresso</span>
+              <div class="routine-picker" id="routineAdmissionPicker">
+                <button type="button" class="routine-picker-trigger" id="routineAdmissionTrigger" aria-expanded="false">
+                  <span class="routine-picker-trigger-copy">
+                    <strong class="routine-picker-value" id="routineAdmissionValue">AC</strong>
+                    <span class="routine-picker-meta" id="routineAdmissionMeta">Troque entre AC, EP e PPE.</span>
+                  </span>
+                  <span class="routine-picker-trigger-icon" aria-hidden="true">+</span>
+                </button>
+                <div class="routine-picker-panel routine-picker-panel-compact" id="routineAdmissionPanel" hidden>
+                  <div class="routine-picker-list" id="routineAdmissionList"></div>
+                </div>
+              </div>
+            </div>
+
+            <label class="routine-field">
+              <span class="routine-field-label">Meta semanal</span>
+              <input id="routineWeeklyGoalInput" type="number" min="60" max="2000" step="5" />
+            </label>
+
+            <label class="routine-field">
+              <span class="routine-field-label">Universidade alvo</span>
+              <input
+                id="routineUniversityInput"
+                type="text"
+                maxlength="60"
+                placeholder="Ex.: USP, UFMG, UNICAMP"
+              />
+            </label>
+
+            <label class="routine-field">
+              <span class="routine-field-label">Campus / unidade</span>
+              <input
+                id="routineCampusInput"
+                type="text"
+                maxlength="60"
+                placeholder="Ex.: Butanta, Pinheiros, Campinas"
+              />
+            </label>
+
+            <div class="routine-field">
+              <span class="routine-field-label">Turno</span>
+              <div class="routine-picker" id="routineShiftPicker">
+                <button type="button" class="routine-picker-trigger" id="routineShiftTrigger" aria-expanded="false">
+                  <span class="routine-picker-trigger-copy">
+                    <strong class="routine-picker-value" id="routineShiftValue">Escolha o turno</strong>
+                    <span class="routine-picker-meta" id="routineShiftMeta">Integral, manha, tarde, noite ou flexivel.</span>
+                  </span>
+                  <span class="routine-picker-trigger-icon" aria-hidden="true">+</span>
+                </button>
+                <div class="routine-picker-panel routine-picker-panel-compact" id="routineShiftPanel" hidden>
+                  <div class="routine-picker-list" id="routineShiftList"></div>
+                </div>
+              </div>
+            </div>
+
+            <label class="routine-field routine-field-wide">
+              <span class="routine-field-label">Observacao do objetivo</span>
+              <input
+                id="routineContextNoteInput"
+                type="text"
+                maxlength="120"
+                placeholder="Ex.: foco em medicina na capital, segunda fase ou campus especifico"
+              />
+            </label>
+
+            <input id="routineCourseNameInput" type="hidden" />
+          </div>
+        </div>
+
+        <div class="routine-target-panel">
+          <div class="detail-panel-head">
+            <h3>Meta do curso</h3>
+            <p>Estimativa interna para orientar sua rotina. Nao substitui edital ou corte oficial.</p>
+          </div>
+          <div class="routine-target-summary">
+            <div>
+              <strong class="routine-target-title" id="routineTargetTitle">Curso ainda nao definido</strong>
+              <div class="routine-target-copy" id="routineTargetCopy">
+                Escolha um curso e uma categoria para puxar materias mais necessarias e enxergar uma nota-alvo.
+              </div>
+            </div>
+            <span class="routine-target-scale" id="routineTargetScale">Sem meta</span>
+          </div>
+          <div class="routine-target-grid" id="routineTargetBands">
+            <div class="detail-empty">As faixas AC, EP e PPE aparecem aqui quando voce escolher um curso.</div>
+          </div>
+          <p class="routine-target-note" id="routineTargetNote">
+            Use esta faixa como norte. As notas reais podem mudar conforme vestibular, categoria e ano.
+          </p>
+        </div>
+
+        <details class="routine-advanced-shell" id="routineAdvancedDetails">
+          <summary class="routine-advanced-toggle" id="routineAdvancedToggle" aria-controls="routineAdvancedPanel">
+            <span class="routine-advanced-toggle-copy">
+              <strong>Refinar por vestibular</strong>
+              <span id="routineAdvancedSummary">Opcional. Abra se quiser alinhar a rotina a uma prova especifica.</span>
+            </span>
+            <span class="routine-advanced-toggle-icon" id="routineAdvancedIcon" aria-hidden="true">+</span>
+          </summary>
+
+          <div class="routine-advanced-panel" id="routineAdvancedPanel">
+            <div class="routine-form-grid routine-form-grid-advanced">
+              <div class="routine-field">
+                <span class="routine-field-label">Vestibular principal</span>
+                <div class="routine-picker" id="routinePrimaryExamPicker">
+                  <button type="button" class="routine-picker-trigger" id="routinePrimaryExamTrigger" aria-expanded="false">
+                    <span class="routine-picker-trigger-copy">
+                      <strong class="routine-picker-value" id="routinePrimaryExamValue">Escolha o vestibular principal</strong>
+                      <span class="routine-picker-meta" id="routinePrimaryExamMeta">Mais conhecidos primeiro, com busca e rolagem.</span>
+                    </span>
+                    <span class="routine-picker-trigger-icon" aria-hidden="true">+</span>
+                  </button>
+                  <div class="routine-picker-panel" id="routinePrimaryExamPanel" hidden>
+                    <div class="routine-picker-search-shell">
+                      <label class="visually-hidden" for="routinePrimaryExamSearch">Buscar vestibular principal</label>
+                      <input id="routinePrimaryExamSearch" type="text" name="primaryExamSearch" autocomplete="off" placeholder="Buscar vestibular" />
+                    </div>
+                    <div class="routine-picker-list" id="routinePrimaryExamList"></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="routine-field">
+                <span class="routine-field-label">Vestibular secund&aacute;rio</span>
+                <div class="routine-picker" id="routineSecondaryExamPicker">
+                  <button type="button" class="routine-picker-trigger" id="routineSecondaryExamTrigger" aria-expanded="false">
+                    <span class="routine-picker-trigger-copy">
+                      <strong class="routine-picker-value" id="routineSecondaryExamValue">Sem vestibular secund&aacute;rio</strong>
+                      <span class="routine-picker-meta" id="routineSecondaryExamMeta">Opcional para equilibrar a semana.</span>
+                    </span>
+                    <span class="routine-picker-trigger-icon" aria-hidden="true">+</span>
+                  </button>
+                  <div class="routine-picker-panel" id="routineSecondaryExamPanel" hidden>
+                    <div class="routine-picker-search-shell">
+                      <label class="visually-hidden" for="routineSecondaryExamSearch">Buscar vestibular secundario</label>
+                      <input id="routineSecondaryExamSearch" type="text" name="secondaryExamSearch" autocomplete="off" placeholder="Buscar vestibular secund&aacute;rio" />
+                    </div>
+                    <div class="routine-picker-list" id="routineSecondaryExamList"></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="routine-field">
+                <span class="routine-field-label">Perfil da prova</span>
+                <div class="routine-picker" id="routineCourseTrackPicker">
+                  <button type="button" class="routine-picker-trigger" id="routineCourseTrackTrigger" aria-expanded="false">
+                    <span class="routine-picker-trigger-copy">
+                      <strong class="routine-picker-value" id="routineCourseTrackValue">Escolha o perfil</strong>
+                      <span class="routine-picker-meta" id="routineCourseTrackMeta">Exatas, humanas, sa&uacute;de, linguagens ou geral.</span>
+                    </span>
+                    <span class="routine-picker-trigger-icon" aria-hidden="true">+</span>
+                  </button>
+                  <div class="routine-picker-panel routine-picker-panel-compact" id="routineCourseTrackPanel" hidden>
+                    <div class="routine-picker-list" id="routineCourseTrackList"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </details>
+
+        <div class="routine-section-block">
+          <div class="detail-panel-head">
+            <h3>Dias dispon&iacute;veis</h3>
+            <p>Marque os dias da semana e quantos minutos cabem em cada um.</p>
+          </div>
+
+          <div class="routine-capacity-grid">
+            <article class="summary-card">
+              <span class="summary-label">Capacidade semanal</span>
+              <strong class="summary-value" id="routineCapacityTotalValue">0 min</strong>
+            </article>
+            <article class="summary-card">
+              <span class="summary-label">Media por dia ativo</span>
+              <strong class="summary-value" id="routineCapacityAverageValue">0 min</strong>
+            </article>
+            <article class="summary-card summary-card-wide">
+              <span class="summary-label">Leitura da semana</span>
+              <strong class="summary-value" id="routineCapacityInsight">Defina seus dias para enxergar a capacidade real.</strong>
+            </article>
+          </div>
+
+          <div class="routine-days-grid" id="routineDaysGrid">
+            <label class="routine-day-card">
+              <span class="routine-day-top">
+                <input type="checkbox" data-routine-day-toggle data-day="0" />
+                <strong data-routine-day-label>Segunda</strong>
+              </span>
+              <input type="number" min="30" max="360" step="5" data-routine-day-minutes data-day="0" />
+            </label>
+            <label class="routine-day-card">
+              <span class="routine-day-top">
+                <input type="checkbox" data-routine-day-toggle data-day="1" />
+                <strong data-routine-day-label>Ter&ccedil;a</strong>
+              </span>
+              <input type="number" min="30" max="360" step="5" data-routine-day-minutes data-day="1" />
+            </label>
+            <label class="routine-day-card">
+              <span class="routine-day-top">
+                <input type="checkbox" data-routine-day-toggle data-day="2" />
+                <strong data-routine-day-label>Quarta</strong>
+              </span>
+              <input type="number" min="30" max="360" step="5" data-routine-day-minutes data-day="2" />
+            </label>
+            <label class="routine-day-card">
+              <span class="routine-day-top">
+                <input type="checkbox" data-routine-day-toggle data-day="3" />
+                <strong data-routine-day-label>Quinta</strong>
+              </span>
+              <input type="number" min="30" max="360" step="5" data-routine-day-minutes data-day="3" />
+            </label>
+            <label class="routine-day-card">
+              <span class="routine-day-top">
+                <input type="checkbox" data-routine-day-toggle data-day="4" />
+                <strong data-routine-day-label>Sexta</strong>
+              </span>
+              <input type="number" min="30" max="360" step="5" data-routine-day-minutes data-day="4" />
+            </label>
+            <label class="routine-day-card">
+              <span class="routine-day-top">
+                <input type="checkbox" data-routine-day-toggle data-day="5" />
+                <strong data-routine-day-label>S&aacute;bado</strong>
+              </span>
+              <input type="number" min="30" max="360" step="5" data-routine-day-minutes data-day="5" />
+            </label>
+            <label class="routine-day-card">
+              <span class="routine-day-top">
+                <input type="checkbox" data-routine-day-toggle data-day="6" />
+                <strong data-routine-day-label>Domingo</strong>
+              </span>
+              <input type="number" min="30" max="360" step="5" data-routine-day-minutes data-day="6" />
+            </label>
+          </div>
+        </div>
+
+        <div class="routine-section-block">
+          <div class="detail-panel-head">
+            <h3>Mat&eacute;rias e refor&ccedil;os</h3>
+            <p>Ajuste prioridade manual e marque onde a semana precisa apertar mais.</p>
+          </div>
+
+          <div class="routine-custom-subject">
+            <label class="visually-hidden" for="routineCustomSubjectInput">Adicionar materia personalizada</label>
+            <input
+              id="routineCustomSubjectInput"
+              type="text"
+              name="customSubject"
+              autocomplete="off"
+              maxlength="80"
+              placeholder="Adicionar mat&eacute;ria personalizada"
+            />
+            <button type="button" class="modal-button modal-button-secondary" id="routineAddCustomSubjectButton">
+              Adicionar
+            </button>
+          </div>
+
+          <div class="detail-chip-list routine-suggestions" id="routineCustomSubjectSuggestions">
+            <span class="detail-empty">Suas mat&eacute;rias personalizadas aparecem aqui.</span>
+          </div>
+
+          <div class="routine-subject-list" id="routineSubjectList"></div>
+        </div>
+
+        <p class="form-helper" id="routineFeedback">
+          Salve os ajustes antes de trocar a semana, depois gere o plano para ver os blocos distribu&iacute;dos.
+        </p>
+      </article>
+
+      <article class="routine-card routine-plan-card">
+        <div class="routine-card-head">
+          <div>
+            <p class="section-label">Plano semanal</p>
+            <h2 class="routine-card-title" id="routinePlanTitle">Semana ainda n&atilde;o gerada</h2>
+          </div>
+        </div>
+
+        <div class="focus-subject-grid routine-summary-grid">
+          <article class="summary-card">
+            <span class="summary-label">Execu&ccedil;&atilde;o</span>
+            <strong class="summary-value" id="routinePlanExecutionValue">0%</strong>
+          </article>
+
+          <article class="summary-card">
+            <span class="summary-label">Planejado</span>
+            <strong class="summary-value" id="routinePlanMinutesValue">0 min</strong>
+          </article>
+
+          <article class="summary-card">
+            <span class="summary-label">Realizado</span>
+            <strong class="summary-value" id="routinePlanActualValue">0 min</strong>
+          </article>
+
+          <article class="summary-card summary-card-wide">
+            <span class="summary-label">Pr&oacute;xima prioridade</span>
+            <strong class="summary-value" id="routinePlanPriorityValue">Defina a base da semana</strong>
+          </article>
+        </div>
+
+        <p class="focus-subject-insight" id="routinePlanSummaryText">
+          Quando voc&ecirc; gerar a rotina, este bloco mostra o foco da semana, o refor&ccedil;o principal e o andamento real dos estudos.
+        </p>
+
+        <div class="analysis-grid routine-plan-grid">
+          <article class="analysis-panel">
+            <div class="detail-panel-head">
+              <h3>Agenda da semana</h3>
+              <p>Segunda a domingo com blocos base e blocos de refor&ccedil;o.</p>
+            </div>
+            <div class="routine-days-plan" id="routinePlanDays">
+              <div class="detail-empty">Nenhuma rotina gerada ainda.</div>
+            </div>
+          </article>
+
+          <article class="analysis-panel">
+            <div class="detail-panel-head">
+              <h3>Totais por mat&eacute;ria</h3>
+              <p>Veja quem lidera o plano e qual refor&ccedil;o entrou na semana.</p>
+            </div>
+            <div class="analysis-list" id="routineSubjectTotals">
+              <div class="detail-empty">Quando a semana for gerada, as mat&eacute;rias aparecem aqui.</div>
+            </div>
+          </article>
+        </div>
+      </article>
+    </section>
+
+      <footer class="support-copy" aria-hidden="true"></footer>
+    </main>
+  </div>
+
+  <script src="js/main.js"></script>
+  <script src="js/auth.js"></script>
+  <script type="module" src="js/rotina.js"></script>
+</body>
+</html>
+

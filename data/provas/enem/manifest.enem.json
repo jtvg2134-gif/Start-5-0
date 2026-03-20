@@ -1,0 +1,1240 @@
+[
+  {
+    "vestibular": "ENEM",
+    "ano": 2021,
+    "dia": 1,
+    "caderno": "CD1",
+    "prova": {
+      "principal": "data/provas/enem/2021/provas/2021_PV_impresso_D1_CD1.pdf",
+      "nome_original": "2021_PV_impresso_D1_CD1.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "gabarito": {
+      "principal": "data/provas/enem/2021/gabarito/2021_GB_impresso_D1_CD1.pdf",
+      "nome_original": "2021_GB_impresso_D1_CD1.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "status": "ok"
+  },
+  {
+    "vestibular": "ENEM",
+    "ano": 2021,
+    "dia": 1,
+    "caderno": "CD2",
+    "prova": {
+      "principal": "data/provas/enem/2021/provas/2021_PV_impresso_D1_CD2.pdf",
+      "nome_original": "2021_PV_impresso_D1_CD2.pdf",
+      "variante_principal": "normal",
+      "variantes": [
+        {
+          "tipo": "ampliada",
+          "arquivo": "data/provas/enem/2021/provas/2021_PV_impresso_D1_CD2_ampliada.pdf",
+          "nome_original": "2021_PV_impresso_D1_CD2_ampliada.pdf"
+        },
+        {
+          "tipo": "superampliada",
+          "arquivo": "data/provas/enem/2021/provas/2021_PV_impresso_D1_CD2_superampliada.pdf",
+          "nome_original": "2021_PV_impresso_D1_CD2_superampliada.pdf"
+        }
+      ],
+      "duplicatas": []
+    },
+    "gabarito": {
+      "principal": "data/provas/enem/2021/gabarito/2021_GB_impresso_D1_CD2.pdf",
+      "nome_original": "2021_GB_impresso_D1_CD2.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": [
+        "data/provas/enem/2021/gabarito/2021_GB_impresso_D1_CD2 (1).pdf",
+        "data/provas/enem/2021/gabarito/2021_GB_impresso_D1_CD2 (2).pdf"
+      ]
+    },
+    "status": "ok"
+  },
+  {
+    "vestibular": "ENEM",
+    "ano": 2021,
+    "dia": 1,
+    "caderno": "CD3",
+    "prova": {
+      "principal": "data/provas/enem/2021/provas/2021_PV_impresso_D1_CD3.pdf",
+      "nome_original": "2021_PV_impresso_D1_CD3.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "gabarito": {
+      "principal": "data/provas/enem/2021/gabarito/2021_GB_impresso_D1_CD3.pdf",
+      "nome_original": "2021_GB_impresso_D1_CD3.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "status": "ok"
+  },
+  {
+    "vestibular": "ENEM",
+    "ano": 2021,
+    "dia": 1,
+    "caderno": "CD4",
+    "prova": {
+      "principal": "data/provas/enem/2021/provas/2021_PV_impresso_D1_CD4.pdf",
+      "nome_original": "2021_PV_impresso_D1_CD4.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "gabarito": {
+      "principal": "data/provas/enem/2021/gabarito/2021_GB_impresso_D1_CD4.pdf",
+      "nome_original": "2021_GB_impresso_D1_CD4.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "status": "ok"
+  },
+  {
+    "vestibular": "ENEM",
+    "ano": 2021,
+    "dia": 1,
+    "caderno": "CD9",
+    "prova": {
+      "principal": "data/provas/enem/2021/provas/2021_PV_impresso_D1_CD9.pdf",
+      "nome_original": "2021_PV_impresso_D1_CD9.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "gabarito": {
+      "principal": "data/provas/enem/2021/gabarito/2021_GB_impresso_D1_CD9.pdf",
+      "nome_original": "2021_GB_impresso_D1_CD9.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "status": "ok"
+  },
+  {
+    "vestibular": "ENEM",
+    "ano": 2021,
+    "dia": 1,
+    "caderno": "CD10",
+    "prova": {
+      "principal": "data/provas/enem/2021/provas/2021_PV_impresso_D1_CD10.pdf",
+      "nome_original": "2021_PV_impresso_D1_CD10.pdf",
+      "variante_principal": "normal",
+      "variantes": [
+        {
+          "tipo": "ampliada",
+          "arquivo": "data/provas/enem/2021/provas/2021_PV_impresso_D1_CD10_ampliada.pdf",
+          "nome_original": "2021_PV_impresso_D1_CD10_ampliada.pdf"
+        },
+        {
+          "tipo": "superampliada",
+          "arquivo": "data/provas/enem/2021/provas/2021_PV_impresso_D1_CD10_superampliada.pdf",
+          "nome_original": "2021_PV_impresso_D1_CD10_superampliada.pdf"
+        }
+      ],
+      "duplicatas": [
+        "data/provas/enem/2021/provas/2021_PV_impresso_D1_CD10_ampliada (1).pdf"
+      ]
+    },
+    "gabarito": {
+      "principal": "data/provas/enem/2021/gabarito/2021_GB_impresso_D1_CD10.pdf",
+      "nome_original": "2021_GB_impresso_D1_CD10.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": [
+        "data/provas/enem/2021/gabarito/2021_GB_impresso_D1_CD10 (1).pdf",
+        "data/provas/enem/2021/gabarito/2021_GB_impresso_D1_CD10 (2).pdf"
+      ]
+    },
+    "status": "ok"
+  },
+  {
+    "vestibular": "ENEM",
+    "ano": 2021,
+    "dia": 2,
+    "caderno": "CD5",
+    "prova": {
+      "principal": "data/provas/enem/2021/provas/2021_PV_impresso_D2_CD5.pdf",
+      "nome_original": "2021_PV_impresso_D2_CD5.pdf",
+      "variante_principal": "normal",
+      "variantes": [
+        {
+          "tipo": "ampliada",
+          "arquivo": "data/provas/enem/2021/provas/2021_PV_impresso_D2_CD5_ampliada.pdf",
+          "nome_original": "2021_PV_impresso_D2_CD5_ampliada.pdf"
+        },
+        {
+          "tipo": "superampliada",
+          "arquivo": "data/provas/enem/2021/provas/2021_PV_impresso_D2_CD5_superampliada.pdf",
+          "nome_original": "2021_PV_impresso_D2_CD5_superampliada.pdf"
+        }
+      ],
+      "duplicatas": []
+    },
+    "gabarito": {
+      "principal": "data/provas/enem/2021/gabarito/2021_GB_impresso_D2_CD5.pdf",
+      "nome_original": "2021_GB_impresso_D2_CD5.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": [
+        "data/provas/enem/2021/gabarito/2021_GB_impresso_D2_CD5 (1).pdf",
+        "data/provas/enem/2021/gabarito/2021_GB_impresso_D2_CD5 (2).pdf"
+      ]
+    },
+    "status": "ok"
+  },
+  {
+    "vestibular": "ENEM",
+    "ano": 2021,
+    "dia": 2,
+    "caderno": "CD6",
+    "prova": {
+      "principal": "data/provas/enem/2021/provas/2021_PV_impresso_D2_CD6.pdf",
+      "nome_original": "2021_PV_impresso_D2_CD6.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "gabarito": {
+      "principal": "data/provas/enem/2021/gabarito/2021_GB_impresso_D2_CD6.pdf",
+      "nome_original": "2021_GB_impresso_D2_CD6.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "status": "ok"
+  },
+  {
+    "vestibular": "ENEM",
+    "ano": 2021,
+    "dia": 2,
+    "caderno": "CD7",
+    "prova": {
+      "principal": "data/provas/enem/2021/provas/2021_PV_impresso_D2_CD7.pdf",
+      "nome_original": "2021_PV_impresso_D2_CD7.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "gabarito": {
+      "principal": "data/provas/enem/2021/gabarito/2021_GB_impresso_D2_CD7.pdf",
+      "nome_original": "2021_GB_impresso_D2_CD7.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "status": "ok"
+  },
+  {
+    "vestibular": "ENEM",
+    "ano": 2021,
+    "dia": 2,
+    "caderno": "CD8",
+    "prova": {
+      "principal": "data/provas/enem/2021/provas/2021_PV_impresso_D2_CD8.pdf",
+      "nome_original": "2021_PV_impresso_D2_CD8.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "gabarito": {
+      "principal": "data/provas/enem/2021/gabarito/2021_GB_impresso_D2_CD8.pdf",
+      "nome_original": "2021_GB_impresso_D2_CD8.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "status": "ok"
+  },
+  {
+    "vestibular": "ENEM",
+    "ano": 2021,
+    "dia": 2,
+    "caderno": "CD11",
+    "prova": {
+      "principal": "data/provas/enem/2021/provas/2021_PV_impresso_D2_CD11.pdf",
+      "nome_original": "2021_PV_impresso_D2_CD11.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "gabarito": {
+      "principal": "data/provas/enem/2021/gabarito/2021_GB_impresso_D2_CD11.pdf",
+      "nome_original": "2021_GB_impresso_D2_CD11.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "status": "ok"
+  },
+  {
+    "vestibular": "ENEM",
+    "ano": 2021,
+    "dia": 2,
+    "caderno": "CD12",
+    "prova": {
+      "principal": "data/provas/enem/2021/provas/2021_PV_impresso_D2_CD12.pdf",
+      "nome_original": "2021_PV_impresso_D2_CD12.pdf",
+      "variante_principal": "normal",
+      "variantes": [
+        {
+          "tipo": "ampliada",
+          "arquivo": "data/provas/enem/2021/provas/2021_PV_impresso_D2_CD12_ampliada.pdf",
+          "nome_original": "2021_PV_impresso_D2_CD12_ampliada.pdf"
+        },
+        {
+          "tipo": "superampliada",
+          "arquivo": "data/provas/enem/2021/provas/2021_PV_impresso_D2_CD12_superampliada.pdf",
+          "nome_original": "2021_PV_impresso_D2_CD12_superampliada.pdf"
+        }
+      ],
+      "duplicatas": []
+    },
+    "gabarito": {
+      "principal": "data/provas/enem/2021/gabarito/2021_GB_impresso_D2_CD12.pdf",
+      "nome_original": "2021_GB_impresso_D2_CD12.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": [
+        "data/provas/enem/2021/gabarito/2021_GB_impresso_D2_CD12 (1).pdf",
+        "data/provas/enem/2021/gabarito/2021_GB_impresso_D2_CD12 (2).pdf"
+      ]
+    },
+    "status": "ok"
+  },
+  {
+    "vestibular": "ENEM",
+    "ano": 2022,
+    "dia": 1,
+    "caderno": "CD1",
+    "prova": {
+      "principal": "data/provas/enem/2022/prova/2022_PV_impresso_D1_CD1.pdf",
+      "nome_original": "2022_PV_impresso_D1_CD1.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "gabarito": {
+      "principal": "data/provas/enem/2022/gabarito/2022_GB_impresso_D1_CD1.pdf",
+      "nome_original": "2022_GB_impresso_D1_CD1.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "status": "ok"
+  },
+  {
+    "vestibular": "ENEM",
+    "ano": 2022,
+    "dia": 1,
+    "caderno": "CD2",
+    "prova": {
+      "principal": "data/provas/enem/2022/prova/2022_PV_impresso_D1_CD2.pdf",
+      "nome_original": "2022_PV_impresso_D1_CD2.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "gabarito": {
+      "principal": "data/provas/enem/2022/gabarito/2022_GB_impresso_D1_CD2.pdf",
+      "nome_original": "2022_GB_impresso_D1_CD2.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "status": "ok"
+  },
+  {
+    "vestibular": "ENEM",
+    "ano": 2022,
+    "dia": 1,
+    "caderno": "CD3",
+    "prova": {
+      "principal": "data/provas/enem/2022/prova/2022_PV_impresso_D1_CD3.pdf",
+      "nome_original": "2022_PV_impresso_D1_CD3.pdf",
+      "variante_principal": "normal",
+      "variantes": [
+        {
+          "tipo": "ampliada",
+          "arquivo": "data/provas/enem/2022/prova/2022_PV_impresso_D1_CD3_ampliada.pdf",
+          "nome_original": "2022_PV_impresso_D1_CD3_ampliada.pdf"
+        },
+        {
+          "tipo": "superampliada",
+          "arquivo": "data/provas/enem/2022/prova/2022_PV_impresso_D1_CD3_superampliada.pdf",
+          "nome_original": "2022_PV_impresso_D1_CD3_superampliada.pdf"
+        }
+      ],
+      "duplicatas": []
+    },
+    "gabarito": {
+      "principal": "data/provas/enem/2022/gabarito/2022_GB_impresso_D1_CD3.pdf",
+      "nome_original": "2022_GB_impresso_D1_CD3.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": [
+        "data/provas/enem/2022/gabarito/2022_GB_impresso_D1_CD3 (1).pdf",
+        "data/provas/enem/2022/gabarito/2022_GB_impresso_D1_CD3 (2).pdf"
+      ]
+    },
+    "status": "ok"
+  },
+  {
+    "vestibular": "ENEM",
+    "ano": 2022,
+    "dia": 1,
+    "caderno": "CD4",
+    "prova": {
+      "principal": "data/provas/enem/2022/prova/2022_PV_impresso_D1_CD4.pdf",
+      "nome_original": "2022_PV_impresso_D1_CD4.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "gabarito": {
+      "principal": "data/provas/enem/2022/gabarito/2022_GB_impresso_D1_CD4.pdf",
+      "nome_original": "2022_GB_impresso_D1_CD4.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "status": "ok"
+  },
+  {
+    "vestibular": "ENEM",
+    "ano": 2022,
+    "dia": 1,
+    "caderno": "CD9",
+    "prova": {
+      "principal": "data/provas/enem/2022/prova/2022_PV_impresso_D1_CD9.pdf",
+      "nome_original": "2022_PV_impresso_D1_CD9.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "gabarito": {
+      "principal": "data/provas/enem/2022/gabarito/2022_GB_impresso_D1_CD9.pdf",
+      "nome_original": "2022_GB_impresso_D1_CD9.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "status": "ok"
+  },
+  {
+    "vestibular": "ENEM",
+    "ano": 2022,
+    "dia": 1,
+    "caderno": "CD10",
+    "prova": {
+      "principal": "data/provas/enem/2022/prova/2022_PV_impresso_D1_CD10.pdf",
+      "nome_original": "2022_PV_impresso_D1_CD10.pdf",
+      "variante_principal": "normal",
+      "variantes": [
+        {
+          "tipo": "ampliada",
+          "arquivo": "data/provas/enem/2022/prova/2022_PV_impresso_D1_CD10_ampliada.pdf",
+          "nome_original": "2022_PV_impresso_D1_CD10_ampliada.pdf"
+        },
+        {
+          "tipo": "superampliada",
+          "arquivo": "data/provas/enem/2022/prova/2022_PV_impresso_D1_CD10_superampliada.pdf",
+          "nome_original": "2022_PV_impresso_D1_CD10_superampliada.pdf"
+        }
+      ],
+      "duplicatas": []
+    },
+    "gabarito": {
+      "principal": "data/provas/enem/2022/gabarito/2022_GB_impresso_D1_CD10.pdf",
+      "nome_original": "2022_GB_impresso_D1_CD10.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": [
+        "data/provas/enem/2022/gabarito/2022_GB_impresso_D1_CD10 (1).pdf",
+        "data/provas/enem/2022/gabarito/2022_GB_impresso_D1_CD10 (2).pdf"
+      ]
+    },
+    "status": "ok"
+  },
+  {
+    "vestibular": "ENEM",
+    "ano": 2022,
+    "dia": 2,
+    "caderno": "CD5",
+    "prova": {
+      "principal": "data/provas/enem/2022/prova/2022_PV_impresso_D2_CD5.pdf",
+      "nome_original": "2022_PV_impresso_D2_CD5.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "gabarito": {
+      "principal": "data/provas/enem/2022/gabarito/2022_GB_impresso_D2_CD5.pdf",
+      "nome_original": "2022_GB_impresso_D2_CD5.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "status": "ok"
+  },
+  {
+    "vestibular": "ENEM",
+    "ano": 2022,
+    "dia": 2,
+    "caderno": "CD6",
+    "prova": {
+      "principal": "data/provas/enem/2022/prova/2022_PV_impresso_D2_CD6.pdf",
+      "nome_original": "2022_PV_impresso_D2_CD6.pdf",
+      "variante_principal": "normal",
+      "variantes": [
+        {
+          "tipo": "ampliada",
+          "arquivo": "data/provas/enem/2022/prova/2022_PV_impresso_D2_CD6_ampliada.pdf",
+          "nome_original": "2022_PV_impresso_D2_CD6_ampliada.pdf"
+        },
+        {
+          "tipo": "superampliada",
+          "arquivo": "data/provas/enem/2022/prova/2022_PV_impresso_D2_CD6_superampliada.pdf",
+          "nome_original": "2022_PV_impresso_D2_CD6_superampliada.pdf"
+        }
+      ],
+      "duplicatas": []
+    },
+    "gabarito": {
+      "principal": "data/provas/enem/2022/gabarito/2022_GB_impresso_D2_CD6.pdf",
+      "nome_original": "2022_GB_impresso_D2_CD6.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": [
+        "data/provas/enem/2022/gabarito/2022_GB_impresso_D2_CD6 (1).pdf",
+        "data/provas/enem/2022/gabarito/2022_GB_impresso_D2_CD6 (2).pdf"
+      ]
+    },
+    "status": "ok"
+  },
+  {
+    "vestibular": "ENEM",
+    "ano": 2022,
+    "dia": 2,
+    "caderno": "CD7",
+    "prova": {
+      "principal": "data/provas/enem/2022/prova/2022_PV_impresso_D2_CD7.pdf",
+      "nome_original": "2022_PV_impresso_D2_CD7.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "gabarito": {
+      "principal": "data/provas/enem/2022/gabarito/2022_GB_impresso_D2_CD7.pdf",
+      "nome_original": "2022_GB_impresso_D2_CD7.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "status": "ok"
+  },
+  {
+    "vestibular": "ENEM",
+    "ano": 2022,
+    "dia": 2,
+    "caderno": "CD8",
+    "prova": {
+      "principal": "data/provas/enem/2022/prova/2022_PV_impresso_D2_CD8.pdf",
+      "nome_original": "2022_PV_impresso_D2_CD8.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "gabarito": {
+      "principal": "data/provas/enem/2022/gabarito/2022_GB_impresso_D2_CD8.pdf",
+      "nome_original": "2022_GB_impresso_D2_CD8.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "status": "ok"
+  },
+  {
+    "vestibular": "ENEM",
+    "ano": 2022,
+    "dia": 2,
+    "caderno": "CD11",
+    "prova": {
+      "principal": "data/provas/enem/2022/prova/2022_PV_impresso_D2_CD11.pdf",
+      "nome_original": "2022_PV_impresso_D2_CD11.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "gabarito": {
+      "principal": "data/provas/enem/2022/gabarito/2022_GB_impresso_D2_CD11.pdf",
+      "nome_original": "2022_GB_impresso_D2_CD11.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "status": "ok"
+  },
+  {
+    "vestibular": "ENEM",
+    "ano": 2022,
+    "dia": 2,
+    "caderno": "CD12",
+    "prova": {
+      "principal": "data/provas/enem/2022/prova/2022_PV_impresso_D2_CD12.pdf",
+      "nome_original": "2022_PV_impresso_D2_CD12.pdf",
+      "variante_principal": "normal",
+      "variantes": [
+        {
+          "tipo": "ampliada",
+          "arquivo": "data/provas/enem/2022/prova/2022_PV_impresso_D2_CD12_ampliada.pdf",
+          "nome_original": "2022_PV_impresso_D2_CD12_ampliada.pdf"
+        },
+        {
+          "tipo": "superampliada",
+          "arquivo": "data/provas/enem/2022/prova/2022_PV_impresso_D2_CD12_superampliada.pdf",
+          "nome_original": "2022_PV_impresso_D2_CD12_superampliada.pdf"
+        }
+      ],
+      "duplicatas": []
+    },
+    "gabarito": {
+      "principal": "data/provas/enem/2022/gabarito/2022_GB_impresso_D2_CD12.pdf",
+      "nome_original": "2022_GB_impresso_D2_CD12.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": [
+        "data/provas/enem/2022/gabarito/2022_GB_impresso_D2_CD12 (1).pdf",
+        "data/provas/enem/2022/gabarito/2022_GB_impresso_D2_CD12 (2).pdf"
+      ]
+    },
+    "status": "ok"
+  },
+  {
+    "vestibular": "ENEM",
+    "ano": 2023,
+    "dia": 1,
+    "caderno": "CD1",
+    "prova": {
+      "principal": "data/provas/enem/2023/prova/2023_PV_impresso_D1_CD1.pdf",
+      "nome_original": "2023_PV_impresso_D1_CD1.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "gabarito": {
+      "principal": "data/provas/enem/2023/gabarito/2023_GB_impresso_D1_CD1.pdf",
+      "nome_original": "2023_GB_impresso_D1_CD1.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "status": "ok"
+  },
+  {
+    "vestibular": "ENEM",
+    "ano": 2023,
+    "dia": 1,
+    "caderno": "CD2",
+    "prova": {
+      "principal": "data/provas/enem/2023/prova/2023_PV_impresso_D1_CD2.pdf",
+      "nome_original": "2023_PV_impresso_D1_CD2.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "gabarito": {
+      "principal": "data/provas/enem/2023/gabarito/2023_GB_impresso_D1_CD2.pdf",
+      "nome_original": "2023_GB_impresso_D1_CD2.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "status": "ok"
+  },
+  {
+    "vestibular": "ENEM",
+    "ano": 2023,
+    "dia": 1,
+    "caderno": "CD3",
+    "prova": {
+      "principal": "data/provas/enem/2023/prova/2023_PV_impresso_D1_CD3.pdf",
+      "nome_original": "2023_PV_impresso_D1_CD3.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "gabarito": {
+      "principal": "data/provas/enem/2023/gabarito/2023_GB_impresso_D1_CD3.pdf",
+      "nome_original": "2023_GB_impresso_D1_CD3.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "status": "ok"
+  },
+  {
+    "vestibular": "ENEM",
+    "ano": 2023,
+    "dia": 1,
+    "caderno": "CD4",
+    "prova": {
+      "principal": "data/provas/enem/2023/prova/2023_PV_impresso_D1_CD4.pdf",
+      "nome_original": "2023_PV_impresso_D1_CD4.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "gabarito": {
+      "principal": "data/provas/enem/2023/gabarito/2023_GB_impresso_D1_CD4.pdf",
+      "nome_original": "2023_GB_impresso_D1_CD4.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "status": "ok"
+  },
+  {
+    "vestibular": "ENEM",
+    "ano": 2023,
+    "dia": 1,
+    "caderno": "CD9",
+    "prova": {
+      "principal": "data/provas/enem/2023/prova/2023_PV_impresso_D1_CD9.pdf",
+      "nome_original": "2023_PV_impresso_D1_CD9.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "gabarito": {
+      "principal": "data/provas/enem/2023/gabarito/2023_GB_impresso_D1_CD9.pdf",
+      "nome_original": "2023_GB_impresso_D1_CD9.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "status": "ok"
+  },
+  {
+    "vestibular": "ENEM",
+    "ano": 2023,
+    "dia": 1,
+    "caderno": "CD10",
+    "prova": {
+      "principal": "data/provas/enem/2023/prova/2023_PV_impresso_D1_CD10.pdf",
+      "nome_original": "2023_PV_impresso_D1_CD10.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "gabarito": {
+      "principal": "data/provas/enem/2023/gabarito/2023_GB_impresso_D1_CD10.pdf",
+      "nome_original": "2023_GB_impresso_D1_CD10.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "status": "ok"
+  },
+  {
+    "vestibular": "ENEM",
+    "ano": 2023,
+    "dia": 2,
+    "caderno": "CD5",
+    "prova": {
+      "principal": "data/provas/enem/2023/prova/2023_PV_impresso_D2_CD5.pdf",
+      "nome_original": "2023_PV_impresso_D2_CD5.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "gabarito": {
+      "principal": "data/provas/enem/2023/gabarito/2023_GB_impresso_D2_CD5.pdf",
+      "nome_original": "2023_GB_impresso_D2_CD5.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "status": "ok"
+  },
+  {
+    "vestibular": "ENEM",
+    "ano": 2023,
+    "dia": 2,
+    "caderno": "CD6",
+    "prova": {
+      "principal": "data/provas/enem/2023/prova/2023_PV_impresso_D2_CD6.pdf",
+      "nome_original": "2023_PV_impresso_D2_CD6.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "gabarito": {
+      "principal": "data/provas/enem/2023/gabarito/2023_GB_impresso_D2_CD6.pdf",
+      "nome_original": "2023_GB_impresso_D2_CD6.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "status": "ok"
+  },
+  {
+    "vestibular": "ENEM",
+    "ano": 2023,
+    "dia": 2,
+    "caderno": "CD7",
+    "prova": {
+      "principal": "data/provas/enem/2023/prova/2023_PV_impresso_D2_CD7.pdf",
+      "nome_original": "2023_PV_impresso_D2_CD7.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "gabarito": {
+      "principal": "data/provas/enem/2023/gabarito/2023_GB_impresso_D2_CD7.pdf",
+      "nome_original": "2023_GB_impresso_D2_CD7.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "status": "ok"
+  },
+  {
+    "vestibular": "ENEM",
+    "ano": 2023,
+    "dia": 2,
+    "caderno": "CD8",
+    "prova": {
+      "principal": "data/provas/enem/2023/prova/2023_PV_impresso_D2_CD8.pdf",
+      "nome_original": "2023_PV_impresso_D2_CD8.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "gabarito": {
+      "principal": "data/provas/enem/2023/gabarito/2023_GB_impresso_D2_CD8.pdf",
+      "nome_original": "2023_GB_impresso_D2_CD8.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "status": "ok"
+  },
+  {
+    "vestibular": "ENEM",
+    "ano": 2023,
+    "dia": 2,
+    "caderno": "CD11",
+    "prova": {
+      "principal": "data/provas/enem/2023/prova/2023_PV_impresso_D2_CD11.pdf",
+      "nome_original": "2023_PV_impresso_D2_CD11.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "gabarito": {
+      "principal": "data/provas/enem/2023/gabarito/2023_GB_impresso_D2_CD11.pdf",
+      "nome_original": "2023_GB_impresso_D2_CD11.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "status": "ok"
+  },
+  {
+    "vestibular": "ENEM",
+    "ano": 2023,
+    "dia": 2,
+    "caderno": "CD12",
+    "prova": {
+      "principal": "data/provas/enem/2023/prova/2023_PV_impresso_D2_CD12.pdf",
+      "nome_original": "2023_PV_impresso_D2_CD12.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "gabarito": {
+      "principal": "data/provas/enem/2023/gabarito/2023_GB_impresso_D2_CD12.pdf",
+      "nome_original": "2023_GB_impresso_D2_CD12.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "status": "ok"
+  },
+  {
+    "vestibular": "ENEM",
+    "ano": 2024,
+    "dia": 1,
+    "caderno": "CD1",
+    "prova": {
+      "principal": "data/provas/enem/2024/provas/2024_PV_impresso_D1_CD1.pdf",
+      "nome_original": "2024_PV_impresso_D1_CD1.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "gabarito": {
+      "principal": "data/provas/enem/2024/gabarito/2024_GB_impresso_D1_CD1.pdf",
+      "nome_original": "2024_GB_impresso_D1_CD1.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "status": "ok"
+  },
+  {
+    "vestibular": "ENEM",
+    "ano": 2024,
+    "dia": 1,
+    "caderno": "CD2",
+    "prova": {
+      "principal": "data/provas/enem/2024/provas/2024_PV_impresso_D1_CD2.pdf",
+      "nome_original": "2024_PV_impresso_D1_CD2.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": [
+        "data/provas/enem/2024/gabarito/2024_PV_impresso_D1_CD2.pdf"
+      ]
+    },
+    "gabarito": null,
+    "status": "missing_gabarito"
+  },
+  {
+    "vestibular": "ENEM",
+    "ano": 2024,
+    "dia": 1,
+    "caderno": "CD3",
+    "prova": {
+      "principal": "data/provas/enem/2024/provas/2024_PV_impresso_D1_CD3.pdf",
+      "nome_original": "2024_PV_impresso_D1_CD3.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "gabarito": {
+      "principal": "data/provas/enem/2024/gabarito/2024_GB_impresso_D1_CD3.pdf",
+      "nome_original": "2024_GB_impresso_D1_CD3.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "status": "ok"
+  },
+  {
+    "vestibular": "ENEM",
+    "ano": 2024,
+    "dia": 1,
+    "caderno": "CD4",
+    "prova": {
+      "principal": "data/provas/enem/2024/provas/2024_PV_impresso_D1_CD4.pdf",
+      "nome_original": "2024_PV_impresso_D1_CD4.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "gabarito": {
+      "principal": "data/provas/enem/2024/gabarito/2024_GB_impresso_D1_CD4.pdf",
+      "nome_original": "2024_GB_impresso_D1_CD4.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "status": "ok"
+  },
+  {
+    "vestibular": "ENEM",
+    "ano": 2024,
+    "dia": 1,
+    "caderno": "CD9",
+    "prova": {
+      "principal": "data/provas/enem/2024/provas/2024_PV_impresso_D1_CD9.pdf",
+      "nome_original": "2024_PV_impresso_D1_CD9.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "gabarito": {
+      "principal": "data/provas/enem/2024/gabarito/2024_GB_impresso_D1_CD9.pdf",
+      "nome_original": "2024_GB_impresso_D1_CD9.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "status": "ok"
+  },
+  {
+    "vestibular": "ENEM",
+    "ano": 2024,
+    "dia": 1,
+    "caderno": "CD10",
+    "prova": {
+      "principal": "data/provas/enem/2024/provas/2024_PV_impresso_D1_CD10.pdf",
+      "nome_original": "2024_PV_impresso_D1_CD10.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "gabarito": {
+      "principal": "data/provas/enem/2024/gabarito/2024_GB_impresso_D1_CD10.pdf",
+      "nome_original": "2024_GB_impresso_D1_CD10.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "status": "ok"
+  },
+  {
+    "vestibular": "ENEM",
+    "ano": 2024,
+    "dia": 2,
+    "caderno": "CD5",
+    "prova": {
+      "principal": "data/provas/enem/2024/provas/2024_PV_impresso_D2_CD5.pdf",
+      "nome_original": "2024_PV_impresso_D2_CD5.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "gabarito": {
+      "principal": "data/provas/enem/2024/gabarito/2024_GB_impresso_D2_CD5.pdf",
+      "nome_original": "2024_GB_impresso_D2_CD5.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "status": "ok"
+  },
+  {
+    "vestibular": "ENEM",
+    "ano": 2024,
+    "dia": 2,
+    "caderno": "CD6",
+    "prova": null,
+    "gabarito": {
+      "principal": "data/provas/enem/2024/gabarito/2024_GB_impresso_D2_CD6.pdf",
+      "nome_original": "2024_GB_impresso_D2_CD6.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "status": "missing_prova"
+  },
+  {
+    "vestibular": "ENEM",
+    "ano": 2024,
+    "dia": 2,
+    "caderno": "CD7",
+    "prova": {
+      "principal": "data/provas/enem/2024/provas/2024_PV_impresso_D2_CD7.pdf",
+      "nome_original": "2024_PV_impresso_D2_CD7.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "gabarito": {
+      "principal": "data/provas/enem/2024/gabarito/2024_GB_impresso_D2_CD7.pdf",
+      "nome_original": "2024_GB_impresso_D2_CD7.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "status": "ok"
+  },
+  {
+    "vestibular": "ENEM",
+    "ano": 2024,
+    "dia": 2,
+    "caderno": "CD8",
+    "prova": {
+      "principal": "data/provas/enem/2024/provas/2024_PV_impresso_D2_CD8.pdf",
+      "nome_original": "2024_PV_impresso_D2_CD8.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "gabarito": {
+      "principal": "data/provas/enem/2024/gabarito/2024_GB_impresso_D2_CD8.pdf",
+      "nome_original": "2024_GB_impresso_D2_CD8.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "status": "ok"
+  },
+  {
+    "vestibular": "ENEM",
+    "ano": 2025,
+    "dia": 1,
+    "caderno": "CD1",
+    "prova": {
+      "principal": "data/provas/enem/2025/provas/2025_PV_impresso_D1_CD1.pdf",
+      "nome_original": "2025_PV_impresso_D1_CD1.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "gabarito": {
+      "principal": "data/provas/enem/2025/gabarito/2025_GB_impresso_D1_CD1.pdf",
+      "nome_original": "2025_GB_impresso_D1_CD1.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "status": "ok"
+  },
+  {
+    "vestibular": "ENEM",
+    "ano": 2025,
+    "dia": 1,
+    "caderno": "CD2",
+    "prova": {
+      "principal": "data/provas/enem/2025/provas/2025_PV_impresso_D1_CD2.pdf",
+      "nome_original": "2025_PV_impresso_D1_CD2.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "gabarito": {
+      "principal": "data/provas/enem/2025/gabarito/2025_GB_impresso_D1_CD2.pdf",
+      "nome_original": "2025_GB_impresso_D1_CD2.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "status": "ok"
+  },
+  {
+    "vestibular": "ENEM",
+    "ano": 2025,
+    "dia": 1,
+    "caderno": "CD3",
+    "prova": {
+      "principal": "data/provas/enem/2025/provas/2025_PV_impresso_D1_CD3.pdf",
+      "nome_original": "2025_PV_impresso_D1_CD3.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "gabarito": {
+      "principal": "data/provas/enem/2025/gabarito/2025_GB_impresso_D1_CD3.pdf",
+      "nome_original": "2025_GB_impresso_D1_CD3.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "status": "ok"
+  },
+  {
+    "vestibular": "ENEM",
+    "ano": 2025,
+    "dia": 1,
+    "caderno": "CD4",
+    "prova": {
+      "principal": "data/provas/enem/2025/provas/2025_PV_impresso_D1_CD4.pdf",
+      "nome_original": "2025_PV_impresso_D1_CD4.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "gabarito": {
+      "principal": "data/provas/enem/2025/gabarito/2025_GB_impresso_D1_CD4.pdf",
+      "nome_original": "2025_GB_impresso_D1_CD4.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "status": "ok"
+  },
+  {
+    "vestibular": "ENEM",
+    "ano": 2025,
+    "dia": 2,
+    "caderno": "CD5",
+    "prova": {
+      "principal": "data/provas/enem/2025/provas/2025_PV_impresso_D2_CD5.pdf",
+      "nome_original": "2025_PV_impresso_D2_CD5.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "gabarito": {
+      "principal": "data/provas/enem/2025/gabarito/2025_GB_impresso_D2_CD5.pdf",
+      "nome_original": "2025_GB_impresso_D2_CD5.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "status": "ok"
+  },
+  {
+    "vestibular": "ENEM",
+    "ano": 2025,
+    "dia": 2,
+    "caderno": "CD6",
+    "prova": {
+      "principal": "data/provas/enem/2025/provas/2025_PV_impresso_D2_CD6.pdf",
+      "nome_original": "2025_PV_impresso_D2_CD6.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "gabarito": {
+      "principal": "data/provas/enem/2025/gabarito/2025_GB_impresso_D2_CD6.pdf",
+      "nome_original": "2025_GB_impresso_D2_CD6.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "status": "ok"
+  },
+  {
+    "vestibular": "ENEM",
+    "ano": 2025,
+    "dia": 2,
+    "caderno": "CD7",
+    "prova": {
+      "principal": "data/provas/enem/2025/provas/2025_PV_impresso_D2_CD7.pdf",
+      "nome_original": "2025_PV_impresso_D2_CD7.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "gabarito": {
+      "principal": "data/provas/enem/2025/gabarito/2025_GB_impresso_D2_CD7.pdf",
+      "nome_original": "2025_GB_impresso_D2_CD7.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "status": "ok"
+  },
+  {
+    "vestibular": "ENEM",
+    "ano": 2025,
+    "dia": 2,
+    "caderno": "CD8",
+    "prova": {
+      "principal": "data/provas/enem/2025/provas/2025_PV_impresso_D2_CD8.pdf",
+      "nome_original": "2025_PV_impresso_D2_CD8.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "gabarito": {
+      "principal": "data/provas/enem/2025/gabarito/2025_GB_impresso_D2_CD8.pdf",
+      "nome_original": "2025_GB_impresso_D2_CD8.pdf",
+      "variante_principal": "normal",
+      "variantes": [],
+      "duplicatas": []
+    },
+    "status": "ok"
+  }
+]

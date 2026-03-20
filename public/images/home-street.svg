@@ -1,0 +1,72 @@
+<svg width="1600" height="900" viewBox="0 0 1600 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="skyHome" x1="800" y1="0" x2="800" y2="520" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#A8D4FF"/>
+      <stop offset="0.48" stop-color="#F7D28B"/>
+      <stop offset="1" stop-color="#E19A58"/>
+    </linearGradient>
+    <linearGradient id="streetGlow" x1="800" y1="470" x2="800" y2="900" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#D79D57"/>
+      <stop offset="1" stop-color="#6F4B30"/>
+    </linearGradient>
+    <linearGradient id="brickLeft" x1="0" y1="60" x2="520" y2="760" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#7C3F27"/>
+      <stop offset="1" stop-color="#3D231A"/>
+    </linearGradient>
+    <linearGradient id="brickRight" x1="1120" y1="80" x2="1600" y2="760" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#9A5A36"/>
+      <stop offset="1" stop-color="#43261D"/>
+    </linearGradient>
+    <radialGradient id="sunHome" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(805 162) rotate(90) scale(190 240)">
+      <stop stop-color="#FFF8D4" stop-opacity="0.98"/>
+      <stop offset="0.5" stop-color="#FFE19F" stop-opacity="0.54"/>
+      <stop offset="1" stop-color="#FFE19F" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1600" height="900" fill="url(#skyHome)"/>
+  <rect width="1600" height="900" fill="#071019" fill-opacity="0.14"/>
+  <ellipse cx="805" cy="162" rx="238" ry="190" fill="url(#sunHome)"/>
+
+  <polygon points="0,70 470,120 470,650 0,760" fill="url(#brickLeft)"/>
+  <polygon points="210,80 590,110 590,620 210,708" fill="#9E592F" fill-opacity="0.72"/>
+  <polygon points="1110,110 1600,58 1600,760 1110,640" fill="url(#brickRight)"/>
+  <polygon points="970,122 1360,94 1360,618 970,650" fill="#A25C39" fill-opacity="0.7"/>
+
+  <g opacity="0.88">
+    <rect x="35" y="170" width="110" height="150" fill="#1C2128"/>
+    <rect x="165" y="180" width="116" height="148" fill="#1A1F26"/>
+    <rect x="306" y="196" width="112" height="144" fill="#1C2128"/>
+    <rect x="225" y="342" width="150" height="205" fill="#181C23"/>
+    <rect x="1185" y="168" width="110" height="150" fill="#1C2128"/>
+    <rect x="1322" y="184" width="118" height="154" fill="#1A1F26"/>
+    <rect x="1450" y="208" width="96" height="138" fill="#1C2128"/>
+  </g>
+
+  <g opacity="0.88">
+    <rect x="508" y="0" width="16" height="690" fill="#6C7782"/>
+    <rect x="1077" y="0" width="16" height="690" fill="#6C7782"/>
+    <rect x="620" y="130" width="350" height="18" fill="#72808D"/>
+    <rect x="620" y="260" width="350" height="18" fill="#72808D"/>
+    <rect x="625" y="134" width="10" height="290" fill="#D2D8DD"/>
+    <rect x="955" y="134" width="10" height="290" fill="#D2D8DD"/>
+    <path d="M525 472H1080V520H525V472Z" fill="#5A6773"/>
+    <path d="M660 148L804 338L944 148" stroke="#D2D8DD" stroke-width="16"/>
+    <path d="M525 472L676 286" stroke="#D4DADF" stroke-width="8"/>
+    <path d="M1080 472L932 286" stroke="#D4DADF" stroke-width="8"/>
+  </g>
+
+  <polygon points="650,900 950,900 860,525 740,525" fill="#6F4B30"/>
+  <polygon points="0,900 650,900 740,525 0,720" fill="url(#streetGlow)"/>
+  <polygon points="950,900 1600,900 1600,720 860,525" fill="#7E5538"/>
+  <path d="M760 535L610 900" stroke="#D9B277" stroke-width="3" stroke-opacity="0.34"/>
+  <path d="M840 535L990 900" stroke="#D9B277" stroke-width="3" stroke-opacity="0.34"/>
+  <path d="M800 525V900" stroke="#E9C58D" stroke-width="4" stroke-opacity="0.28"/>
+
+  <g opacity="0.22" fill="#FFF2D1">
+    <rect x="96" y="270" width="210" height="118" rx="10"/>
+    <rect x="1298" y="236" width="180" height="42" rx="8"/>
+    <rect x="1298" y="292" width="180" height="42" rx="8"/>
+    <rect x="1298" y="350" width="180" height="42" rx="8"/>
+  </g>
+</svg>

@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "updatedAt": "",
+  "baseDir": "data/provas",
+  "fields": [
+    "vestibular",
+    "ano",
+    "fase",
+    "dia",
+    "corOuVersao",
+    "arquivo"
+  ],
+  "recordTemplate": {
+    "vestibular": "enem",
+    "ano": 2025,
+    "fase": "regular",
+    "dia": "1",
+    "corOuVersao": "azul",
+    "arquivo": "data/provas/enem/2025/prova-dia-1-azul.pdf"
+  },
+  "provas": []
+}

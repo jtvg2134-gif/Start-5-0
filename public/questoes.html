@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Questoes</title>
+  <meta
+    name="description"
+    content="Tela inicial do banco de questoes do Start 5 com entrada dedicada para filtros, pratica e resultados."
+  />
+  <meta name="theme-color" content="#05080d" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Fraunces:wght@500;600;700&family=Instrument+Sans:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <link rel="stylesheet" href="css/dashboard.css" />
+  <link rel="stylesheet" href="css/questoes.css" />
+</head>
+<body class="dashboard-page protected-page panel-page questions-page">
+  <a class="skip-link" href="#mainContent">Pular para o conteudo principal</a>
+
+  <div class="page-shell">
+    <header class="header">
+      <div class="header-inner">
+        <section class="header-account" aria-label="Conta conectada">
+          <div class="header-account-avatar" data-auth-avatar>
+            <img
+              class="header-account-avatar-image"
+              data-auth-avatar-image
+              alt="Foto do perfil"
+              width="42"
+              height="42"
+              decoding="async"
+              hidden
+            />
+            <span class="header-account-avatar-fallback" data-auth-initials>U</span>
+          </div>
+          <div class="header-account-copy">
+            <strong class="header-account-name" data-auth-name>Usuario</strong>
+            <span class="header-account-email" data-auth-email>email@start5.app</span>
+            <span class="header-account-month" data-auth-month-minutes>0 min no mes</span>
+          </div>
+        </section>
+
+        <button
+          class="menu-toggle"
+          id="menuToggle"
+          type="button"
+          aria-label="Abrir menu"
+          aria-expanded="false"
+          aria-controls="menuPanel"
+        >
+          <span class="menu-icon" aria-hidden="true">
+            <span></span>
+            <span></span>
+          </span>
+        </button>
+      </div>
+    </header>
+
+    <aside class="menu-panel" id="menuPanel" aria-label="Menu principal">
+      <div class="menu-panel-inner">
+        <nav class="menu-nav" aria-label="Navegacao principal">
+          <div class="menu-user">
+            <span class="menu-user-label">Conectado como</span>
+            <strong class="menu-user-name" data-auth-name>Usuario</strong>
+            <span class="menu-user-email" data-auth-email>email@start5.app</span>
+          </div>
+
+          <div class="menu-column">
+            <a href="index.html" class="menu-link">Inicio</a>
+            <a href="dashboard.html" class="menu-link">Painel</a>
+            <a href="questoes.html" class="menu-link">Questoes</a>
+            <a href="profile.html" class="menu-link">Perfil</a>
+            <a href="rotina.html" class="menu-link">Rotina</a>
+          </div>
+
+          <div class="menu-column">
+            <a href="redacao.html" class="menu-link">Reda&ccedil;&atilde;o</a>
+            <a href="admin.html" class="menu-link" data-admin-only hidden>Admin</a>
+            <button type="button" class="menu-link menu-link-button" data-logout>Sair</button>
+          </div>
+        </nav>
+      </div>
+    </aside>
+
+    <main id="mainContent" class="question-bank-page">
+      <section class="dashboard-intro question-bank-hero">
+        <div class="dashboard-intro-inner question-bank-hero-inner">
+          <div class="question-bank-hero-copy">
+            <p class="section-label">Banco de questoes</p>
+            <h1 class="progress-title">Resolva vestibulares dentro do Start 5</h1>
+            <p class="dashboard-copy">
+              O PDF fica no ADM. Aqui, o foco e estudar por filtros, acompanhar acertos e revisar o que ainda esta fraco.
+            </p>
+          </div>
+
+          <div class="question-bank-hero-pills" id="questionBankHeroPills">
+            <span class="analytics-pill">Base conectada</span>
+            <span class="analytics-pill analytics-pill-muted">Filtro por vestibular, ano, materia e dificuldade</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="question-bank-summary" aria-labelledby="questionBankSummaryTitle">
+        <div class="question-bank-panel-head">
+          <div>
+            <p class="section-label">Visao rapida</p>
+            <h2 class="analysis-title" id="questionBankSummaryTitle">Seu ritmo no banco</h2>
+          </div>
+        </div>
+
+        <div class="question-bank-summary-grid">
+          <article class="summary-card">
+            <span class="summary-label">Disponiveis</span>
+            <strong class="summary-value" id="questionBankAvailableValue">0</strong>
+          </article>
+
+          <article class="summary-card">
+            <span class="summary-label">Respondidas</span>
+            <strong class="summary-value" id="questionBankAnsweredValue">0</strong>
+          </article>
+
+          <article class="summary-card">
+            <span class="summary-label">Acertos</span>
+            <strong class="summary-value" id="questionBankCorrectValue">0</strong>
+          </article>
+
+          <article class="summary-card">
+            <span class="summary-label">Erros</span>
+            <strong class="summary-value" id="questionBankWrongValue">0</strong>
+          </article>
+
+          <article class="summary-card">
+            <span class="summary-label">Taxa de acerto</span>
+            <strong class="summary-value" id="questionBankAccuracyValue">0%</strong>
+          </article>
+
+          <article class="summary-card">
+            <span class="summary-label">Para revisar</span>
+            <strong class="summary-value" id="questionBankReviewValue">0</strong>
+          </article>
+        </div>
+      </section>
+
+      <section class="dashboard-module question-bank-filter-module" aria-labelledby="questionBankFiltersTitle">
+        <div class="question-bank-panel-head">
+          <div>
+            <p class="section-label">Filtros</p>
+            <h2 class="analysis-title" id="questionBankFiltersTitle">Monte sua sessao</h2>
+            <p class="module-copy">
+              Escolha como quer estudar hoje e busque o proximo bloco de questoes sem depender do PDF original.
+            </p>
+          </div>
+        </div>
+
+        <form class="question-bank-filter-form" id="questionBankFilterForm">
+          <div class="question-bank-filter-grid">
+            <label class="question-bank-field">
+              <span class="question-bank-label">Vestibular</span>
+              <select id="questionBankVestibularFilter" name="vestibular" class="admin-modal-input">
+                <option value="">Todos</option>
+              </select>
+            </label>
+
+            <label class="question-bank-field">
+              <span class="question-bank-label">Ano</span>
+              <select id="questionBankYearFilter" name="ano" class="admin-modal-input">
+                <option value="">Todos</option>
+              </select>
+            </label>
+
+            <label class="question-bank-field">
+              <span class="question-bank-label">Materia</span>
+              <select id="questionBankMatterFilter" name="materia" class="admin-modal-input">
+                <option value="">Todas</option>
+              </select>
+            </label>
+
+            <label class="question-bank-field">
+              <span class="question-bank-label">Dificuldade</span>
+              <select id="questionBankDifficultyFilter" name="dificuldade" class="admin-modal-input">
+                <option value="">Todas</option>
+                <option value="facil">Facil</option>
+                <option value="media">Media</option>
+                <option value="dificil">Dificil</option>
+              </select>
+            </label>
+
+            <label class="question-bank-field">
+              <span class="question-bank-label">Dia</span>
+              <select id="questionBankDayFilter" name="dia" class="admin-modal-input">
+                <option value="">Todos</option>
+              </select>
+            </label>
+
+            <label class="question-bank-field">
+              <span class="question-bank-label">Caderno</span>
+              <select id="questionBankBookletFilter" name="caderno" class="admin-modal-input">
+                <option value="">Todos</option>
+              </select>
+            </label>
+
+            <label class="question-bank-field">
+              <span class="question-bank-label">Recorte</span>
+              <select id="questionBankStatusFilter" name="status" class="admin-modal-input">
+                <option value="all">Todas</option>
+                <option value="unanswered">Nao resolvidas</option>
+                <option value="wrong">Erradas</option>
+                <option value="favorites">Favoritas</option>
+                <option value="review">Revisar depois</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="question-bank-filter-actions">
+            <button type="submit" class="modal-button modal-button-primary" id="questionBankSearchButton">
+              Buscar questoes
+            </button>
+            <button type="button" class="modal-button modal-button-secondary" id="questionBankResetButton">
+              Limpar filtros
+            </button>
+          </div>
+        </form>
+
+        <p class="question-bank-page-feedback" id="questionBankPageFeedback" aria-live="polite"></p>
+      </section>
+
+      <section class="question-bank-layout" aria-labelledby="questionBankResultsTitle">
+        <article class="dashboard-module question-bank-results-panel">
+          <div class="question-bank-panel-head">
+            <div>
+              <p class="section-label">Resultados</p>
+              <h2 class="analysis-title" id="questionBankResultsTitle">Lista para resolver</h2>
+            </div>
+
+            <p class="question-bank-results-meta" id="questionBankResultsMeta">Carregando questoes...</p>
+          </div>
+
+          <div class="question-bank-results-list" id="questionBankResultsList">
+            <div class="question-bank-empty">Carregando questoes publicadas...</div>
+          </div>
+        </article>
+
+        <article class="dashboard-module question-bank-workspace-panel">
+          <div class="question-bank-panel-head">
+            <div>
+              <p class="section-label">Resolucao</p>
+              <h2 class="analysis-title">Area da questao</h2>
+            </div>
+          </div>
+
+          <div class="question-bank-workspace" id="questionBankWorkspace">
+            <div class="question-bank-empty">
+              Escolha uma questao na lista para abrir o enunciado, responder e acompanhar a correcao.
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <footer class="support-copy" aria-hidden="true"></footer>
+    </main>
+  </div>
+
+  <script src="js/main.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/questoes.js"></script>
+</body>
+</html>

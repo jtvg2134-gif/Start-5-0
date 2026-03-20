@@ -1,6 +1,14 @@
 ﻿const rawPage = window.location.pathname.split("/").pop().toLowerCase();
 const currentPage = rawPage || "login.html";
-const protectedPages = new Set(["index.html", "dashboard.html", "admin.html", "profile.html", "redacao.html"]);
+const protectedPages = new Set([
+  "index.html",
+  "dashboard.html",
+  "admin.html",
+  "profile.html",
+  "questoes.html",
+  "redacao.html",
+  "rotina.html",
+]);
 const adminPages = new Set(["admin.html"]);
 const isLoginPage = currentPage === "login.html";
 const MONTHLY_MEDAL_LEVELS = [
@@ -375,6 +383,25 @@ function setupLoginPage() {
 
     if (authNameRow) authNameRow.classList.toggle("is-hidden", !isRegister);
     if (authConfirmField) authConfirmField.classList.toggle("is-hidden", !isRegister);
+
+    if (authFirstNameInput) {
+      authFirstNameInput.required = isRegister;
+      authFirstNameInput.disabled = !isRegister;
+    }
+
+    if (authLastNameInput) {
+      authLastNameInput.required = isRegister;
+      authLastNameInput.disabled = !isRegister;
+    }
+
+    if (authConfirmInput) {
+      authConfirmInput.required = isRegister;
+      authConfirmInput.disabled = !isRegister;
+    }
+
+    if (authPasswordInput) {
+      authPasswordInput.autocomplete = isRegister ? "new-password" : "current-password";
+    }
 
     if (authTitle) {
       authTitle.textContent = isRegister ? "Crie sua conta" : "Acesse sua conta";

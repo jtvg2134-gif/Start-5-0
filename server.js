@@ -2,10 +2,20 @@ import { createServer } from "node:http";
 import { spawnSync } from "node:child_process";
 import { createHash, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 import { existsSync, mkdirSync } from "node:fs";
-import { readFile } from "node:fs/promises";
+import { readFile, unlink, writeFile } from "node:fs/promises";
 import { extname, dirname, resolve, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { DatabaseSync } from "node:sqlite";
+import {
+  DEFAULT_QUESTION_BANK_EXAMS,
+  QUESTION_DIFFICULTY_VALUES,
+  QUESTION_PROCESS_STATUS_VALUES,
+  QUESTION_PROOF_STATUS_VALUES,
+  QUESTION_REVIEW_STATUS_VALUES,
+  calculateUsageDifficulty,
+  parseQuestionsFromExtractedText,
+} from "./backend/question_bank.js";
+import { loadEnemCatalog } from "./backend/enem_catalog.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -13,6 +23,7 @@ const projectRoot = __dirname;
 const publicDir = resolve(projectRoot, "public");
 const dataDir = resolve(projectRoot, "data");
 const dbFile = resolve(dataDir, "start5.db");
+const questionBankUploadDir = resolve(dataDir, "question_bank_uploads");
 const pythonEssayEngineEntry = resolve(projectRoot, "backend", "essay_engine", "cli.py");
 
 const PORT = Number(process.env.PORT) || 3000;
@@ -21,6 +32,10 @@ const DEFAULT_ADMIN_PASSWORD = "Start5Admin123!";
 const DEFAULT_ADMIN_EMAIL = "owner@start5.local";
 const PUBLIC_ORIGIN = String(process.env.START5_PUBLIC_ORIGIN || "").trim().replace(/\/+$/, "");
 const BODY_LIMIT_BYTES = Math.max(10_000, Number(process.env.START5_BODY_LIMIT_BYTES) || 1_000_000);
+const QUESTION_BANK_UPLOAD_LIMIT_BYTES = Math.max(
+  BODY_LIMIT_BYTES,
+  Number(process.env.START5_QUESTION_BANK_UPLOAD_LIMIT_BYTES) || 16_000_000
+);
 const AUTH_RATE_LIMIT_WINDOW_MS = Math.max(
   1_000,
   Number(process.env.START5_AUTH_RATE_LIMIT_WINDOW_MS) || 10 * 60 * 1000
@@ -34,7 +49,39 @@ const WRITE_RATE_LIMIT_MAX = Math.max(1, Number(process.env.START5_WRITE_RATE_LI
 const SESSION_COOKIE = "start5_session";
 const SESSION_DURATION_DAYS = 30;
 const ALLOWED_STATES = new Set(["cansado", "normal", "focado"]);
+const DEFAULT_SESSION_STATE = "normal";
+const MIN_START_SESSION_MINUTES = 10;
 const DEFAULT_SUBJECT_KEY = "ingles";
+const QUESTION_BANK_DIFFICULTY_SET = new Set(QUESTION_DIFFICULTY_VALUES);
+const QUESTION_BANK_PROOF_STATUS_SET = new Set(QUESTION_PROOF_STATUS_VALUES);
+const QUESTION_BANK_REVIEW_STATUS_SET = new Set(QUESTION_REVIEW_STATUS_VALUES);
+const QUESTION_BANK_PROCESS_STATUS_SET = new Set(QUESTION_PROCESS_STATUS_VALUES);
+const QUESTION_BANK_FLAG_FILTERS = new Set(["all", "unanswered", "wrong", "favorites", "review"]);
+const QUESTION_BANK_SUBJECT_VALUES = [
+  "matematica",
+  "portugues",
+  "fisica",
+  "quimica",
+  "biologia",
+  "historia",
+  "geografia",
+  "filosofia",
+  "sociologia",
+  "ingles",
+];
+const QUESTION_BANK_SUBJECT_LABELS = {
+  matematica: "Matematica",
+  portugues: "Portugues",
+  fisica: "Fisica",
+  quimica: "Quimica",
+  biologia: "Biologia",
+  historia: "Historia",
+  geografia: "Geografia",
+  filosofia: "Filosofia",
+  sociologia: "Sociologia",
+  ingles: "Ingles",
+};
+const QUESTION_BANK_ALTERNATIVE_LETTERS = ["A", "B", "C", "D", "E"];
 const ESSAY_STATUS_VALUES = new Set(["pending", "evaluated", "failed"]);
 const ESSAY_THEME_MODE_VALUES = new Set(["preset", "custom"]);
 const ESSAY_EVALUATION_MODE_VALUES = new Set(["local", "hybrid", "openai"]);
@@ -64,6 +111,1062 @@ const SUBJECT_LABELS = {
   outras: "Outra mat\u00e9ria",
 };
 const ALLOWED_SUBJECTS = new Set(Object.keys(SUBJECT_LABELS));
+const ROUTINE_EXAM_METADATA = {
+  enem: {
+    label: "ENEM",
+    group: "Mais conhecidos",
+    featured: true,
+    profile: "enem_like",
+    searchTerms: ["sisu", "nacional", "mec", "federal"],
+  },
+  fuvest: {
+    label: "FUVEST (USP)",
+    group: "Mais conhecidos",
+    featured: true,
+    profile: "paulista_tradicional",
+    searchTerms: ["usp", "sao paulo", "universidade de sao paulo"],
+  },
+  unicamp: {
+    label: "UNICAMP",
+    group: "Mais conhecidos",
+    featured: true,
+    profile: "paulista_tradicional",
+    searchTerms: ["campinas"],
+  },
+  unesp: {
+    label: "UNESP",
+    group: "Mais conhecidos",
+    featured: true,
+    profile: "paulista_tradicional",
+    searchTerms: ["julio de mesquita", "estadual paulista"],
+  },
+  unifesp: {
+    label: "UNIFESP",
+    group: "Mais conhecidos",
+    featured: true,
+    profile: "saude_reforcada",
+    searchTerms: ["federal de sao paulo", "medicina", "sao paulo"],
+  },
+  uerj: {
+    label: "UERJ",
+    group: "Mais conhecidos",
+    featured: true,
+    profile: "humanas_redacao",
+    searchTerms: ["rio de janeiro", "estadual do rio"],
+  },
+  ufmg: {
+    label: "UFMG",
+    group: "Federais e estaduais",
+    featured: true,
+    profile: "federal_tradicional",
+    searchTerms: ["minas gerais", "belo horizonte"],
+  },
+  ufrj: {
+    label: "UFRJ",
+    group: "Federais e estaduais",
+    featured: true,
+    profile: "federal_tradicional",
+    searchTerms: ["rio de janeiro", "federal do rio"],
+  },
+  ufpr: {
+    label: "UFPR",
+    group: "Federais e estaduais",
+    featured: true,
+    profile: "federal_tradicional",
+    searchTerms: ["parana", "curitiba"],
+  },
+  ufrgs: {
+    label: "UFRGS",
+    group: "Federais e estaduais",
+    featured: true,
+    profile: "federal_tradicional",
+    searchTerms: ["rio grande do sul", "porto alegre"],
+  },
+  ufsc: {
+    label: "UFSC",
+    group: "Federais e estaduais",
+    featured: true,
+    profile: "federal_tradicional",
+    searchTerms: ["santa catarina", "florianopolis"],
+  },
+  unb: {
+    label: "UnB",
+    group: "Federais e estaduais",
+    featured: true,
+    profile: "federal_tradicional",
+    searchTerms: ["brasilia", "universidade de brasilia"],
+  },
+  ufc: {
+    label: "UFC",
+    group: "Federais e estaduais",
+    featured: false,
+    profile: "federal_tradicional",
+    searchTerms: ["ceara", "fortaleza"],
+  },
+  ufpe: {
+    label: "UFPE",
+    group: "Federais e estaduais",
+    featured: false,
+    profile: "federal_tradicional",
+    searchTerms: ["pernambuco", "recife"],
+  },
+  ufba: {
+    label: "UFBA",
+    group: "Federais e estaduais",
+    featured: false,
+    profile: "federal_tradicional",
+    searchTerms: ["bahia", "salvador"],
+  },
+  ufrn: {
+    label: "UFRN",
+    group: "Federais e estaduais",
+    featured: false,
+    profile: "federal_tradicional",
+    searchTerms: ["rio grande do norte", "natal"],
+  },
+  ufpb: {
+    label: "UFPB",
+    group: "Federais e estaduais",
+    featured: false,
+    profile: "federal_tradicional",
+    searchTerms: ["paraiba", "joao pessoa"],
+  },
+  ufpa: {
+    label: "UFPA",
+    group: "Federais e estaduais",
+    featured: false,
+    profile: "federal_tradicional",
+    searchTerms: ["para", "belem"],
+  },
+  ufam: {
+    label: "UFAM",
+    group: "Federais e estaduais",
+    featured: false,
+    profile: "federal_tradicional",
+    searchTerms: ["amazonas", "manaus"],
+  },
+  ufmt: {
+    label: "UFMT",
+    group: "Federais e estaduais",
+    featured: false,
+    profile: "federal_tradicional",
+    searchTerms: ["mato grosso", "cuiaba"],
+  },
+  ufms: {
+    label: "UFMS",
+    group: "Federais e estaduais",
+    featured: false,
+    profile: "federal_tradicional",
+    searchTerms: ["mato grosso do sul", "campo grande"],
+  },
+  ufg: {
+    label: "UFG",
+    group: "Federais e estaduais",
+    featured: false,
+    profile: "federal_tradicional",
+    searchTerms: ["goias", "goiania"],
+  },
+  uece: {
+    label: "UECE",
+    group: "Federais e estaduais",
+    featured: false,
+    profile: "federal_tradicional",
+    searchTerms: ["estadual do ceara", "ceara"],
+  },
+  uea: {
+    label: "UEA",
+    group: "Federais e estaduais",
+    featured: false,
+    profile: "saude_reforcada",
+    searchTerms: ["amazonas", "estadual do amazonas"],
+  },
+  ita: {
+    label: "ITA",
+    group: "Militares e especiais",
+    featured: true,
+    profile: "militar_exatas",
+    searchTerms: ["aeronautica", "engenharia", "tecnologico"],
+  },
+  ime: {
+    label: "IME",
+    group: "Militares e especiais",
+    featured: true,
+    profile: "militar_exatas",
+    searchTerms: ["exercito", "engenharia militar"],
+  },
+  especex: {
+    label: "EsPCEx",
+    group: "Militares e especiais",
+    featured: false,
+    profile: "militar_misto",
+    searchTerms: ["preparatoria de cadetes", "exercito"],
+  },
+  puc_sp: {
+    label: "PUC-SP",
+    group: "Privados e especiais",
+    featured: false,
+    profile: "humanas_redacao",
+    searchTerms: ["pontificia catolica", "sao paulo"],
+  },
+  puc_rio: {
+    label: "PUC-Rio",
+    group: "Privados e especiais",
+    featured: false,
+    profile: "humanas_redacao",
+    searchTerms: ["pontificia catolica", "rio"],
+  },
+  mackenzie: {
+    label: "Mackenzie",
+    group: "Privados e especiais",
+    featured: false,
+    profile: "paulista_tradicional",
+    searchTerms: ["presbiteriana", "mack"],
+  },
+  fgv: {
+    label: "FGV",
+    group: "Privados e especiais",
+    featured: false,
+    profile: "humanas_redacao",
+    searchTerms: ["fundacao getulio vargas", "administracao", "economia", "direito"],
+  },
+  insper: {
+    label: "Insper",
+    group: "Privados e especiais",
+    featured: false,
+    profile: "exatas_aplicadas",
+    searchTerms: ["negocios", "engenharia", "economia", "administracao"],
+  },
+  outro: {
+    label: "Outro vestibular",
+    group: "Personalizado",
+    featured: false,
+    profile: "federal_tradicional",
+    searchTerms: ["personalizado", "outro", "proprio"],
+  },
+};
+const ROUTINE_EXAM_LABELS = Object.fromEntries(
+  Object.entries(ROUTINE_EXAM_METADATA).map(([key, metadata]) => [key, metadata.label])
+);
+const ROUTINE_EXAM_WEIGHT_PROFILES = {
+  enem_like: {
+    ingles: 8,
+    matematica: 16,
+    portugues: 12,
+    geografia: 8,
+    historia: 8,
+    biologia: 11,
+    fisica: 9,
+    quimica: 9,
+    redacao: 14,
+    filosofia: 4,
+    sociologia: 4,
+  },
+  paulista_tradicional: {
+    ingles: 6,
+    matematica: 14,
+    portugues: 13,
+    geografia: 9,
+    historia: 9,
+    biologia: 10,
+    fisica: 10,
+    quimica: 10,
+    redacao: 13,
+    filosofia: 3,
+    sociologia: 3,
+  },
+  federal_tradicional: {
+    ingles: 7,
+    matematica: 13,
+    portugues: 13,
+    geografia: 8,
+    historia: 8,
+    biologia: 10,
+    fisica: 10,
+    quimica: 10,
+    redacao: 13,
+    filosofia: 4,
+    sociologia: 4,
+  },
+  humanas_redacao: {
+    ingles: 6,
+    matematica: 10,
+    portugues: 15,
+    geografia: 10,
+    historia: 10,
+    biologia: 8,
+    fisica: 7,
+    quimica: 7,
+    redacao: 16,
+    filosofia: 6,
+    sociologia: 5,
+  },
+  saude_reforcada: {
+    ingles: 6,
+    matematica: 11,
+    portugues: 12,
+    geografia: 7,
+    historia: 7,
+    biologia: 14,
+    fisica: 8,
+    quimica: 12,
+    redacao: 14,
+    filosofia: 4,
+    sociologia: 3,
+  },
+  militar_exatas: {
+    ingles: 5,
+    matematica: 18,
+    portugues: 10,
+    geografia: 5,
+    historia: 5,
+    biologia: 6,
+    fisica: 16,
+    quimica: 12,
+    redacao: 10,
+    filosofia: 2,
+    sociologia: 1,
+  },
+  militar_misto: {
+    ingles: 6,
+    matematica: 13,
+    portugues: 13,
+    geografia: 10,
+    historia: 10,
+    biologia: 8,
+    fisica: 9,
+    quimica: 8,
+    redacao: 12,
+    filosofia: 4,
+    sociologia: 3,
+  },
+  exatas_aplicadas: {
+    ingles: 7,
+    matematica: 17,
+    portugues: 11,
+    geografia: 6,
+    historia: 6,
+    biologia: 6,
+    fisica: 12,
+    quimica: 10,
+    redacao: 11,
+    filosofia: 2,
+    sociologia: 2,
+  },
+};
+const ROUTINE_TRACK_LABELS = {
+  geral: "Geral",
+  exatas: "Exatas",
+  humanas: "Humanas",
+  saude: "Saúde",
+  linguagens: "Linguagens",
+  personalizado: "Personalizado",
+};
+const ROUTINE_TRACK_DETAILS = {
+  geral: "Equilíbrio amplo entre as matérias mais cobradas.",
+  exatas: "Puxa matemática, física e química.",
+  humanas: "Puxa história, geografia, filosofia e sociologia.",
+  saude: "Puxa biologia e química sem largar redação.",
+  linguagens: "Puxa português, redação e inglês.",
+  personalizado: "Você ajusta a prioridade manualmente.",
+};
+const ROUTINE_TRACK_MULTIPLIERS = {
+  geral: {},
+  exatas: {
+    matematica: 1.35,
+    fisica: 1.24,
+    quimica: 1.18,
+    biologia: 0.95,
+    geografia: 0.9,
+    historia: 0.9,
+    filosofia: 0.85,
+    sociologia: 0.85,
+    portugues: 0.94,
+    redacao: 0.94,
+    ingles: 0.95,
+  },
+  humanas: {
+    geografia: 1.26,
+    historia: 1.26,
+    filosofia: 1.2,
+    sociologia: 1.2,
+    portugues: 1.18,
+    redacao: 1.18,
+    ingles: 1.05,
+    matematica: 0.86,
+    fisica: 0.82,
+    quimica: 0.82,
+    biologia: 0.95,
+  },
+  saude: {
+    biologia: 1.32,
+    quimica: 1.22,
+    matematica: 1.08,
+    fisica: 0.98,
+    portugues: 1.05,
+    redacao: 1.15,
+    ingles: 0.96,
+    geografia: 0.88,
+    historia: 0.88,
+    filosofia: 0.84,
+    sociologia: 0.84,
+  },
+  linguagens: {
+    portugues: 1.32,
+    redacao: 1.34,
+    ingles: 1.22,
+    historia: 1.02,
+    geografia: 0.95,
+    matematica: 0.82,
+    fisica: 0.8,
+    quimica: 0.8,
+    biologia: 0.9,
+    filosofia: 1.05,
+    sociologia: 1.05,
+  },
+  personalizado: {},
+};
+const ROUTINE_COURSE_METADATA = {
+  medicina: {
+    label: "Medicina",
+    group: "Saude",
+    featured: true,
+    recommendedTrackKey: "saude",
+    searchTerms: ["med", "medicina", "medico"],
+    subjectBoosts: {
+      biologia: 1.38,
+      quimica: 1.24,
+      redacao: 1.12,
+      portugues: 1.08,
+      matematica: 1.06,
+    },
+    targetScores: { ac: 790, ep: 760, ppe: 735 },
+  },
+  odontologia: {
+    label: "Odontologia",
+    group: "Saude",
+    featured: true,
+    recommendedTrackKey: "saude",
+    searchTerms: ["odonto", "dentista"],
+    subjectBoosts: {
+      biologia: 1.28,
+      quimica: 1.2,
+      redacao: 1.08,
+      portugues: 1.04,
+    },
+    targetScores: { ac: 740, ep: 705, ppe: 675 },
+  },
+  enfermagem: {
+    label: "Enfermagem",
+    group: "Saude",
+    featured: true,
+    recommendedTrackKey: "saude",
+    searchTerms: ["enfermeiro", "enfermagem"],
+    subjectBoosts: {
+      biologia: 1.24,
+      quimica: 1.14,
+      redacao: 1.08,
+      portugues: 1.05,
+    },
+    targetScores: { ac: 700, ep: 665, ppe: 635 },
+  },
+  fisioterapia: {
+    label: "Fisioterapia",
+    group: "Saude",
+    featured: false,
+    recommendedTrackKey: "saude",
+    searchTerms: ["fisio", "reabilitacao"],
+    subjectBoosts: {
+      biologia: 1.22,
+      quimica: 1.12,
+      redacao: 1.08,
+    },
+    targetScores: { ac: 700, ep: 665, ppe: 635 },
+  },
+  psicologia: {
+    label: "Psicologia",
+    group: "Saude",
+    featured: true,
+    recommendedTrackKey: "humanas",
+    searchTerms: ["psi", "psicologo"],
+    subjectBoosts: {
+      redacao: 1.16,
+      portugues: 1.14,
+      biologia: 1.08,
+      sociologia: 1.12,
+      filosofia: 1.1,
+    },
+    targetScores: { ac: 735, ep: 700, ppe: 670 },
+  },
+  farmacia: {
+    label: "Farmacia",
+    group: "Saude",
+    featured: false,
+    recommendedTrackKey: "saude",
+    searchTerms: ["farmacia", "farmaceutico"],
+    subjectBoosts: {
+      quimica: 1.24,
+      biologia: 1.14,
+      redacao: 1.06,
+    },
+    targetScores: { ac: 710, ep: 675, ppe: 645 },
+  },
+  biomedicina: {
+    label: "Biomedicina",
+    group: "Saude",
+    featured: false,
+    recommendedTrackKey: "saude",
+    searchTerms: ["biomed", "laboratorio"],
+    subjectBoosts: {
+      biologia: 1.24,
+      quimica: 1.16,
+      redacao: 1.06,
+    },
+    targetScores: { ac: 720, ep: 685, ppe: 655 },
+  },
+  nutricao: {
+    label: "Nutricao",
+    group: "Saude",
+    featured: false,
+    recommendedTrackKey: "saude",
+    searchTerms: ["nutri", "nutricionista"],
+    subjectBoosts: {
+      biologia: 1.18,
+      quimica: 1.08,
+      redacao: 1.06,
+    },
+    targetScores: { ac: 690, ep: 655, ppe: 625 },
+  },
+  veterinaria: {
+    label: "Medicina Veterinaria",
+    group: "Saude",
+    featured: false,
+    recommendedTrackKey: "saude",
+    searchTerms: ["veterinaria", "veterinario", "animal"],
+    subjectBoosts: {
+      biologia: 1.26,
+      quimica: 1.12,
+      redacao: 1.06,
+    },
+    targetScores: { ac: 730, ep: 695, ppe: 665 },
+  },
+  engenharia: {
+    label: "Engenharia",
+    group: "Exatas e tecnologia",
+    featured: true,
+    recommendedTrackKey: "exatas",
+    searchTerms: ["engenharia", "engenheiro"],
+    subjectBoosts: {
+      matematica: 1.3,
+      fisica: 1.22,
+      quimica: 1.12,
+      redacao: 1.04,
+    },
+    targetScores: { ac: 730, ep: 695, ppe: 665 },
+  },
+  engenharia_civil: {
+    label: "Engenharia Civil",
+    group: "Exatas e tecnologia",
+    featured: true,
+    recommendedTrackKey: "exatas",
+    searchTerms: ["engenharia civil", "civil", "obra", "estruturas"],
+    subjectBoosts: {
+      matematica: 1.34,
+      fisica: 1.24,
+      quimica: 1.08,
+      redacao: 1.04,
+    },
+    targetScores: { ac: 745, ep: 710, ppe: 680 },
+  },
+  engenharia_mecanica: {
+    label: "Engenharia Mecanica",
+    group: "Exatas e tecnologia",
+    featured: false,
+    recommendedTrackKey: "exatas",
+    searchTerms: ["engenharia mecanica", "mecanica", "motores"],
+    subjectBoosts: {
+      matematica: 1.34,
+      fisica: 1.26,
+      quimica: 1.08,
+      redacao: 1.04,
+    },
+    targetScores: { ac: 735, ep: 700, ppe: 670 },
+  },
+  engenharia_eletrica: {
+    label: "Engenharia Eletrica",
+    group: "Exatas e tecnologia",
+    featured: false,
+    recommendedTrackKey: "exatas",
+    searchTerms: ["engenharia eletrica", "eletrica", "circuitos"],
+    subjectBoosts: {
+      matematica: 1.34,
+      fisica: 1.26,
+      quimica: 1.06,
+      redacao: 1.04,
+    },
+    targetScores: { ac: 740, ep: 705, ppe: 675 },
+  },
+  engenharia_producao: {
+    label: "Engenharia de Producao",
+    group: "Exatas e tecnologia",
+    featured: false,
+    recommendedTrackKey: "exatas",
+    searchTerms: ["engenharia de producao", "producao", "processos"],
+    subjectBoosts: {
+      matematica: 1.28,
+      fisica: 1.16,
+      quimica: 1.06,
+      redacao: 1.06,
+    },
+    targetScores: { ac: 725, ep: 690, ppe: 660 },
+  },
+  engenharia_quimica: {
+    label: "Engenharia Quimica",
+    group: "Exatas e tecnologia",
+    featured: false,
+    recommendedTrackKey: "exatas",
+    searchTerms: ["engenharia quimica", "quimica", "processos quimicos"],
+    subjectBoosts: {
+      matematica: 1.26,
+      fisica: 1.14,
+      quimica: 1.22,
+      redacao: 1.04,
+    },
+    targetScores: { ac: 730, ep: 695, ppe: 665 },
+  },
+  engenharia_software: {
+    label: "Engenharia de Software",
+    group: "Exatas e tecnologia",
+    featured: true,
+    recommendedTrackKey: "exatas",
+    searchTerms: ["software", "programacao", "dev"],
+    subjectBoosts: {
+      matematica: 1.32,
+      fisica: 1.16,
+      ingles: 1.12,
+      redacao: 1.04,
+    },
+    targetScores: { ac: 755, ep: 720, ppe: 690 },
+  },
+  ciencia_computacao: {
+    label: "Ciencia da Computacao",
+    group: "Exatas e tecnologia",
+    featured: true,
+    recommendedTrackKey: "exatas",
+    searchTerms: ["computacao", "computador", "ti", "programacao"],
+    subjectBoosts: {
+      matematica: 1.34,
+      ingles: 1.14,
+      fisica: 1.08,
+      redacao: 1.05,
+    },
+    targetScores: { ac: 760, ep: 725, ppe: 695 },
+  },
+  sistemas_informacao: {
+    label: "Sistemas de Informacao",
+    group: "Exatas e tecnologia",
+    featured: false,
+    recommendedTrackKey: "exatas",
+    searchTerms: ["sistemas", "informacao", "dados"],
+    subjectBoosts: {
+      matematica: 1.24,
+      ingles: 1.1,
+      redacao: 1.04,
+    },
+    targetScores: { ac: 710, ep: 675, ppe: 645 },
+  },
+  arquitetura: {
+    label: "Arquitetura e Urbanismo",
+    group: "Exatas e tecnologia",
+    featured: false,
+    recommendedTrackKey: "exatas",
+    searchTerms: ["arquitetura", "urbanismo", "projeto"],
+    subjectBoosts: {
+      matematica: 1.12,
+      redacao: 1.14,
+      portugues: 1.08,
+      geografia: 1.06,
+    },
+    targetScores: { ac: 715, ep: 680, ppe: 650 },
+  },
+  matematica: {
+    label: "Matematica",
+    group: "Exatas e tecnologia",
+    featured: false,
+    recommendedTrackKey: "exatas",
+    searchTerms: ["matematica", "licenciatura"],
+    subjectBoosts: {
+      matematica: 1.36,
+      fisica: 1.08,
+      redacao: 1.04,
+    },
+    targetScores: { ac: 650, ep: 620, ppe: 590 },
+  },
+  fisica_curso: {
+    label: "Fisica",
+    group: "Exatas e tecnologia",
+    featured: false,
+    recommendedTrackKey: "exatas",
+    searchTerms: ["fisica", "licenciatura em fisica", "bacharelado em fisica"],
+    subjectBoosts: {
+      fisica: 1.36,
+      matematica: 1.18,
+      redacao: 1.04,
+    },
+    targetScores: { ac: 650, ep: 620, ppe: 590 },
+  },
+  quimica_curso: {
+    label: "Quimica",
+    group: "Exatas e tecnologia",
+    featured: false,
+    recommendedTrackKey: "exatas",
+    searchTerms: ["quimica", "licenciatura em quimica", "bacharelado em quimica"],
+    subjectBoosts: {
+      quimica: 1.34,
+      matematica: 1.1,
+      redacao: 1.04,
+      fisica: 1.04,
+    },
+    targetScores: { ac: 640, ep: 610, ppe: 580 },
+  },
+  biologia_curso: {
+    label: "Biologia",
+    group: "Saude",
+    featured: false,
+    recommendedTrackKey: "saude",
+    searchTerms: ["biologia", "ciencias biologicas", "licenciatura em biologia"],
+    subjectBoosts: {
+      biologia: 1.34,
+      quimica: 1.08,
+      redacao: 1.06,
+    },
+    targetScores: { ac: 650, ep: 620, ppe: 590 },
+  },
+  estatistica: {
+    label: "Estatistica",
+    group: "Exatas e tecnologia",
+    featured: false,
+    recommendedTrackKey: "exatas",
+    searchTerms: ["estatistica", "dados", "analise"],
+    subjectBoosts: {
+      matematica: 1.32,
+      ingles: 1.08,
+      redacao: 1.04,
+    },
+    targetScores: { ac: 680, ep: 645, ppe: 615 },
+  },
+  direito: {
+    label: "Direito",
+    group: "Humanas e negocios",
+    featured: true,
+    recommendedTrackKey: "humanas",
+    searchTerms: ["direito", "juridico", "advocacia"],
+    subjectBoosts: {
+      redacao: 1.18,
+      portugues: 1.16,
+      historia: 1.1,
+      geografia: 1.08,
+      sociologia: 1.08,
+      filosofia: 1.08,
+    },
+    targetScores: { ac: 760, ep: 725, ppe: 695 },
+  },
+  relacoes_internacionais: {
+    label: "Relacoes Internacionais",
+    group: "Humanas e negocios",
+    featured: false,
+    recommendedTrackKey: "humanas",
+    searchTerms: ["ri", "internacional", "diplomacia"],
+    subjectBoosts: {
+      historia: 1.14,
+      geografia: 1.14,
+      ingles: 1.12,
+      redacao: 1.1,
+      portugues: 1.08,
+    },
+    targetScores: { ac: 730, ep: 695, ppe: 665 },
+  },
+  historia: {
+    label: "Historia",
+    group: "Humanas e negocios",
+    featured: false,
+    recommendedTrackKey: "humanas",
+    searchTerms: ["historia", "licenciatura"],
+    subjectBoosts: {
+      historia: 1.34,
+      redacao: 1.1,
+      portugues: 1.08,
+      geografia: 1.08,
+    },
+    targetScores: { ac: 640, ep: 605, ppe: 575 },
+  },
+  geografia: {
+    label: "Geografia",
+    group: "Humanas e negocios",
+    featured: false,
+    recommendedTrackKey: "humanas",
+    searchTerms: ["geografia", "licenciatura"],
+    subjectBoosts: {
+      geografia: 1.34,
+      redacao: 1.08,
+      historia: 1.08,
+      portugues: 1.04,
+    },
+    targetScores: { ac: 630, ep: 595, ppe: 565 },
+  },
+  letras: {
+    label: "Letras",
+    group: "Linguagens e criacao",
+    featured: false,
+    recommendedTrackKey: "linguagens",
+    searchTerms: ["letras", "literatura", "linguistica"],
+    subjectBoosts: {
+      portugues: 1.3,
+      redacao: 1.18,
+      ingles: 1.14,
+      historia: 1.04,
+    },
+    targetScores: { ac: 620, ep: 590, ppe: 560 },
+  },
+  pedagogia: {
+    label: "Pedagogia",
+    group: "Linguagens e criacao",
+    featured: false,
+    recommendedTrackKey: "linguagens",
+    searchTerms: ["pedagogia", "educacao"],
+    subjectBoosts: {
+      redacao: 1.14,
+      portugues: 1.14,
+      historia: 1.06,
+      sociologia: 1.06,
+    },
+    targetScores: { ac: 600, ep: 570, ppe: 545 },
+  },
+  educacao_fisica: {
+    label: "Educacao Fisica",
+    group: "Saude",
+    featured: false,
+    recommendedTrackKey: "saude",
+    searchTerms: ["educacao fisica", "edf", "esporte"],
+    subjectBoosts: {
+      biologia: 1.12,
+      redacao: 1.08,
+      portugues: 1.06,
+      historia: 1.04,
+    },
+    targetScores: { ac: 640, ep: 610, ppe: 580 },
+  },
+  jornalismo: {
+    label: "Jornalismo",
+    group: "Linguagens e criacao",
+    featured: false,
+    recommendedTrackKey: "linguagens",
+    searchTerms: ["jornalismo", "midia", "comunicacao"],
+    subjectBoosts: {
+      redacao: 1.16,
+      portugues: 1.16,
+      historia: 1.06,
+      geografia: 1.04,
+    },
+    targetScores: { ac: 690, ep: 655, ppe: 625 },
+  },
+  publicidade: {
+    label: "Publicidade e Propaganda",
+    group: "Linguagens e criacao",
+    featured: false,
+    recommendedTrackKey: "linguagens",
+    searchTerms: ["publicidade", "propaganda", "marketing"],
+    subjectBoosts: {
+      redacao: 1.12,
+      portugues: 1.1,
+      ingles: 1.08,
+      sociologia: 1.04,
+    },
+    targetScores: { ac: 680, ep: 645, ppe: 615 },
+  },
+  design: {
+    label: "Design",
+    group: "Linguagens e criacao",
+    featured: false,
+    recommendedTrackKey: "linguagens",
+    searchTerms: ["design", "criacao", "visual"],
+    subjectBoosts: {
+      redacao: 1.12,
+      portugues: 1.08,
+      matematica: 1.04,
+      historia: 1.04,
+    },
+    targetScores: { ac: 670, ep: 635, ppe: 605 },
+  },
+  administracao: {
+    label: "Administracao",
+    group: "Humanas e negocios",
+    featured: true,
+    recommendedTrackKey: "humanas",
+    searchTerms: ["administracao", "gestao", "negocios"],
+    subjectBoosts: {
+      matematica: 1.12,
+      redacao: 1.1,
+      portugues: 1.08,
+      geografia: 1.06,
+      historia: 1.04,
+    },
+    targetScores: { ac: 690, ep: 655, ppe: 625 },
+  },
+  economia: {
+    label: "Economia",
+    group: "Humanas e negocios",
+    featured: false,
+    recommendedTrackKey: "humanas",
+    searchTerms: ["economia", "economista", "mercado"],
+    subjectBoosts: {
+      matematica: 1.2,
+      redacao: 1.1,
+      geografia: 1.08,
+      historia: 1.06,
+      portugues: 1.04,
+    },
+    targetScores: { ac: 730, ep: 695, ppe: 665 },
+  },
+  contabeis: {
+    label: "Ciencias Contabeis",
+    group: "Humanas e negocios",
+    featured: false,
+    recommendedTrackKey: "humanas",
+    searchTerms: ["contabeis", "contabilidade", "contador"],
+    subjectBoosts: {
+      matematica: 1.12,
+      portugues: 1.08,
+      redacao: 1.08,
+      geografia: 1.04,
+    },
+    targetScores: { ac: 670, ep: 635, ppe: 605 },
+  },
+  outro: {
+    label: "Outro curso",
+    group: "Personalizado",
+    featured: false,
+    recommendedTrackKey: "personalizado",
+    searchTerms: ["outro", "personalizado", "curso livre"],
+    subjectBoosts: {},
+    targetScores: { ac: 650, ep: 620, ppe: 590 },
+  },
+};
+const ROUTINE_ADMISSION_CATEGORY_LABELS = {
+  ac: "Ampla Concorrencia",
+  ep: "Escola Publica",
+  ppi: "Pretos, Pardos e Indigenas",
+  ep_baixa_renda: "Escola Publica + Baixa Renda",
+  ep_ppi: "Escola Publica + PPI",
+  pcd: "Pessoa com Deficiencia",
+};
+const ROUTINE_ADMISSION_CATEGORY_DETAILS = {
+  ac: "Modalidade geral sem reserva especifica.",
+  ep: "Referencia interna para ingresso por escola publica.",
+  ppi: "Estimativa interna para modalidades com recorte racial.",
+  ep_baixa_renda: "Estimativa interna para escola publica com recorte de renda.",
+  ep_ppi: "Estimativa interna para escola publica com recorte racial.",
+  pcd: "Estimativa interna para modalidades com reserva PcD.",
+};
+const ROUTINE_ADMISSION_CATEGORY_SHORT_LABELS = {
+  ac: "AC",
+  ep: "EP",
+  ppi: "PPI",
+  ep_baixa_renda: "EP + BR",
+  ep_ppi: "EP + PPI",
+  pcd: "PcD",
+};
+const ROUTINE_ADMISSION_CATEGORY_TARGET_BUCKETS = {
+  ac: "ac",
+  ep: "ep",
+  ppi: "ppe",
+  ep_baixa_renda: "ppe",
+  ep_ppi: "ppe",
+  pcd: "ep",
+};
+const ROUTINE_EXAM_SCORE_SCALE_BY_PROFILE = {
+  enem_like: "enem_points",
+  federal_tradicional: "enem_points",
+  saude_reforcada: "enem_points",
+  paulista_tradicional: "percent_correct",
+  humanas_redacao: "percent_correct",
+  militar_exatas: "percent_correct",
+  militar_misto: "percent_correct",
+  exatas_aplicadas: "percent_correct",
+};
+const ROUTINE_EXAM_PERCENT_ADJUSTMENTS = {
+  fuvest: 2,
+  unicamp: 1,
+  unesp: -1,
+  unifesp: -1,
+  uerj: -2,
+  ita: 5,
+  ime: 6,
+  especex: -2,
+  puc_sp: -1,
+  puc_rio: -1,
+  mackenzie: -2,
+  fgv: 1,
+  insper: 1,
+};
+const ROUTINE_EXAM_KEYS = new Set(Object.keys(ROUTINE_EXAM_LABELS));
+const ROUTINE_COURSE_KEYS = new Set(Object.keys(ROUTINE_COURSE_METADATA));
+const ROUTINE_TRACK_KEYS = new Set(Object.keys(ROUTINE_TRACK_LABELS));
+const ROUTINE_ADMISSION_CATEGORY_KEYS = new Set(Object.keys(ROUTINE_ADMISSION_CATEGORY_LABELS));
+const ROUTINE_DIFFICULTY_LEVELS = new Set(["facil", "normal", "dificil", "muito_dificil", "atencao", "reforco"]);
+const ROUTINE_MANUAL_DELTA_VALUES = new Set([-2, -1, 0, 1, 2, 3, 4, 5]);
+const ROUTINE_WEEKDAY_LABELS = [
+  "Segunda",
+  "Terça",
+  "Quarta",
+  "Quinta",
+  "Sexta",
+  "Sábado",
+  "Domingo",
+];
+const ROUTINE_PRIMARY_EXAM_WEIGHT = 0.7;
+const ROUTINE_SECONDARY_EXAM_WEIGHT = 0.3;
+const ROUTINE_DEFAULT_STUDY_DAYS = [0, 1, 2, 3, 4];
+const ROUTINE_DEFAULT_WEEKDAY_MINUTES = 60;
+const ROUTINE_DEFAULT_WEEKLY_GOAL_MINUTES = 300;
+const ROUTINE_MIN_DAY_MINUTES = 30;
+const ROUTINE_MAX_DAY_MINUTES = 360;
+const ROUTINE_MIN_TOTAL_WEEKLY_MINUTES = 30;
+const ROUTINE_MIN_BLOCK_MINUTES = 25;
+const ROUTINE_PRIORITY_FOCUS_MULTIPLIER = 1.06;
+const ROUTINE_DIFFICULTY_MULTIPLIERS = {
+  facil: 0.92,
+  normal: 1,
+  dificil: 1.16,
+  muito_dificil: 1.3,
+  atencao: 1.16,
+  reforco: 1.32,
+};
+const ROUTINE_MANUAL_DELTA_MULTIPLIERS = {
+  "-2": 0.74,
+  "-1": 0.88,
+  0: 1,
+  1: 1.16,
+  2: 1.32,
+  3: 1.42,
+  4: 1.52,
+  5: 1.62,
+};
+const ROUTINE_SUMMARY_VERSION = "routine-v1";
+const ROUTINE_HISTORY_LOOKBACK_DAYS = 21;
+const ROUTINE_SUBJECT_ORDER = [
+  "matematica",
+  "portugues",
+  "redacao",
+  "ingles",
+  "biologia",
+  "quimica",
+  "fisica",
+  "historia",
+  "geografia",
+  "filosofia",
+  "sociologia",
+  "outras",
+];
 const ENEM_COMPETENCIES = [
   { id: 1, name: "Compet\u00eancia 1" },
   { id: 2, name: "Compet\u00eancia 2" },
@@ -679,6 +1782,11 @@ const ALLOWED_ACTIVITIES = new Set([
   "outros",
 ]);
 const SQL_ACTIVITY_LIST = "'serie', 'game', 'verbos', 'frases', 'escuta', 'leitura', 'outros'";
+const SQL_QUESTION_BANK_DIFFICULTY_LIST = QUESTION_DIFFICULTY_VALUES.map((value) => `'${value}'`).join(", ");
+const SQL_QUESTION_BANK_REVIEW_STATUS_LIST = QUESTION_REVIEW_STATUS_VALUES.map((value) => `'${value}'`).join(", ");
+const SQL_QUESTION_BANK_PROOF_STATUS_LIST = QUESTION_PROOF_STATUS_VALUES.map((value) => `'${value}'`).join(", ");
+const SQL_QUESTION_BANK_PROCESS_STATUS_LIST = QUESTION_PROCESS_STATUS_VALUES.map((value) => `'${value}'`).join(", ");
+const SQL_QUESTION_BANK_ALTERNATIVE_LETTER_LIST = QUESTION_BANK_ALTERNATIVE_LETTERS.map((value) => `'${value}'`).join(", ");
 const STRUCTURED_SESSION_MIGRATION_KEY = "start5_structured_sessions_v2_subjects";
 const DEFAULT_ADMIN = {
   name: process.env.START5_ADMIN_NAME || "Start 5 Owner",
@@ -689,6 +1797,10 @@ const rateLimitStore = new Map();
 
 if (!existsSync(dataDir)) {
   mkdirSync(dataDir, { recursive: true });
+}
+
+if (!existsSync(questionBankUploadDir)) {
+  mkdirSync(questionBankUploadDir, { recursive: true });
 }
 
 const db = new DatabaseSync(dbFile);
@@ -798,6 +1910,148 @@ db.exec(`
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
   );
 
+  CREATE TABLE IF NOT EXISTS routine_preferences (
+    user_id INTEGER PRIMARY KEY,
+    primary_exam_key TEXT NOT NULL DEFAULT 'enem',
+    secondary_exam_key TEXT NOT NULL DEFAULT '',
+    course_key TEXT NOT NULL DEFAULT '',
+    admission_category_key TEXT NOT NULL DEFAULT 'ac',
+    course_track_key TEXT NOT NULL DEFAULT 'geral',
+    course_name TEXT NOT NULL DEFAULT '',
+    study_days_json TEXT NOT NULL DEFAULT '[]',
+    weekday_minutes_json TEXT NOT NULL DEFAULT '{}',
+    weekly_goal_minutes INTEGER NOT NULL DEFAULT 300,
+    updated_at TEXT NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  );
+
+  CREATE TABLE IF NOT EXISTS routine_subject_preferences (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    subject_key TEXT NOT NULL DEFAULT 'ingles',
+    custom_subject_name TEXT NOT NULL DEFAULT '',
+    manual_delta INTEGER NOT NULL DEFAULT 0,
+    difficulty_level TEXT NOT NULL DEFAULT 'normal',
+    updated_at TEXT NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    UNIQUE(user_id, subject_key, custom_subject_name)
+  );
+
+  CREATE TABLE IF NOT EXISTS routine_week_plans (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    week_start TEXT NOT NULL,
+    generation_source_json TEXT NOT NULL DEFAULT '{}',
+    generated_at TEXT NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    UNIQUE(user_id, week_start)
+  );
+
+  CREATE TABLE IF NOT EXISTS routine_week_plan_items (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    plan_id INTEGER NOT NULL,
+    day_of_week INTEGER NOT NULL,
+    subject_key TEXT NOT NULL DEFAULT 'ingles',
+    custom_subject_name TEXT NOT NULL DEFAULT '',
+    planned_minutes INTEGER NOT NULL DEFAULT 0,
+    slot_type TEXT NOT NULL DEFAULT 'base',
+    reason_label TEXT NOT NULL DEFAULT '',
+    FOREIGN KEY (plan_id) REFERENCES routine_week_plans(id) ON DELETE CASCADE
+  );
+
+  CREATE TABLE IF NOT EXISTS vestibulares (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nome TEXT NOT NULL,
+    sigla TEXT NOT NULL UNIQUE,
+    descricao TEXT NOT NULL DEFAULT '',
+    ativo INTEGER NOT NULL DEFAULT 1 CHECK (ativo IN (0, 1)),
+    created_at TEXT NOT NULL
+  );
+
+  CREATE TABLE IF NOT EXISTS provas (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    vestibular_id INTEGER NOT NULL,
+    ano INTEGER NOT NULL,
+    fase TEXT NOT NULL DEFAULT '',
+    versao TEXT NOT NULL DEFAULT '',
+    materia_geral TEXT NOT NULL DEFAULT '',
+    pdf_file_path TEXT NOT NULL DEFAULT '',
+    pdf_original_name TEXT NOT NULL DEFAULT '',
+    pdf_mime_type TEXT NOT NULL DEFAULT '',
+    pdf_size_bytes INTEGER NOT NULL DEFAULT 0,
+    extracted_text TEXT NOT NULL DEFAULT '',
+    process_status TEXT NOT NULL DEFAULT 'pending' CHECK (process_status IN (${SQL_QUESTION_BANK_PROCESS_STATUS_LIST})),
+    status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN (${SQL_QUESTION_BANK_PROOF_STATUS_LIST})),
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    FOREIGN KEY (vestibular_id) REFERENCES vestibulares(id) ON DELETE RESTRICT
+  );
+
+  CREATE TABLE IF NOT EXISTS questoes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    prova_id INTEGER NOT NULL,
+    numero INTEGER NOT NULL DEFAULT 0,
+    enunciado TEXT NOT NULL,
+    materia TEXT NOT NULL DEFAULT '',
+    tema TEXT NOT NULL DEFAULT '',
+    dificuldade TEXT NOT NULL DEFAULT 'media' CHECK (dificuldade IN (${SQL_QUESTION_BANK_DIFFICULTY_LIST})),
+    resposta_correta TEXT NOT NULL DEFAULT '' CHECK (resposta_correta IN ('', ${SQL_QUESTION_BANK_ALTERNATIVE_LETTER_LIST})),
+    status_revisao TEXT NOT NULL DEFAULT 'pending' CHECK (status_revisao IN (${SQL_QUESTION_BANK_REVIEW_STATUS_LIST})),
+    origem_pdf TEXT NOT NULL DEFAULT '',
+    observacoes_adm TEXT NOT NULL DEFAULT '',
+    sugestao_materia TEXT NOT NULL DEFAULT '',
+    sugestao_tema TEXT NOT NULL DEFAULT '',
+    sugestao_dificuldade TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    published_at TEXT NOT NULL DEFAULT '',
+    FOREIGN KEY (prova_id) REFERENCES provas(id) ON DELETE CASCADE
+  );
+
+  CREATE TABLE IF NOT EXISTS alternativas (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    questao_id INTEGER NOT NULL,
+    letra TEXT NOT NULL CHECK (letra IN (${SQL_QUESTION_BANK_ALTERNATIVE_LETTER_LIST})),
+    texto TEXT NOT NULL DEFAULT '',
+    FOREIGN KEY (questao_id) REFERENCES questoes(id) ON DELETE CASCADE,
+    UNIQUE(questao_id, letra)
+  );
+
+  CREATE TABLE IF NOT EXISTS question_attempts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    questao_id INTEGER NOT NULL,
+    resposta_marcada TEXT NOT NULL CHECK (resposta_marcada IN (${SQL_QUESTION_BANK_ALTERNATIVE_LETTER_LIST})),
+    acertou INTEGER NOT NULL CHECK (acertou IN (0, 1)),
+    tempo_gasto_segundos INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (questao_id) REFERENCES questoes(id) ON DELETE CASCADE
+  );
+
+  CREATE TABLE IF NOT EXISTS question_stats (
+    questao_id INTEGER PRIMARY KEY,
+    total_respostas INTEGER NOT NULL DEFAULT 0,
+    total_acertos INTEGER NOT NULL DEFAULT 0,
+    total_erros INTEGER NOT NULL DEFAULT 0,
+    taxa_acerto REAL NOT NULL DEFAULT 0,
+    dificuldade_calculada TEXT NOT NULL DEFAULT '' CHECK (dificuldade_calculada IN ('', ${SQL_QUESTION_BANK_DIFFICULTY_LIST})),
+    updated_at TEXT NOT NULL,
+    FOREIGN KEY (questao_id) REFERENCES questoes(id) ON DELETE CASCADE
+  );
+
+  CREATE TABLE IF NOT EXISTS question_user_states (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    questao_id INTEGER NOT NULL,
+    is_favorite INTEGER NOT NULL DEFAULT 0 CHECK (is_favorite IN (0, 1)),
+    review_later INTEGER NOT NULL DEFAULT 0 CHECK (review_later IN (0, 1)),
+    updated_at TEXT NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (questao_id) REFERENCES questoes(id) ON DELETE CASCADE,
+    UNIQUE(user_id, questao_id)
+  );
+
   CREATE INDEX IF NOT EXISTS idx_start_sessions_user_date
   ON start_sessions (user_id, date_key);
 
@@ -821,6 +2075,42 @@ db.exec(`
 
   CREATE INDEX IF NOT EXISTS idx_essay_submissions_status
   ON essay_submissions (status);
+
+  CREATE INDEX IF NOT EXISTS idx_routine_subject_preferences_user
+  ON routine_subject_preferences (user_id);
+
+  CREATE INDEX IF NOT EXISTS idx_routine_week_plans_user_week
+  ON routine_week_plans (user_id, week_start);
+
+  CREATE INDEX IF NOT EXISTS idx_routine_week_plan_items_plan
+  ON routine_week_plan_items (plan_id, day_of_week);
+
+  CREATE INDEX IF NOT EXISTS idx_vestibulares_nome
+  ON vestibulares (nome);
+
+  CREATE INDEX IF NOT EXISTS idx_provas_vestibular_ano
+  ON provas (vestibular_id, ano DESC);
+
+  CREATE INDEX IF NOT EXISTS idx_provas_status
+  ON provas (status, process_status);
+
+  CREATE INDEX IF NOT EXISTS idx_questoes_prova_numero
+  ON questoes (prova_id, numero ASC);
+
+  CREATE INDEX IF NOT EXISTS idx_questoes_filtros
+  ON questoes (materia, tema, dificuldade, status_revisao);
+
+  CREATE INDEX IF NOT EXISTS idx_alternativas_questao
+  ON alternativas (questao_id, letra);
+
+  CREATE INDEX IF NOT EXISTS idx_question_attempts_user_question_created
+  ON question_attempts (user_id, questao_id, created_at DESC);
+
+  CREATE INDEX IF NOT EXISTS idx_question_attempts_question
+  ON question_attempts (questao_id, created_at DESC);
+
+  CREATE INDEX IF NOT EXISTS idx_question_user_states_user
+  ON question_user_states (user_id, updated_at DESC);
 `);
 
 function ensureStartSessionColumns() {
@@ -999,9 +2289,38 @@ function ensureEssaySubmissionColumns() {
   db.exec("UPDATE essay_submissions SET updated_at = created_at WHERE updated_at = ''");
 }
 
+function ensureRoutinePreferenceColumns() {
+  const existingColumns = db
+    .prepare("PRAGMA table_info(routine_preferences)")
+    .all()
+    .map((column) => column.name);
+
+  if (!existingColumns.length) {
+    return;
+  }
+
+  const migrations = [
+    {
+      name: "course_key",
+      sql: "ALTER TABLE routine_preferences ADD COLUMN course_key TEXT NOT NULL DEFAULT ''",
+    },
+    {
+      name: "admission_category_key",
+      sql: "ALTER TABLE routine_preferences ADD COLUMN admission_category_key TEXT NOT NULL DEFAULT 'ac'",
+    },
+  ];
+
+  migrations.forEach((migration) => {
+    if (!existingColumns.includes(migration.name)) {
+      db.exec(migration.sql);
+    }
+  });
+}
+
 ensureUserColumns();
 ensureStartSessionColumns();
 ensureEssaySubmissionColumns();
+ensureRoutinePreferenceColumns();
 
 const insertUserStatement = db.prepare(`
   INSERT INTO users (name, first_name, last_name, email, password_hash, role, created_at)
@@ -1460,6 +2779,606 @@ const countAdminsStatement = db.prepare(`
   WHERE role = 'admin'
 `);
 
+const getRoutinePreferencesStatement = db.prepare(`
+  SELECT
+    user_id AS userId,
+    primary_exam_key AS primaryExamKey,
+    secondary_exam_key AS secondaryExamKey,
+    course_key AS courseKey,
+    admission_category_key AS admissionCategoryKey,
+    course_track_key AS courseTrackKey,
+    course_name AS courseName,
+    study_days_json AS studyDaysJson,
+    weekday_minutes_json AS weekdayMinutesJson,
+    weekly_goal_minutes AS weeklyGoalMinutes,
+    updated_at AS updatedAt
+  FROM routine_preferences
+  WHERE user_id = ?
+`);
+
+const upsertRoutinePreferencesStatement = db.prepare(`
+  INSERT INTO routine_preferences (
+    user_id,
+    primary_exam_key,
+    secondary_exam_key,
+    course_key,
+    admission_category_key,
+    course_track_key,
+    course_name,
+    study_days_json,
+    weekday_minutes_json,
+    weekly_goal_minutes,
+    updated_at
+  )
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  ON CONFLICT(user_id) DO UPDATE SET
+    primary_exam_key = excluded.primary_exam_key,
+    secondary_exam_key = excluded.secondary_exam_key,
+    course_key = excluded.course_key,
+    admission_category_key = excluded.admission_category_key,
+    course_track_key = excluded.course_track_key,
+    course_name = excluded.course_name,
+    study_days_json = excluded.study_days_json,
+    weekday_minutes_json = excluded.weekday_minutes_json,
+    weekly_goal_minutes = excluded.weekly_goal_minutes,
+    updated_at = excluded.updated_at
+`);
+
+const listRoutineSubjectPreferencesStatement = db.prepare(`
+  SELECT
+    id,
+    user_id AS userId,
+    subject_key AS subjectKey,
+    custom_subject_name AS customSubjectName,
+    manual_delta AS manualDelta,
+    difficulty_level AS difficultyLevel,
+    updated_at AS updatedAt
+  FROM routine_subject_preferences
+  WHERE user_id = ?
+  ORDER BY id ASC
+`);
+
+const deleteRoutineSubjectPreferencesStatement = db.prepare(`
+  DELETE FROM routine_subject_preferences
+  WHERE user_id = ?
+`);
+
+const insertRoutineSubjectPreferenceStatement = db.prepare(`
+  INSERT INTO routine_subject_preferences (
+    user_id,
+    subject_key,
+    custom_subject_name,
+    manual_delta,
+    difficulty_level,
+    updated_at
+  )
+  VALUES (?, ?, ?, ?, ?, ?)
+`);
+
+const getRoutineWeekPlanStatement = db.prepare(`
+  SELECT
+    id,
+    user_id AS userId,
+    week_start AS weekStart,
+    generation_source_json AS generationSourceJson,
+    generated_at AS generatedAt
+  FROM routine_week_plans
+  WHERE user_id = ? AND week_start = ?
+`);
+
+const insertRoutineWeekPlanStatement = db.prepare(`
+  INSERT INTO routine_week_plans (
+    user_id,
+    week_start,
+    generation_source_json,
+    generated_at
+  )
+  VALUES (?, ?, ?, ?)
+`);
+
+const updateRoutineWeekPlanStatement = db.prepare(`
+  UPDATE routine_week_plans
+  SET
+    generation_source_json = ?,
+    generated_at = ?
+  WHERE id = ? AND user_id = ?
+`);
+
+const deleteRoutineWeekPlanItemsStatement = db.prepare(`
+  DELETE FROM routine_week_plan_items
+  WHERE plan_id = ?
+`);
+
+const insertRoutineWeekPlanItemStatement = db.prepare(`
+  INSERT INTO routine_week_plan_items (
+    plan_id,
+    day_of_week,
+    subject_key,
+    custom_subject_name,
+    planned_minutes,
+    slot_type,
+    reason_label
+  )
+  VALUES (?, ?, ?, ?, ?, ?, ?)
+`);
+
+const listRoutineWeekPlanItemsStatement = db.prepare(`
+  SELECT
+    id,
+    plan_id AS planId,
+    day_of_week AS dayOfWeek,
+    subject_key AS subjectKey,
+    custom_subject_name AS customSubjectName,
+    planned_minutes AS plannedMinutes,
+    slot_type AS slotType,
+    reason_label AS reasonLabel
+  FROM routine_week_plan_items
+  WHERE plan_id = ?
+  ORDER BY day_of_week ASC, id ASC
+`);
+
+const countQuestionBankExamsStatement = db.prepare(`
+  SELECT COUNT(*) AS total
+  FROM vestibulares
+`);
+
+const listQuestionBankExamsStatement = db.prepare(`
+  SELECT
+    id,
+    nome,
+    sigla,
+    descricao,
+    ativo,
+    created_at AS createdAt
+  FROM vestibulares
+  ORDER BY ativo DESC, nome COLLATE NOCASE ASC
+`);
+
+const listPublishedQuestionBankExamsStatement = db.prepare(`
+  SELECT DISTINCT
+    vestibulares.id,
+    vestibulares.nome,
+    vestibulares.sigla,
+    vestibulares.descricao,
+    vestibulares.ativo,
+    vestibulares.created_at AS createdAt
+  FROM vestibulares
+  INNER JOIN provas ON provas.vestibular_id = vestibulares.id
+  INNER JOIN questoes ON questoes.prova_id = provas.id
+  WHERE vestibulares.ativo = 1
+    AND provas.status = 'published'
+    AND questoes.status_revisao = 'approved'
+  ORDER BY vestibulares.nome COLLATE NOCASE ASC
+`);
+
+const findQuestionBankExamByIdStatement = db.prepare(`
+  SELECT
+    id,
+    nome,
+    sigla,
+    descricao,
+    ativo,
+    created_at AS createdAt
+  FROM vestibulares
+  WHERE id = ?
+`);
+
+const findQuestionBankExamBySiglaStatement = db.prepare(`
+  SELECT
+    id,
+    nome,
+    sigla,
+    descricao,
+    ativo,
+    created_at AS createdAt
+  FROM vestibulares
+  WHERE sigla = ?
+`);
+
+const insertQuestionBankExamStatement = db.prepare(`
+  INSERT INTO vestibulares (nome, sigla, descricao, ativo, created_at)
+  VALUES (?, ?, ?, ?, ?)
+`);
+
+const questionBankAdminOverviewStatement = db.prepare(`
+  SELECT
+    (SELECT COUNT(*) FROM provas) AS totalProofs,
+    (SELECT COUNT(*) FROM provas WHERE status = 'published') AS publishedProofs,
+    (SELECT COUNT(*) FROM provas WHERE status = 'review') AS proofsInReview,
+    (SELECT COUNT(*) FROM questoes) AS totalQuestions,
+    (SELECT COUNT(*) FROM questoes WHERE status_revisao = 'approved') AS approvedQuestions,
+    (SELECT COUNT(*) FROM questoes WHERE status_revisao = 'pending') AS pendingQuestions,
+    (SELECT COUNT(*) FROM question_attempts) AS totalAttempts
+`);
+
+const listQuestionProofsStatement = db.prepare(`
+  SELECT
+    provas.id,
+    provas.vestibular_id AS vestibularId,
+    vestibulares.nome AS vestibularNome,
+    vestibulares.sigla AS vestibularSigla,
+    provas.ano,
+    provas.fase,
+    provas.versao,
+    provas.materia_geral AS materiaGeral,
+    provas.pdf_file_path AS pdfFilePath,
+    provas.pdf_original_name AS pdfOriginalName,
+    provas.pdf_mime_type AS pdfMimeType,
+    provas.pdf_size_bytes AS pdfSizeBytes,
+    provas.extracted_text AS extractedText,
+    provas.process_status AS processStatus,
+    provas.status,
+    provas.created_at AS createdAt,
+    provas.updated_at AS updatedAt,
+    COUNT(questoes.id) AS totalQuestions,
+    COALESCE(SUM(CASE WHEN questoes.status_revisao = 'approved' THEN 1 ELSE 0 END), 0) AS approvedQuestions,
+    COALESCE(SUM(CASE WHEN questoes.status_revisao = 'pending' THEN 1 ELSE 0 END), 0) AS pendingQuestions,
+    COALESCE(SUM(CASE WHEN questoes.status_revisao = 'rejected' THEN 1 ELSE 0 END), 0) AS rejectedQuestions
+  FROM provas
+  INNER JOIN vestibulares ON vestibulares.id = provas.vestibular_id
+  LEFT JOIN questoes ON questoes.prova_id = provas.id
+  GROUP BY provas.id
+  ORDER BY provas.created_at DESC, provas.id DESC
+`);
+
+const getQuestionProofByIdStatement = db.prepare(`
+  SELECT
+    provas.id,
+    provas.vestibular_id AS vestibularId,
+    vestibulares.nome AS vestibularNome,
+    vestibulares.sigla AS vestibularSigla,
+    provas.ano,
+    provas.fase,
+    provas.versao,
+    provas.materia_geral AS materiaGeral,
+    provas.pdf_file_path AS pdfFilePath,
+    provas.pdf_original_name AS pdfOriginalName,
+    provas.pdf_mime_type AS pdfMimeType,
+    provas.pdf_size_bytes AS pdfSizeBytes,
+    provas.extracted_text AS extractedText,
+    provas.process_status AS processStatus,
+    provas.status,
+    provas.created_at AS createdAt,
+    provas.updated_at AS updatedAt,
+    COUNT(questoes.id) AS totalQuestions,
+    COALESCE(SUM(CASE WHEN questoes.status_revisao = 'approved' THEN 1 ELSE 0 END), 0) AS approvedQuestions,
+    COALESCE(SUM(CASE WHEN questoes.status_revisao = 'pending' THEN 1 ELSE 0 END), 0) AS pendingQuestions,
+    COALESCE(SUM(CASE WHEN questoes.status_revisao = 'rejected' THEN 1 ELSE 0 END), 0) AS rejectedQuestions
+  FROM provas
+  INNER JOIN vestibulares ON vestibulares.id = provas.vestibular_id
+  LEFT JOIN questoes ON questoes.prova_id = provas.id
+  WHERE provas.id = ?
+  GROUP BY provas.id
+`);
+
+const insertQuestionProofStatement = db.prepare(`
+  INSERT INTO provas (
+    vestibular_id,
+    ano,
+    fase,
+    versao,
+    materia_geral,
+    pdf_file_path,
+    pdf_original_name,
+    pdf_mime_type,
+    pdf_size_bytes,
+    extracted_text,
+    process_status,
+    status,
+    created_at,
+    updated_at
+  )
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+`);
+
+const updateQuestionProofStatement = db.prepare(`
+  UPDATE provas
+  SET
+    vestibular_id = ?,
+    ano = ?,
+    fase = ?,
+    versao = ?,
+    materia_geral = ?,
+    pdf_file_path = ?,
+    pdf_original_name = ?,
+    pdf_mime_type = ?,
+    pdf_size_bytes = ?,
+    extracted_text = ?,
+    process_status = ?,
+    status = ?,
+    updated_at = ?
+  WHERE id = ?
+`);
+
+const updateQuestionProofStatusStatement = db.prepare(`
+  UPDATE provas
+  SET
+    status = ?,
+    updated_at = ?
+  WHERE id = ?
+`);
+
+const updateQuestionProofProcessStatement = db.prepare(`
+  UPDATE provas
+  SET
+    extracted_text = ?,
+    process_status = ?,
+    status = ?,
+    updated_at = ?
+  WHERE id = ?
+`);
+
+const countQuestionAttemptsForProofStatement = db.prepare(`
+  SELECT COUNT(*) AS total
+  FROM question_attempts
+  INNER JOIN questoes ON questoes.id = question_attempts.questao_id
+  WHERE questoes.prova_id = ?
+`);
+
+const listQuestionsByProofStatement = db.prepare(`
+  SELECT
+    questoes.id,
+    questoes.prova_id AS provaId,
+    questoes.numero,
+    questoes.enunciado,
+    questoes.materia,
+    questoes.tema,
+    questoes.dificuldade,
+    questoes.resposta_correta AS respostaCorreta,
+    questoes.status_revisao AS statusRevisao,
+    questoes.origem_pdf AS origemPdf,
+    questoes.observacoes_adm AS observacoesAdm,
+    questoes.sugestao_materia AS sugestaoMateria,
+    questoes.sugestao_tema AS sugestaoTema,
+    questoes.sugestao_dificuldade AS sugestaoDificuldade,
+    questoes.created_at AS createdAt,
+    questoes.updated_at AS updatedAt,
+    questoes.published_at AS publishedAt,
+    question_stats.total_respostas AS totalRespostas,
+    question_stats.total_acertos AS totalAcertos,
+    question_stats.total_erros AS totalErros,
+    question_stats.taxa_acerto AS taxaAcerto,
+    question_stats.dificuldade_calculada AS dificuldadeCalculada
+  FROM questoes
+  LEFT JOIN question_stats ON question_stats.questao_id = questoes.id
+  WHERE questoes.prova_id = ?
+  ORDER BY questoes.numero ASC, questoes.id ASC
+`);
+
+const getQuestionByIdStatement = db.prepare(`
+  SELECT
+    questoes.id,
+    questoes.prova_id AS provaId,
+    questoes.numero,
+    questoes.enunciado,
+    questoes.materia,
+    questoes.tema,
+    questoes.dificuldade,
+    questoes.resposta_correta AS respostaCorreta,
+    questoes.status_revisao AS statusRevisao,
+    questoes.origem_pdf AS origemPdf,
+    questoes.observacoes_adm AS observacoesAdm,
+    questoes.sugestao_materia AS sugestaoMateria,
+    questoes.sugestao_tema AS sugestaoTema,
+    questoes.sugestao_dificuldade AS sugestaoDificuldade,
+    questoes.created_at AS createdAt,
+    questoes.updated_at AS updatedAt,
+    questoes.published_at AS publishedAt,
+    provas.id AS proofId,
+    provas.ano,
+    provas.fase,
+    provas.versao,
+    provas.status AS proofStatus,
+    vestibulares.id AS vestibularId,
+    vestibulares.nome AS vestibularNome,
+    vestibulares.sigla AS vestibularSigla,
+    question_stats.total_respostas AS totalRespostas,
+    question_stats.total_acertos AS totalAcertos,
+    question_stats.total_erros AS totalErros,
+    question_stats.taxa_acerto AS taxaAcerto,
+    question_stats.dificuldade_calculada AS dificuldadeCalculada
+  FROM questoes
+  INNER JOIN provas ON provas.id = questoes.prova_id
+  INNER JOIN vestibulares ON vestibulares.id = provas.vestibular_id
+  LEFT JOIN question_stats ON question_stats.questao_id = questoes.id
+  WHERE questoes.id = ?
+`);
+
+const insertQuestionStatement = db.prepare(`
+  INSERT INTO questoes (
+    prova_id,
+    numero,
+    enunciado,
+    materia,
+    tema,
+    dificuldade,
+    resposta_correta,
+    status_revisao,
+    origem_pdf,
+    observacoes_adm,
+    sugestao_materia,
+    sugestao_tema,
+    sugestao_dificuldade,
+    created_at,
+    updated_at,
+    published_at
+  )
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+`);
+
+const updateQuestionStatement = db.prepare(`
+  UPDATE questoes
+  SET
+    numero = ?,
+    enunciado = ?,
+    materia = ?,
+    tema = ?,
+    dificuldade = ?,
+    resposta_correta = ?,
+    status_revisao = ?,
+    origem_pdf = ?,
+    observacoes_adm = ?,
+    sugestao_materia = ?,
+    sugestao_tema = ?,
+    sugestao_dificuldade = ?,
+    updated_at = ?,
+    published_at = ?
+  WHERE id = ?
+`);
+
+const publishApprovedQuestionsByProofStatement = db.prepare(`
+  UPDATE questoes
+  SET
+    published_at = ?,
+    updated_at = ?
+  WHERE prova_id = ? AND status_revisao = 'approved'
+`);
+
+const deleteQuestionsByProofStatement = db.prepare(`
+  DELETE FROM questoes
+  WHERE prova_id = ?
+`);
+
+const deleteQuestionAlternativesStatement = db.prepare(`
+  DELETE FROM alternativas
+  WHERE questao_id = ?
+`);
+
+const insertQuestionAlternativeStatement = db.prepare(`
+  INSERT INTO alternativas (questao_id, letra, texto)
+  VALUES (?, ?, ?)
+`);
+
+const listQuestionAlternativesForQuestionStatement = db.prepare(`
+  SELECT
+    id,
+    questao_id AS questaoId,
+    letra,
+    texto
+  FROM alternativas
+  WHERE questao_id = ?
+  ORDER BY letra ASC, id ASC
+`);
+
+const aggregateQuestionStatsStatement = db.prepare(`
+  SELECT
+    COUNT(*) AS totalRespostas,
+    COALESCE(SUM(CASE WHEN acertou = 1 THEN 1 ELSE 0 END), 0) AS totalAcertos,
+    COALESCE(SUM(CASE WHEN acertou = 0 THEN 1 ELSE 0 END), 0) AS totalErros
+  FROM question_attempts
+  WHERE questao_id = ?
+`);
+
+const upsertQuestionStatsStatement = db.prepare(`
+  INSERT INTO question_stats (
+    questao_id,
+    total_respostas,
+    total_acertos,
+    total_erros,
+    taxa_acerto,
+    dificuldade_calculada,
+    updated_at
+  )
+  VALUES (?, ?, ?, ?, ?, ?, ?)
+  ON CONFLICT(questao_id) DO UPDATE SET
+    total_respostas = excluded.total_respostas,
+    total_acertos = excluded.total_acertos,
+    total_erros = excluded.total_erros,
+    taxa_acerto = excluded.taxa_acerto,
+    dificuldade_calculada = excluded.dificuldade_calculada,
+    updated_at = excluded.updated_at
+`);
+
+const getQuestionStatsStatement = db.prepare(`
+  SELECT
+    questao_id AS questaoId,
+    total_respostas AS totalRespostas,
+    total_acertos AS totalAcertos,
+    total_erros AS totalErros,
+    taxa_acerto AS taxaAcerto,
+    dificuldade_calculada AS dificuldadeCalculada,
+    updated_at AS updatedAt
+  FROM question_stats
+  WHERE questao_id = ?
+`);
+
+const insertQuestionAttemptStatement = db.prepare(`
+  INSERT INTO question_attempts (
+    user_id,
+    questao_id,
+    resposta_marcada,
+    acertou,
+    tempo_gasto_segundos,
+    created_at
+  )
+  VALUES (?, ?, ?, ?, ?, ?)
+`);
+
+const getLatestUserQuestionAttemptStatement = db.prepare(`
+  SELECT
+    id,
+    user_id AS userId,
+    questao_id AS questaoId,
+    resposta_marcada AS respostaMarcada,
+    acertou,
+    tempo_gasto_segundos AS tempoGastoSegundos,
+    created_at AS createdAt
+  FROM question_attempts
+  WHERE user_id = ? AND questao_id = ?
+  ORDER BY created_at DESC, id DESC
+  LIMIT 1
+`);
+
+const upsertQuestionUserStateStatement = db.prepare(`
+  INSERT INTO question_user_states (
+    user_id,
+    questao_id,
+    is_favorite,
+    review_later,
+    updated_at
+  )
+  VALUES (?, ?, ?, ?, ?)
+  ON CONFLICT(user_id, questao_id) DO UPDATE SET
+    is_favorite = excluded.is_favorite,
+    review_later = excluded.review_later,
+    updated_at = excluded.updated_at
+`);
+
+const getQuestionUserStateStatement = db.prepare(`
+  SELECT
+    user_id AS userId,
+    questao_id AS questaoId,
+    is_favorite AS isFavorite,
+    review_later AS reviewLater,
+    updated_at AS updatedAt
+  FROM question_user_states
+  WHERE user_id = ? AND questao_id = ?
+`);
+
+const questionBankStudentOverviewStatement = db.prepare(`
+  SELECT
+    COUNT(DISTINCT questoes.id) AS totalAvailable,
+    COUNT(DISTINCT CASE WHEN latest_attempt.id IS NOT NULL THEN questoes.id END) AS answeredQuestions,
+    COUNT(DISTINCT CASE WHEN latest_attempt.acertou = 1 THEN questoes.id END) AS correctQuestions,
+    COUNT(DISTINCT CASE WHEN latest_attempt.acertou = 0 THEN questoes.id END) AS wrongQuestions,
+    COUNT(DISTINCT CASE WHEN user_state.is_favorite = 1 THEN questoes.id END) AS favoriteQuestions,
+    COUNT(DISTINCT CASE WHEN user_state.review_later = 1 THEN questoes.id END) AS reviewQuestions
+  FROM questoes
+  INNER JOIN provas ON provas.id = questoes.prova_id
+  LEFT JOIN question_user_states AS user_state
+    ON user_state.user_id = ? AND user_state.questao_id = questoes.id
+  LEFT JOIN question_attempts AS latest_attempt
+    ON latest_attempt.id = (
+      SELECT qa.id
+      FROM question_attempts qa
+      WHERE qa.user_id = ? AND qa.questao_id = questoes.id
+      ORDER BY qa.created_at DESC, qa.id DESC
+      LIMIT 1
+    )
+  WHERE provas.status = 'published'
+    AND questoes.status_revisao = 'approved'
+`);
+
 function nowIso() {
   return new Date().toISOString();
 }
@@ -1604,6 +3523,237 @@ function addDays(date, days) {
   const copy = new Date(date);
   copy.setDate(copy.getDate() + days);
   return copy;
+}
+
+function startOfWeekMonday(date) {
+  const copy = new Date(date);
+  copy.setHours(0, 0, 0, 0);
+  const weekday = copy.getDay();
+  const offset = weekday === 0 ? -6 : 1 - weekday;
+  copy.setDate(copy.getDate() + offset);
+  return copy;
+}
+
+function toDateKey(date) {
+  const safeDate = new Date(date);
+
+  if (Number.isNaN(safeDate.getTime())) {
+    return "";
+  }
+
+  const year = safeDate.getFullYear();
+  const month = String(safeDate.getMonth() + 1).padStart(2, "0");
+  const day = String(safeDate.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function parseDateKey(value) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(value || "").trim());
+
+  if (!match) {
+    return null;
+  }
+
+  const parsedDate = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]), 12, 0, 0, 0);
+  return Number.isNaN(parsedDate.getTime()) ? null : parsedDate;
+}
+
+function getWeekStartDateKey(referenceDate = new Date()) {
+  return toDateKey(startOfWeekMonday(referenceDate));
+}
+
+function getWeekEndDateKey(weekStartKey) {
+  const weekStartDate = parseDateKey(weekStartKey);
+  return weekStartDate ? toDateKey(addDays(weekStartDate, 6)) : "";
+}
+
+function isDateKeyInRange(dateKey, startKey, endKey) {
+  return Boolean(dateKey) && Boolean(startKey) && Boolean(endKey) && dateKey >= startKey && dateKey <= endKey;
+}
+
+function sanitizeRoutineExamKey(value, allowEmpty = false) {
+  const normalizedValue = String(value || "").trim().toLowerCase();
+
+  if (!normalizedValue) {
+    return allowEmpty ? "" : "enem";
+  }
+
+  return ROUTINE_EXAM_KEYS.has(normalizedValue) ? normalizedValue : allowEmpty ? "" : "enem";
+}
+
+function sanitizeRoutineCourseKey(value, allowEmpty = true) {
+  const normalizedValue = String(value || "").trim().toLowerCase();
+
+  if (!normalizedValue) {
+    return allowEmpty ? "" : "outro";
+  }
+
+  return ROUTINE_COURSE_KEYS.has(normalizedValue) ? normalizedValue : allowEmpty ? "" : "outro";
+}
+
+function sanitizeRoutineAdmissionCategoryKey(value) {
+  const normalizedValue = String(value || "").trim().toLowerCase();
+  return ROUTINE_ADMISSION_CATEGORY_KEYS.has(normalizedValue) ? normalizedValue : "ac";
+}
+
+function sanitizeRoutineTrackKey(value) {
+  const normalizedValue = String(value || "").trim().toLowerCase();
+  return ROUTINE_TRACK_KEYS.has(normalizedValue) ? normalizedValue : "geral";
+}
+
+function sanitizeRoutineDifficultyLevel(value) {
+  const normalizedValue = String(value || "").trim().toLowerCase();
+  return ROUTINE_DIFFICULTY_LEVELS.has(normalizedValue) ? normalizedValue : "normal";
+}
+
+function sanitizeRoutineManualDelta(value) {
+  const safeValue = clampInteger(value, -2, 2);
+  return ROUTINE_MANUAL_DELTA_VALUES.has(safeValue) ? safeValue : 0;
+}
+
+function normalizeRoutineStudyDays(value) {
+  const rawValues = Array.isArray(value) ? value : parseStoredJson(String(value || "[]"), []);
+  const normalizedDays = rawValues
+    .map((entry) => clampInteger(entry, 0, 6))
+    .filter((entry, index, list) => list.indexOf(entry) === index)
+    .sort((left, right) => left - right);
+
+  return normalizedDays.length ? normalizedDays : [...ROUTINE_DEFAULT_STUDY_DAYS];
+}
+
+function normalizeRoutineWeekdayMinutes(value, studyDays = ROUTINE_DEFAULT_STUDY_DAYS) {
+  const fallback = {};
+  const source =
+    value && typeof value === "object" && !Array.isArray(value)
+      ? value
+      : parseStoredJson(typeof value === "string" ? value : JSON.stringify(value || {}), {});
+
+  studyDays.forEach((dayOfWeek) => {
+    fallback[String(dayOfWeek)] = ROUTINE_DEFAULT_WEEKDAY_MINUTES;
+  });
+
+  studyDays.forEach((dayOfWeek) => {
+    const rawValue = source?.[dayOfWeek] ?? source?.[String(dayOfWeek)];
+    fallback[String(dayOfWeek)] = clampInteger(
+      rawValue === undefined ? ROUTINE_DEFAULT_WEEKDAY_MINUTES : rawValue,
+      ROUTINE_MIN_DAY_MINUTES,
+      ROUTINE_MAX_DAY_MINUTES
+    );
+  });
+
+  return fallback;
+}
+
+function getRoutineWeeklyGoalMinutes(weekdayMinutes, explicitValue) {
+  const totalMinutes = Object.values(weekdayMinutes || {}).reduce(
+    (total, currentValue) => total + clampInteger(currentValue, 0, ROUTINE_MAX_DAY_MINUTES),
+    0
+  );
+  const fallbackValue = Math.max(ROUTINE_MIN_TOTAL_WEEKLY_MINUTES, totalMinutes || ROUTINE_DEFAULT_WEEKLY_GOAL_MINUTES);
+  return clampInteger(
+    explicitValue === undefined ? fallbackValue : explicitValue,
+    ROUTINE_MIN_TOTAL_WEEKLY_MINUTES,
+    Math.max(ROUTINE_MIN_TOTAL_WEEKLY_MINUTES, fallbackValue)
+  );
+}
+
+function getRoutinePreferenceKey(subjectKey, customSubjectName = "") {
+  const normalizedCustomName = String(customSubjectName || "").trim().toLowerCase();
+  return subjectKey === "outras" ? `${subjectKey}:${normalizedCustomName}` : subjectKey;
+}
+
+function getRoutineCourseLabel(courseKey, courseName = "") {
+  const normalizedCourseKey = sanitizeRoutineCourseKey(courseKey, true);
+  const customCourseName = sanitizeShortText(courseName, 80);
+
+  if (normalizedCourseKey === "outro" && customCourseName) {
+    return customCourseName;
+  }
+
+  if (normalizedCourseKey && ROUTINE_COURSE_METADATA[normalizedCourseKey]) {
+    return ROUTINE_COURSE_METADATA[normalizedCourseKey].label;
+  }
+
+  return customCourseName;
+}
+
+function getRoutineSubjectLabel(subjectKey, customSubjectName = "") {
+  return getSubjectLabel(subjectKey, customSubjectName);
+}
+
+function getRoutineCourseMultiplier(courseKey, subjectKey) {
+  const normalizedCourseKey = sanitizeRoutineCourseKey(courseKey, true);
+
+  if (!normalizedCourseKey || !ROUTINE_COURSE_METADATA[normalizedCourseKey]) {
+    return 1;
+  }
+
+  return Number(ROUTINE_COURSE_METADATA[normalizedCourseKey].subjectBoosts?.[subjectKey] || 1);
+}
+
+function getRoutineExamScoreScale(examKey) {
+  const normalizedExamKey = sanitizeRoutineExamKey(examKey);
+  const profileKey = ROUTINE_EXAM_METADATA[normalizedExamKey]?.profile;
+  return ROUTINE_EXAM_SCORE_SCALE_BY_PROFILE[profileKey] || "enem_points";
+}
+
+function getRoutinePercentTargetFromEnemEstimate(enemTarget, examKey) {
+  const adjustment = Number(ROUTINE_EXAM_PERCENT_ADJUSTMENTS[examKey] || 0);
+  const rawPercent = 36 + ((Number(enemTarget || 0) - 500) * 0.155) + adjustment;
+  return clampInteger(rawPercent, 40, 92);
+}
+
+function buildRoutineCourseTarget(preferences) {
+  const courseKey = sanitizeRoutineCourseKey(preferences?.courseKey, true);
+  const courseMetadata = courseKey ? ROUTINE_COURSE_METADATA[courseKey] : null;
+  const courseLabel = getRoutineCourseLabel(courseKey, preferences?.courseName);
+
+  if (!courseMetadata || !courseLabel) {
+    return null;
+  }
+
+  const primaryExamKey = sanitizeRoutineExamKey(preferences?.primaryExamKey);
+  const scoreScaleType = getRoutineExamScoreScale(primaryExamKey);
+  const admissionCategoryKey = sanitizeRoutineAdmissionCategoryKey(preferences?.admissionCategoryKey);
+  const categoryTargets = Object.entries(ROUTINE_ADMISSION_CATEGORY_LABELS).map(([categoryKey, categoryLabel]) => {
+    const targetBucket = ROUTINE_ADMISSION_CATEGORY_TARGET_BUCKETS[categoryKey] || "ac";
+    const enemEquivalent = Number(courseMetadata.targetScores?.[targetBucket] || courseMetadata.targetScores?.ac || 650);
+    const targetValue = scoreScaleType === "percent_correct"
+      ? getRoutinePercentTargetFromEnemEstimate(enemEquivalent, primaryExamKey)
+      : enemEquivalent;
+
+    return {
+      key: categoryKey,
+      label: categoryLabel,
+      shortLabel: ROUTINE_ADMISSION_CATEGORY_SHORT_LABELS[categoryKey] || categoryLabel,
+      detail: ROUTINE_ADMISSION_CATEGORY_DETAILS[categoryKey] || "",
+      enemEquivalent,
+      targetValue,
+      targetDisplay: scoreScaleType === "percent_correct" ? `${targetValue}/100` : `${targetValue}/1000`,
+      isSelected: categoryKey === admissionCategoryKey,
+    };
+  });
+
+  return {
+    courseKey,
+    courseLabel,
+    group: courseMetadata.group,
+    recommendedTrackKey: courseMetadata.recommendedTrackKey || "geral",
+    recommendedTrackLabel: ROUTINE_TRACK_LABELS[courseMetadata.recommendedTrackKey] || "Geral",
+    admissionCategoryKey,
+    scoreScaleType,
+    scoreScaleLabel: scoreScaleType === "percent_correct"
+      ? "desempenho estimado na prova"
+      : "nota ENEM estimada",
+    selectedTarget: categoryTargets.find((entry) => entry.key === admissionCategoryKey) || categoryTargets[0],
+    categories: categoryTargets,
+    note: "Meta interna de referencia, nao corte oficial do vestibular.",
+  };
+}
+
+function roundToNearestFive(value) {
+  const safeValue = Number(value) || 0;
+  return Math.max(0, Math.round(safeValue / 5) * 5);
 }
 
 function hashPassword(password) {
@@ -1847,11 +3997,12 @@ function createError(statusCode, message) {
   return error;
 }
 
-async function readRequestBody(request) {
+async function readRequestBody(request, options = {}) {
+  const maxBytes = Math.max(1_000, Number(options.maxBytes) || BODY_LIMIT_BYTES);
   const contentType = String(request.headers["content-type"] || "").toLowerCase();
   const contentLength = Number(request.headers["content-length"] || 0);
 
-  if (contentLength > BODY_LIMIT_BYTES) {
+  if (contentLength > maxBytes) {
     throw createError(413, "A requisicao passou do limite permitido.");
   }
 
@@ -1865,7 +4016,7 @@ async function readRequestBody(request) {
   for await (const chunk of request) {
     totalSize += chunk.length;
 
-    if (totalSize > BODY_LIMIT_BYTES) {
+    if (totalSize > maxBytes) {
       throw createError(413, "A requisicao passou do limite permitido.");
     }
 
@@ -1964,6 +4115,2199 @@ function clampInteger(value, minimum, maximum) {
   }
 
   return Math.min(maximum, Math.max(minimum, Math.round(safeValue)));
+}
+
+function normalizeQuestionBankTerm(value, maxLength = 120) {
+  return sanitizeShortText(value, maxLength)
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ");
+}
+
+function sanitizeQuestionBankMultilineText(value, maxLength = 16_000) {
+  return sanitizeEssayText(value, maxLength);
+}
+
+function sanitizeQuestionBankExamName(value) {
+  return sanitizeShortText(value, 120);
+}
+
+function sanitizeQuestionBankExamSigla(value) {
+  return String(value || "")
+    .trim()
+    .toUpperCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^A-Z0-9]/g, "")
+    .slice(0, 24);
+}
+
+function sanitizeQuestionBankDescription(value) {
+  return sanitizeQuestionBankMultilineText(value, 320);
+}
+
+function sanitizeQuestionBankYear(value, { allowEmpty = false } = {}) {
+  const safeValue = Number(value);
+
+  if (!Number.isInteger(safeValue)) {
+    if (allowEmpty) {
+      return 0;
+    }
+
+    throw createError(400, "Informe um ano valido para a prova.");
+  }
+
+  if (safeValue < 1980 || safeValue > 2100) {
+    throw createError(400, "O ano da prova precisa estar entre 1980 e 2100.");
+  }
+
+  return safeValue;
+}
+
+function sanitizeQuestionDifficulty(value, fallback = "media") {
+  const difficulty = normalizeQuestionBankTerm(value, 20);
+  return QUESTION_BANK_DIFFICULTY_SET.has(difficulty) ? difficulty : fallback;
+}
+
+function sanitizeQuestionProofStatus(value, fallback = "draft") {
+  const status = normalizeQuestionBankTerm(value, 20);
+  return QUESTION_BANK_PROOF_STATUS_SET.has(status) ? status : fallback;
+}
+
+function sanitizeQuestionProcessStatus(value, fallback = "pending") {
+  const status = normalizeQuestionBankTerm(value, 20);
+  return QUESTION_BANK_PROCESS_STATUS_SET.has(status) ? status : fallback;
+}
+
+function sanitizeQuestionReviewStatus(value, fallback = "pending") {
+  const status = normalizeQuestionBankTerm(value, 20);
+  return QUESTION_BANK_REVIEW_STATUS_SET.has(status) ? status : fallback;
+}
+
+function sanitizeQuestionFlagFilter(value, fallback = "all") {
+  const flag = normalizeQuestionBankTerm(value, 20);
+  return QUESTION_BANK_FLAG_FILTERS.has(flag) ? flag : fallback;
+}
+
+function sanitizeQuestionNumber(value, { allowEmpty = false } = {}) {
+  const safeValue = Number(value);
+
+  if (!Number.isInteger(safeValue)) {
+    if (allowEmpty) {
+      return 0;
+    }
+
+    throw createError(400, "Informe um numero valido para a questao.");
+  }
+
+  if (safeValue < 0 || safeValue > 300) {
+    throw createError(400, "O numero da questao precisa estar entre 0 e 300.");
+  }
+
+  return safeValue;
+}
+
+function sanitizeQuestionAlternativeLetter(value, allowEmpty = false) {
+  const letter = String(value || "").trim().toUpperCase();
+
+  if (!letter && allowEmpty) {
+    return "";
+  }
+
+  if (!QUESTION_BANK_ALTERNATIVE_LETTERS.includes(letter)) {
+    throw createError(400, "Alternativa invalida. Use apenas letras de A a E.");
+  }
+
+  return letter;
+}
+
+function sanitizeQuestionBankTimeSpent(value) {
+  const safeValue = Number(value);
+
+  if (!Number.isFinite(safeValue) || safeValue < 0) {
+    return 0;
+  }
+
+  return Math.min(60 * 60 * 4, Math.round(safeValue));
+}
+
+function sanitizeQuestionAlternatives(value, { includeEmptySlots = false } = {}) {
+  const normalizedEntries = [];
+
+  if (Array.isArray(value)) {
+    normalizedEntries.push(...value);
+  } else if (value && typeof value === "object") {
+    Object.entries(value).forEach(([letter, text]) => {
+      normalizedEntries.push({ letra: letter, texto: text });
+    });
+  }
+
+  const alternativesByLetter = new Map();
+
+  normalizedEntries.forEach((entry, index) => {
+    const letterSource =
+      typeof entry === "object" && entry !== null
+        ? entry.letra ?? entry.letter ?? entry.key ?? QUESTION_BANK_ALTERNATIVE_LETTERS[index] ?? ""
+        : QUESTION_BANK_ALTERNATIVE_LETTERS[index] ?? "";
+    const textSource =
+      typeof entry === "object" && entry !== null
+        ? entry.texto ?? entry.text ?? entry.value ?? ""
+        : entry;
+    const letter = sanitizeQuestionAlternativeLetter(letterSource, true);
+
+    if (!letter) {
+      return;
+    }
+
+    const text = sanitizeQuestionBankMultilineText(textSource, 2_400).replace(/\n+/g, " ").trim();
+    alternativesByLetter.set(letter, { letra: letter, texto: text });
+  });
+
+  const orderedAlternatives = QUESTION_BANK_ALTERNATIVE_LETTERS.map((letter) => (
+    alternativesByLetter.get(letter) || { letra: letter, texto: "" }
+  ));
+
+  return includeEmptySlots ? orderedAlternatives : orderedAlternatives.filter((item) => item.texto);
+}
+
+function validateQuestionAlternativePayload(alternatives, correctAnswer) {
+  const filledAlternatives = sanitizeQuestionAlternatives(alternatives);
+
+  if (filledAlternatives.length < 2) {
+    throw createError(400, "Cadastre pelo menos duas alternativas preenchidas.");
+  }
+
+  if (!correctAnswer) {
+    throw createError(400, "Defina a resposta correta da questao.");
+  }
+
+  if (!filledAlternatives.some((item) => item.letra === correctAnswer)) {
+    throw createError(400, "A resposta correta precisa apontar para uma alternativa preenchida.");
+  }
+
+  return filledAlternatives;
+}
+
+function sanitizeQuestionBankPdfPayload(payload) {
+  if (!payload) {
+    return null;
+  }
+
+  const fileName = sanitizeShortText(payload.fileName || payload.name || "", 180);
+  const mimeType = sanitizeShortText(payload.mimeType || payload.type || "application/pdf", 80).toLowerCase();
+  const rawBase64 = String(payload.dataBase64 || payload.base64 || "").trim();
+  const normalizedBase64 = rawBase64.replace(/^data:application\/pdf;base64,/i, "").replace(/\s+/g, "");
+
+  if (!fileName || !normalizedBase64) {
+    throw createError(400, "Envie o PDF original da prova.");
+  }
+
+  if (!mimeType.includes("pdf")) {
+    throw createError(400, "O arquivo enviado precisa ser um PDF.");
+  }
+
+  let buffer;
+
+  try {
+    buffer = Buffer.from(normalizedBase64, "base64");
+  } catch {
+    throw createError(400, "Nao foi possivel ler o PDF enviado.");
+  }
+
+  if (!buffer || !buffer.length) {
+    throw createError(400, "Nao foi possivel ler o PDF enviado.");
+  }
+
+  if (buffer.length > QUESTION_BANK_UPLOAD_LIMIT_BYTES) {
+    throw createError(413, "O PDF enviado passou do limite permitido.");
+  }
+
+  const safeOriginalName = fileName.toLowerCase().endsWith(".pdf") ? fileName : `${fileName}.pdf`;
+
+  return {
+    fileName: safeOriginalName,
+    mimeType: "application/pdf",
+    buffer,
+    sizeBytes: buffer.length,
+  };
+}
+
+async function saveQuestionBankPdfFile(payload) {
+  const normalizedPdf = sanitizeQuestionBankPdfPayload(payload);
+
+  if (!normalizedPdf) {
+    return null;
+  }
+
+  const storedFileName = `${Date.now()}-${randomBytes(8).toString("hex")}.pdf`;
+  const filePath = resolve(questionBankUploadDir, storedFileName);
+  await writeFile(filePath, normalizedPdf.buffer);
+
+  return {
+    storedFileName,
+    originalName: normalizedPdf.fileName,
+    mimeType: normalizedPdf.mimeType,
+    sizeBytes: normalizedPdf.sizeBytes,
+  };
+}
+
+function getQuestionBankUploadFilePath(storedFileName) {
+  const safeFileName = sanitizeShortText(storedFileName, 200);
+
+  if (!safeFileName) {
+    return "";
+  }
+
+  const filePath = resolve(questionBankUploadDir, safeFileName);
+  const fileRelativePath = relative(questionBankUploadDir, filePath);
+
+  if (!fileRelativePath || fileRelativePath.startsWith("..")) {
+    return "";
+  }
+
+  return filePath;
+}
+
+function tryExtractTextFromPdfFile(storedFileName) {
+  const filePath = getQuestionBankUploadFilePath(storedFileName);
+
+  if (!filePath || !existsSync(filePath)) {
+    return "";
+  }
+
+  try {
+    const result = spawnSync("pdftotext", ["-layout", "-enc", "UTF-8", filePath, "-"], {
+      encoding: "utf8",
+      maxBuffer: 6_000_000,
+      timeout: 15_000,
+      windowsHide: true,
+    });
+
+    if (result.status === 0) {
+      return sanitizeQuestionBankMultilineText(result.stdout || "", 220_000);
+    }
+  } catch {
+    return "";
+  }
+
+  return "";
+}
+
+function serializeQuestionBankExam(row) {
+  if (!row) {
+    return null;
+  }
+
+  return {
+    id: Number(row.id) || 0,
+    nome: String(row.nome || ""),
+    sigla: String(row.sigla || ""),
+    descricao: String(row.descricao || ""),
+    ativo: Boolean(Number(row.ativo)),
+    createdAt: String(row.createdAt || ""),
+  };
+}
+
+function serializeQuestionStatsRow(row) {
+  const totalAnswers = Number(row?.totalRespostas) || 0;
+  const totalCorrect = Number(row?.totalAcertos) || 0;
+  const totalWrong = Number(row?.totalErros) || 0;
+  const accuracyRate = totalAnswers > 0 ? totalCorrect / totalAnswers : Number(row?.taxaAcerto) || 0;
+
+  return {
+    totalAnswers,
+    totalCorrect,
+    totalWrong,
+    accuracyRate,
+    accuracyPercentage: Math.round(accuracyRate * 100),
+    usageDifficulty: String(row?.dificuldadeCalculada || ""),
+    updatedAt: String(row?.updatedAt || ""),
+  };
+}
+
+function serializeQuestionAttemptRow(row) {
+  if (!row || !row.id) {
+    return null;
+  }
+
+  return {
+    id: Number(row.id) || 0,
+    userId: Number(row.userId) || 0,
+    questaoId: Number(row.questaoId) || 0,
+    respostaMarcada: sanitizeQuestionAlternativeLetter(row.respostaMarcada, true),
+    acertou: Boolean(Number(row.acertou)),
+    tempoGastoSegundos: Number(row.tempoGastoSegundos) || 0,
+    createdAt: String(row.createdAt || ""),
+  };
+}
+
+function serializeQuestionStateRow(row) {
+  return {
+    isFavorite: Boolean(Number(row?.isFavorite)),
+    reviewLater: Boolean(Number(row?.reviewLater)),
+    updatedAt: String(row?.updatedAt || ""),
+  };
+}
+
+function buildQuestionAlternativeSlots(alternatives, { filledOnly = false } = {}) {
+  const normalizedAlternatives = sanitizeQuestionAlternatives(alternatives, { includeEmptySlots: true });
+  return filledOnly ? normalizedAlternatives.filter((item) => item.texto) : normalizedAlternatives;
+}
+
+function serializeQuestionProofRow(row, { includeExtractedText = false } = {}) {
+  if (!row) {
+    return null;
+  }
+
+  return {
+    id: Number(row.id) || 0,
+    vestibular: {
+      id: Number(row.vestibularId) || 0,
+      nome: String(row.vestibularNome || ""),
+      sigla: String(row.vestibularSigla || ""),
+    },
+    ano: Number(row.ano) || 0,
+    fase: String(row.fase || ""),
+    versao: String(row.versao || ""),
+    materiaGeral: String(row.materiaGeral || ""),
+    pdf: {
+      hasFile: Boolean(String(row.pdfFilePath || "")),
+      filePath: String(row.pdfFilePath || ""),
+      originalName: String(row.pdfOriginalName || ""),
+      mimeType: String(row.pdfMimeType || ""),
+      sizeBytes: Number(row.pdfSizeBytes) || 0,
+      downloadUrl: row.pdfFilePath ? `/api/admin/question-bank/provas/${Number(row.id) || 0}/file` : "",
+    },
+    extractedText: includeExtractedText ? String(row.extractedText || "") : "",
+    extractedTextLength: String(row.extractedText || "").length,
+    processStatus: sanitizeQuestionProcessStatus(row.processStatus),
+    status: sanitizeQuestionProofStatus(row.status),
+    createdAt: String(row.createdAt || ""),
+    updatedAt: String(row.updatedAt || ""),
+    counts: {
+      totalQuestions: Number(row.totalQuestions) || 0,
+      approvedQuestions: Number(row.approvedQuestions) || 0,
+      pendingQuestions: Number(row.pendingQuestions) || 0,
+      rejectedQuestions: Number(row.rejectedQuestions) || 0,
+    },
+  };
+}
+
+function serializeAdminQuestionRow(row, alternatives = []) {
+  if (!row) {
+    return null;
+  }
+
+  return {
+    id: Number(row.id) || 0,
+    provaId: Number(row.provaId || row.proofId) || 0,
+    numero: Number(row.numero) || 0,
+    enunciado: String(row.enunciado || ""),
+    materia: String(row.materia || ""),
+    tema: String(row.tema || ""),
+    dificuldade: sanitizeQuestionDifficulty(row.dificuldade),
+    respostaCorreta: sanitizeQuestionAlternativeLetter(row.respostaCorreta, true),
+    statusRevisao: sanitizeQuestionReviewStatus(row.statusRevisao),
+    origemPdf: String(row.origemPdf || ""),
+    observacoesAdm: String(row.observacoesAdm || ""),
+    sugestoes: {
+      materia: String(row.sugestaoMateria || ""),
+      tema: String(row.sugestaoTema || ""),
+      dificuldade: String(row.sugestaoDificuldade || ""),
+    },
+    alternatives: buildQuestionAlternativeSlots(alternatives),
+    stats: serializeQuestionStatsRow(row),
+    createdAt: String(row.createdAt || ""),
+    updatedAt: String(row.updatedAt || ""),
+    publishedAt: String(row.publishedAt || ""),
+    prova: {
+      id: Number(row.proofId || row.provaId) || 0,
+      ano: Number(row.ano) || 0,
+      fase: String(row.fase || ""),
+      versao: String(row.versao || ""),
+      status: String(row.proofStatus || ""),
+    },
+    vestibular: {
+      id: Number(row.vestibularId) || 0,
+      nome: String(row.vestibularNome || ""),
+      sigla: String(row.vestibularSigla || ""),
+    },
+  };
+}
+
+function serializeStudentQuestionRow(row, alternatives = [], options = {}) {
+  if (!row) {
+    return null;
+  }
+
+  const latestAttempt = serializeQuestionAttemptRow({
+    id: row.lastAttemptId,
+    userId: row.lastAttemptUserId || 0,
+    questaoId: row.id,
+    respostaMarcada: row.lastRespostaMarcada,
+    acertou: row.lastAcertou,
+    tempoGastoSegundos: row.lastTempoGastoSegundos,
+    createdAt: row.lastAttemptAt,
+  });
+  const userState = serializeQuestionStateRow({
+    isFavorite: row.isFavorite,
+    reviewLater: row.reviewLater,
+    updatedAt: row.userStateUpdatedAt,
+  });
+  const prompt = String(row.enunciado || "");
+  const excerpt = sanitizeShortText(prompt.replace(/\s+/g, " "), 220);
+
+  return {
+    id: Number(row.id) || 0,
+    provaId: Number(row.proofId || row.provaId) || 0,
+    numero: Number(row.numero) || 0,
+    vestibular: {
+      id: Number(row.vestibularId) || 0,
+      nome: String(row.vestibularNome || ""),
+      sigla: String(row.vestibularSigla || ""),
+    },
+    prova: {
+      id: Number(row.proofId || row.provaId) || 0,
+      ano: Number(row.ano) || 0,
+      fase: String(row.fase || ""),
+      versao: String(row.versao || ""),
+    },
+    materia: String(row.materia || ""),
+    tema: String(row.tema || ""),
+    assunto: String(row.tema || row.materia || ""),
+    dificuldade: sanitizeQuestionDifficulty(row.dificuldade),
+    enunciado: options.includeFullText ? prompt : "",
+    excerpt,
+    alternatives: buildQuestionAlternativeSlots(alternatives, { filledOnly: true }),
+    stats: serializeQuestionStatsRow(row),
+    user: {
+      answered: Boolean(latestAttempt),
+      lastAttempt,
+      lastAttemptCorrect: latestAttempt ? latestAttempt.acertou : null,
+      isFavorite: userState.isFavorite,
+      reviewLater: userState.reviewLater,
+    },
+    createdAt: String(row.createdAt || ""),
+    updatedAt: String(row.updatedAt || ""),
+    respostaCorreta: options.includeCorrectAnswer
+      ? sanitizeQuestionAlternativeLetter(row.respostaCorreta, true)
+      : "",
+  };
+}
+
+function listQuestionAlternativeRowsByQuestionIds(questionIds) {
+  const normalizedIds = Array.from(new Set(
+    (Array.isArray(questionIds) ? questionIds : [])
+      .map((value) => Number(value))
+      .filter((value) => Number.isInteger(value) && value > 0)
+  ));
+
+  if (!normalizedIds.length) {
+    return new Map();
+  }
+
+  const placeholders = normalizedIds.map(() => "?").join(", ");
+  const rows = db.prepare(`
+    SELECT
+      id,
+      questao_id AS questaoId,
+      letra,
+      texto
+    FROM alternativas
+    WHERE questao_id IN (${placeholders})
+    ORDER BY questao_id ASC, letra ASC, id ASC
+  `).all(...normalizedIds);
+  const groupedAlternatives = new Map();
+
+  rows.forEach((row) => {
+    const questionId = Number(row.questaoId) || 0;
+
+    if (!groupedAlternatives.has(questionId)) {
+      groupedAlternatives.set(questionId, []);
+    }
+
+    groupedAlternatives.get(questionId).push({
+      id: Number(row.id) || 0,
+      questaoId: questionId,
+      letra: sanitizeQuestionAlternativeLetter(row.letra, true),
+      texto: String(row.texto || ""),
+    });
+  });
+
+  return groupedAlternatives;
+}
+
+function refreshQuestionStats(questionId) {
+  const safeQuestionId = Number(questionId);
+
+  if (!Number.isInteger(safeQuestionId) || safeQuestionId <= 0) {
+    throw createError(400, "Questao invalida.");
+  }
+
+  const aggregateRow = aggregateQuestionStatsStatement.get(safeQuestionId);
+  const totalAnswers = Number(aggregateRow?.totalRespostas) || 0;
+  const totalCorrect = Number(aggregateRow?.totalAcertos) || 0;
+  const totalWrong = Number(aggregateRow?.totalErros) || 0;
+  const accuracyRate = totalAnswers > 0 ? totalCorrect / totalAnswers : 0;
+  const calculatedDifficulty = calculateUsageDifficulty(totalAnswers, accuracyRate) || "";
+
+  upsertQuestionStatsStatement.run(
+    safeQuestionId,
+    totalAnswers,
+    totalCorrect,
+    totalWrong,
+    accuracyRate,
+    calculatedDifficulty,
+    nowIso()
+  );
+
+  return serializeQuestionStatsRow(getQuestionStatsStatement.get(safeQuestionId));
+}
+
+function saveQuestionAlternatives(questionId, alternatives) {
+  const safeQuestionId = Number(questionId);
+  const filledAlternatives = sanitizeQuestionAlternatives(alternatives);
+
+  deleteQuestionAlternativesStatement.run(safeQuestionId);
+
+  filledAlternatives.forEach((alternative) => {
+    insertQuestionAlternativeStatement.run(
+      safeQuestionId,
+      sanitizeQuestionAlternativeLetter(alternative.letra),
+      sanitizeQuestionBankMultilineText(alternative.texto, 2_400).replace(/\n+/g, " ").trim()
+    );
+  });
+
+  return buildQuestionAlternativeSlots(filledAlternatives);
+}
+
+function resolveQuestionPublishedAt(proofRow, statusRevisao, currentPublishedAt = "") {
+  if (sanitizeQuestionProofStatus(proofRow?.status) === "published" && statusRevisao === "approved") {
+    return String(currentPublishedAt || nowIso());
+  }
+
+  return "";
+}
+
+function sanitizeQuestionPayload(payload, options = {}) {
+  const proofId = Number(payload?.provaId ?? payload?.proofId ?? options.proofId);
+  const numero = sanitizeQuestionNumber(payload?.numero ?? options.numero ?? 0, {
+    allowEmpty: options.allowEmptyNumber !== false,
+  });
+  const enunciado = sanitizeQuestionBankMultilineText(payload?.enunciado, 20_000);
+  const materia = normalizeQuestionBankTerm(payload?.materia, 80);
+  const tema = normalizeQuestionBankTerm(payload?.tema, 120);
+  const dificuldade = sanitizeQuestionDifficulty(payload?.dificuldade);
+  const respostaCorreta = sanitizeQuestionAlternativeLetter(payload?.respostaCorreta, true);
+  const statusRevisao = sanitizeQuestionReviewStatus(payload?.statusRevisao, options.defaultStatusRevisao || "pending");
+  const origemPdf = sanitizeQuestionBankMultilineText(payload?.origemPdf, 220).replace(/\n+/g, " ").trim();
+  const observacoesAdm = sanitizeQuestionBankMultilineText(payload?.observacoesAdm, 2_200);
+  const sugestaoMateria = normalizeQuestionBankTerm(payload?.sugestaoMateria || payload?.sugestoes?.materia || materia, 80);
+  const sugestaoTema = normalizeQuestionBankTerm(payload?.sugestaoTema || payload?.sugestoes?.tema || tema, 120);
+  const sugestaoDificuldade = sanitizeQuestionDifficulty(
+    payload?.sugestaoDificuldade || payload?.sugestoes?.dificuldade || dificuldade,
+    dificuldade
+  );
+  const alternatives = validateQuestionAlternativePayload(payload?.alternativas || payload?.alternatives, respostaCorreta);
+
+  if (!Number.isInteger(proofId) || proofId <= 0) {
+    throw createError(400, "Selecione a prova da questao.");
+  }
+
+  if (!enunciado) {
+    throw createError(400, "Preencha o enunciado da questao.");
+  }
+
+  if (!materia) {
+    throw createError(400, "Defina a materia da questao.");
+  }
+
+  if (statusRevisao === "approved" && numero <= 0) {
+    throw createError(400, "Defina o numero da questao antes de aprovar.");
+  }
+
+  return {
+    proofId,
+    numero,
+    enunciado,
+    materia,
+    tema,
+    dificuldade,
+    respostaCorreta,
+    statusRevisao,
+    origemPdf,
+    observacoesAdm,
+    sugestaoMateria,
+    sugestaoTema,
+    sugestaoDificuldade,
+    alternatives,
+  };
+}
+
+function sanitizeQuestionProofPayload(payload, currentProof = null) {
+  const ano = sanitizeQuestionBankYear(payload?.ano ?? currentProof?.ano);
+  const fase = sanitizeShortText(payload?.fase ?? currentProof?.fase ?? "", 80);
+  const versao = sanitizeShortText(payload?.versao ?? currentProof?.versao ?? "", 80);
+  const materiaGeral = normalizeQuestionBankTerm(payload?.materiaGeral ?? currentProof?.materiaGeral ?? "", 80);
+  const extractedText = payload?.extractedText === undefined
+    ? sanitizeQuestionBankMultilineText(currentProof?.extractedText || "", 220_000)
+    : sanitizeQuestionBankMultilineText(payload?.extractedText, 220_000);
+  const processStatus = sanitizeQuestionProcessStatus(
+    payload?.processStatus ?? currentProof?.processStatus ?? "pending"
+  );
+  const status = sanitizeQuestionProofStatus(payload?.status ?? currentProof?.status ?? "draft");
+
+  return {
+    ano,
+    fase,
+    versao,
+    materiaGeral,
+    extractedText,
+    processStatus,
+    status,
+  };
+}
+
+function resolveQuestionBankExamId(payload) {
+  const directExamId = Number(payload?.vestibularId ?? payload?.examId);
+
+  if (Number.isInteger(directExamId) && directExamId > 0) {
+    const existingExam = findQuestionBankExamByIdStatement.get(directExamId);
+
+    if (!existingExam) {
+      throw createError(404, "Vestibular nao encontrado.");
+    }
+
+    return Number(existingExam.id);
+  }
+
+  const nome = sanitizeQuestionBankExamName(
+    payload?.vestibularNome ?? payload?.examName ?? payload?.novoVestibularNome ?? ""
+  );
+  const sigla = sanitizeQuestionBankExamSigla(
+    payload?.vestibularSigla ?? payload?.examSigla ?? payload?.novoVestibularSigla ?? ""
+  );
+  const descricao = sanitizeQuestionBankDescription(
+    payload?.vestibularDescricao ?? payload?.examDescription ?? ""
+  );
+
+  if (!nome || !sigla) {
+    throw createError(400, "Selecione um vestibular existente ou informe nome e sigla.");
+  }
+
+  const existingExam = findQuestionBankExamBySiglaStatement.get(sigla);
+
+  if (existingExam) {
+    return Number(existingExam.id) || 0;
+  }
+
+  const result = insertQuestionBankExamStatement.run(nome, sigla, descricao, 1, nowIso());
+  return Number(result.lastInsertRowid) || 0;
+}
+
+function ensureQuestionBankSeedData() {
+  const totalExams = Number(countQuestionBankExamsStatement.get()?.total) || 0;
+
+  if (totalExams > 0) {
+    return;
+  }
+
+  DEFAULT_QUESTION_BANK_EXAMS.forEach((exam) => {
+    insertQuestionBankExamStatement.run(
+      sanitizeQuestionBankExamName(exam.nome),
+      sanitizeQuestionBankExamSigla(exam.sigla),
+      sanitizeQuestionBankDescription(exam.descricao),
+      exam.ativo ? 1 : 0,
+      nowIso()
+    );
+  });
+}
+
+function listAdminQuestionsByProof(proofId) {
+  const rows = listQuestionsByProofStatement.all(proofId);
+  const alternativesByQuestionId = listQuestionAlternativeRowsByQuestionIds(rows.map((row) => row.id));
+  return rows.map((row) => serializeAdminQuestionRow(row, alternativesByQuestionId.get(Number(row.id)) || []));
+}
+
+function getAdminQuestionById(questionId) {
+  const row = getQuestionByIdStatement.get(questionId);
+
+  if (!row) {
+    return null;
+  }
+
+  return serializeAdminQuestionRow(
+    row,
+    listQuestionAlternativesForQuestionStatement.all(questionId)
+  );
+}
+
+function buildQuestionBankReferenceData({ publishedOnly = false } = {}) {
+  const vestibulares = (publishedOnly ? listPublishedQuestionBankExamsStatement : listQuestionBankExamsStatement)
+    .all()
+    .map((row) => serializeQuestionBankExam(row))
+    .filter((row) => row && (publishedOnly ? true : row.ativo));
+
+  const yearRows = publishedOnly
+    ? db.prepare(`
+        SELECT DISTINCT provas.ano AS value
+        FROM provas
+        INNER JOIN questoes ON questoes.prova_id = provas.id
+        WHERE provas.status = 'published' AND questoes.status_revisao = 'approved'
+        ORDER BY provas.ano DESC
+      `).all()
+    : db.prepare(`
+        SELECT DISTINCT ano AS value
+        FROM provas
+        ORDER BY ano DESC
+      `).all();
+  const matterRows = publishedOnly
+    ? db.prepare(`
+        SELECT DISTINCT questoes.materia AS value
+        FROM questoes
+        INNER JOIN provas ON provas.id = questoes.prova_id
+        WHERE provas.status = 'published'
+          AND questoes.status_revisao = 'approved'
+          AND questoes.materia <> ''
+        ORDER BY questoes.materia ASC
+      `).all()
+    : db.prepare(`
+        SELECT DISTINCT materia AS value
+        FROM questoes
+        WHERE materia <> ''
+        ORDER BY materia ASC
+      `).all();
+  const themeRows = publishedOnly
+    ? db.prepare(`
+        SELECT DISTINCT questoes.tema AS value
+        FROM questoes
+        INNER JOIN provas ON provas.id = questoes.prova_id
+        WHERE provas.status = 'published'
+          AND questoes.status_revisao = 'approved'
+          AND questoes.tema <> ''
+        ORDER BY questoes.tema ASC
+      `).all()
+    : db.prepare(`
+        SELECT DISTINCT tema AS value
+        FROM questoes
+        WHERE tema <> ''
+        ORDER BY tema ASC
+      `).all();
+  const materias = Array.from(new Set([
+    ...QUESTION_BANK_SUBJECT_VALUES,
+    ...matterRows.map((row) => String(row.value || "")).filter(Boolean),
+  ]));
+
+  return {
+    vestibulares,
+    anos: yearRows.map((row) => Number(row.value)).filter((value) => Number.isInteger(value) && value > 0),
+    materias,
+    temas: themeRows.map((row) => String(row.value || "")).filter(Boolean),
+    dificuldades: QUESTION_DIFFICULTY_VALUES.slice(),
+    proofStatuses: QUESTION_PROOF_STATUS_VALUES.slice(),
+    reviewStatuses: QUESTION_REVIEW_STATUS_VALUES.slice(),
+    processStatuses: QUESTION_PROCESS_STATUS_VALUES.slice(),
+    statusFilters: Array.from(QUESTION_BANK_FLAG_FILTERS),
+  };
+}
+
+function sanitizeQuestionBankBooklet(value = "") {
+  const normalized = String(value || "").trim().toUpperCase();
+  return /^CD\d{1,2}$/.test(normalized) ? normalized : "";
+}
+
+function resolveQuestionBankCatalogVestibular(rawVestibular = "") {
+  const directExamId = Number(rawVestibular);
+
+  if (Number.isInteger(directExamId) && directExamId > 0) {
+    const exam = findQuestionBankExamByIdStatement.get(directExamId);
+    return serializeQuestionBankExam(exam);
+  }
+
+  const normalizedSigla = sanitizeQuestionBankExamSigla(rawVestibular);
+
+  if (!normalizedSigla) {
+    return null;
+  }
+
+  return serializeQuestionBankExam(findQuestionBankExamBySiglaStatement.get(normalizedSigla));
+}
+
+function buildQuestionBankCatalogSessionStatus(item = {}) {
+  const pending = Array.isArray(item.pendencias) ? item.pendencias : [];
+
+  if (pending.includes("prova")) {
+    return { label: "Falta prova", state: "missing" };
+  }
+
+  if (pending.includes("gabarito")) {
+    return { label: "Falta gabarito", state: "missing" };
+  }
+
+  if (String(item.status || "") === "review") {
+    return { label: "Em revisao", state: "review" };
+  }
+
+  return { label: "Pronta", state: "ready" };
+}
+
+function serializeQuestionBankCatalogSession(item = {}) {
+  const status = buildQuestionBankCatalogSessionStatus(item);
+
+  return {
+    key: String(item.chave || ""),
+    vestibular: String(item.vestibular || "ENEM"),
+    ano: Number(item.ano) || 0,
+    dia: Number(item.dia) || 0,
+    caderno: String(item.caderno || ""),
+    status: String(item.status || ""),
+    manifestStatus: String(item.manifest_status || item.status || ""),
+    statusLabel: status.label,
+    statusState: status.state,
+    hasProof: Boolean(item.prova?.principal),
+    hasAnswerKey: Boolean(item.gabarito?.principal),
+    proof: item.prova
+      ? {
+          principal: String(item.prova.principal || ""),
+          nomeOriginal: String(item.prova.nome_original || ""),
+          variantCount: Array.isArray(item.prova.variantes) ? item.prova.variantes.length : 0,
+          duplicateCount: Array.isArray(item.prova.duplicatas) ? item.prova.duplicatas.length : 0,
+        }
+      : null,
+    answerKey: item.gabarito
+      ? {
+          principal: String(item.gabarito.principal || ""),
+          nomeOriginal: String(item.gabarito.nome_original || ""),
+          variantCount: Array.isArray(item.gabarito.variantes) ? item.gabarito.variantes.length : 0,
+          duplicateCount: Array.isArray(item.gabarito.duplicatas) ? item.gabarito.duplicatas.length : 0,
+        }
+      : null,
+    pending: Array.isArray(item.pendencias) ? item.pendencias : [],
+    notes: Array.isArray(item.notes) ? item.notes.map((note) => String(note || "")).filter(Boolean) : [],
+    tags: Array.isArray(item.tags) ? item.tags.map((tag) => String(tag || "")).filter(Boolean) : [],
+    overrideApplied: Boolean(item.override_aplicado),
+  };
+}
+
+async function buildQuestionBankCatalogFallback(filters = {}) {
+  try {
+    const catalog = await loadEnemCatalog({ repoRoot: projectRoot });
+    const selectedExam = resolveQuestionBankCatalogVestibular(filters.vestibular);
+    const selectedSigla = String(selectedExam?.sigla || "").trim().toUpperCase();
+    const selectedYear = Number(filters.ano || 0);
+    const selectedDay = Number(filters.dia || 0);
+    const selectedBooklet = sanitizeQuestionBankBooklet(filters.caderno || "");
+    const allItems = Array.isArray(catalog.items) ? catalog.items : [];
+    const enemExam = serializeQuestionBankExam(findQuestionBankExamBySiglaStatement.get("ENEM")) || {
+      id: 0,
+      nome: "ENEM",
+      sigla: "ENEM",
+      descricao: "Exame Nacional do Ensino Medio",
+      ativo: true,
+      createdAt: "",
+    };
+
+    const filteredItems = allItems.filter((item) => {
+      if (selectedSigla && String(item.vestibular || "").trim().toUpperCase() !== selectedSigla) {
+        return false;
+      }
+
+      if (Number.isInteger(selectedYear) && selectedYear > 0 && Number(item.ano) !== selectedYear) {
+        return false;
+      }
+
+      if (Number.isInteger(selectedDay) && selectedDay > 0 && Number(item.dia) !== selectedDay) {
+        return false;
+      }
+
+      if (selectedBooklet && String(item.caderno || "").trim().toUpperCase() !== selectedBooklet) {
+        return false;
+      }
+
+      return true;
+    });
+
+    return {
+      available: allItems.length > 0,
+      summary: {
+        totalSessions: filteredItems.length,
+        readySessions: filteredItems.filter((item) => String(item.status || "") === "ok").length,
+        reviewSessions: filteredItems.filter((item) => String(item.status || "") === "review").length,
+        missingProofSessions: filteredItems.filter((item) => (item.pendencias || []).includes("prova")).length,
+        missingAnswerKeySessions: filteredItems.filter((item) => (item.pendencias || []).includes("gabarito")).length,
+        sourceSummary: catalog.summary || {},
+      },
+      reference: {
+        vestibulares: [enemExam],
+        anos: Array.from(new Set(allItems.map((item) => Number(item.ano) || 0).filter((value) => value > 0))).sort((a, b) => b - a),
+        dias: Array.from(new Set(allItems.map((item) => Number(item.dia) || 0).filter((value) => value > 0))).sort((a, b) => a - b),
+        cadernos: Array.from(new Set(allItems.map((item) => String(item.caderno || "").trim().toUpperCase()).filter(Boolean))).sort(
+          (left, right) => {
+            const leftNumber = Number(left.replace(/\D+/g, "")) || 0;
+            const rightNumber = Number(right.replace(/\D+/g, "")) || 0;
+            return leftNumber - rightNumber;
+          }
+        ),
+      },
+      sessions: filteredItems.map((item) => serializeQuestionBankCatalogSession(item)),
+      issues: {
+        active: catalog.activeReport || {},
+        resolved: catalog.resolvedReport || {},
+      },
+      source: catalog.source || {},
+    };
+  } catch (error) {
+    console.error("Erro ao carregar fallback do catalogo ENEM:", error);
+
+    return {
+      available: false,
+      summary: {
+        totalSessions: 0,
+        readySessions: 0,
+        reviewSessions: 0,
+        missingProofSessions: 0,
+        missingAnswerKeySessions: 0,
+        sourceSummary: {},
+      },
+      reference: {
+        vestibulares: [],
+        anos: [],
+        dias: [],
+        cadernos: [],
+      },
+      sessions: [],
+      issues: {
+        active: {},
+        resolved: {},
+      },
+      source: {},
+      error: error?.message || "Nao foi possivel carregar o catalogo ENEM.",
+    };
+  }
+}
+
+function buildQuestionBankStudentOverview(userId) {
+  const overviewRow = questionBankStudentOverviewStatement.get(userId, userId) || {};
+  const totalAvailable = Number(overviewRow.totalAvailable) || 0;
+  const answeredQuestions = Number(overviewRow.answeredQuestions) || 0;
+  const correctQuestions = Number(overviewRow.correctQuestions) || 0;
+  const wrongQuestions = Number(overviewRow.wrongQuestions) || 0;
+  const favoriteQuestions = Number(overviewRow.favoriteQuestions) || 0;
+  const reviewQuestions = Number(overviewRow.reviewQuestions) || 0;
+
+  return {
+    totalAvailable,
+    answeredQuestions,
+    correctQuestions,
+    wrongQuestions,
+    favoriteQuestions,
+    reviewQuestions,
+    accuracyRate: answeredQuestions > 0 ? correctQuestions / answeredQuestions : 0,
+    accuracyPercentage: answeredQuestions > 0 ? Math.round((correctQuestions / answeredQuestions) * 100) : 0,
+  };
+}
+
+function listPublishedQuestionBankQuestions(userId, filters = {}) {
+  const conditions = [
+    "provas.status = 'published'",
+    "questoes.status_revisao = 'approved'",
+  ];
+  const params = [userId, userId];
+  const vestibularId = Number(filters.vestibularId || 0);
+  const ano = Number(filters.ano || 0);
+  const materia = normalizeQuestionBankTerm(filters.materia || "", 80);
+  const dificuldade = sanitizeQuestionDifficulty(filters.dificuldade || "", "");
+  const statusFilter = sanitizeQuestionFlagFilter(filters.status || "all");
+  const limit = clampInteger(filters.limit || 60, 1, 120);
+
+  if (Number.isInteger(vestibularId) && vestibularId > 0) {
+    conditions.push("provas.vestibular_id = ?");
+    params.push(vestibularId);
+  }
+
+  if (Number.isInteger(ano) && ano > 0) {
+    conditions.push("provas.ano = ?");
+    params.push(ano);
+  }
+
+  if (materia) {
+    conditions.push("questoes.materia = ?");
+    params.push(materia);
+  }
+
+  if (dificuldade) {
+    conditions.push("questoes.dificuldade = ?");
+    params.push(dificuldade);
+  }
+
+  if (statusFilter === "unanswered") {
+    conditions.push("latest_attempt.id IS NULL");
+  } else if (statusFilter === "wrong") {
+    conditions.push("latest_attempt.acertou = 0");
+  } else if (statusFilter === "favorites") {
+    conditions.push("COALESCE(user_state.is_favorite, 0) = 1");
+  } else if (statusFilter === "review") {
+    conditions.push("COALESCE(user_state.review_later, 0) = 1");
+  }
+
+  const sql = `
+    SELECT
+      questoes.id,
+      questoes.prova_id AS provaId,
+      questoes.numero,
+      questoes.enunciado,
+      questoes.materia,
+      questoes.tema,
+      questoes.dificuldade,
+      questoes.resposta_correta AS respostaCorreta,
+      questoes.created_at AS createdAt,
+      questoes.updated_at AS updatedAt,
+      provas.id AS proofId,
+      provas.ano,
+      provas.fase,
+      provas.versao,
+      vestibulares.id AS vestibularId,
+      vestibulares.nome AS vestibularNome,
+      vestibulares.sigla AS vestibularSigla,
+      question_stats.total_respostas AS totalRespostas,
+      question_stats.total_acertos AS totalAcertos,
+      question_stats.total_erros AS totalErros,
+      question_stats.taxa_acerto AS taxaAcerto,
+      question_stats.dificuldade_calculada AS dificuldadeCalculada,
+      latest_attempt.id AS lastAttemptId,
+      latest_attempt.user_id AS lastAttemptUserId,
+      latest_attempt.resposta_marcada AS lastRespostaMarcada,
+      latest_attempt.acertou AS lastAcertou,
+      latest_attempt.tempo_gasto_segundos AS lastTempoGastoSegundos,
+      latest_attempt.created_at AS lastAttemptAt,
+      COALESCE(user_state.is_favorite, 0) AS isFavorite,
+      COALESCE(user_state.review_later, 0) AS reviewLater,
+      user_state.updated_at AS userStateUpdatedAt
+    FROM questoes
+    INNER JOIN provas ON provas.id = questoes.prova_id
+    INNER JOIN vestibulares ON vestibulares.id = provas.vestibular_id
+    LEFT JOIN question_stats ON question_stats.questao_id = questoes.id
+    LEFT JOIN question_user_states AS user_state
+      ON user_state.user_id = ? AND user_state.questao_id = questoes.id
+    LEFT JOIN question_attempts AS latest_attempt
+      ON latest_attempt.id = (
+        SELECT qa.id
+        FROM question_attempts qa
+        WHERE qa.user_id = ? AND qa.questao_id = questoes.id
+        ORDER BY qa.created_at DESC, qa.id DESC
+        LIMIT 1
+      )
+    WHERE ${conditions.join(" AND ")}
+    ORDER BY
+      CASE WHEN latest_attempt.id IS NULL THEN 0 ELSE 1 END ASC,
+      provas.ano DESC,
+      vestibulares.sigla ASC,
+      questoes.numero ASC,
+      questoes.id ASC
+    LIMIT ?
+  `;
+
+  const rows = db.prepare(sql).all(...params, limit);
+  return rows.map((row) => serializeStudentQuestionRow(row));
+}
+
+function getPublishedQuestionForUser(userId, questionId, options = {}) {
+  const row = db.prepare(`
+    SELECT
+      questoes.id,
+      questoes.prova_id AS provaId,
+      questoes.numero,
+      questoes.enunciado,
+      questoes.materia,
+      questoes.tema,
+      questoes.dificuldade,
+      questoes.resposta_correta AS respostaCorreta,
+      questoes.created_at AS createdAt,
+      questoes.updated_at AS updatedAt,
+      provas.id AS proofId,
+      provas.ano,
+      provas.fase,
+      provas.versao,
+      vestibulares.id AS vestibularId,
+      vestibulares.nome AS vestibularNome,
+      vestibulares.sigla AS vestibularSigla,
+      question_stats.total_respostas AS totalRespostas,
+      question_stats.total_acertos AS totalAcertos,
+      question_stats.total_erros AS totalErros,
+      question_stats.taxa_acerto AS taxaAcerto,
+      question_stats.dificuldade_calculada AS dificuldadeCalculada,
+      latest_attempt.id AS lastAttemptId,
+      latest_attempt.user_id AS lastAttemptUserId,
+      latest_attempt.resposta_marcada AS lastRespostaMarcada,
+      latest_attempt.acertou AS lastAcertou,
+      latest_attempt.tempo_gasto_segundos AS lastTempoGastoSegundos,
+      latest_attempt.created_at AS lastAttemptAt,
+      COALESCE(user_state.is_favorite, 0) AS isFavorite,
+      COALESCE(user_state.review_later, 0) AS reviewLater,
+      user_state.updated_at AS userStateUpdatedAt
+    FROM questoes
+    INNER JOIN provas ON provas.id = questoes.prova_id
+    INNER JOIN vestibulares ON vestibulares.id = provas.vestibular_id
+    LEFT JOIN question_stats ON question_stats.questao_id = questoes.id
+    LEFT JOIN question_user_states AS user_state
+      ON user_state.user_id = ? AND user_state.questao_id = questoes.id
+    LEFT JOIN question_attempts AS latest_attempt
+      ON latest_attempt.id = (
+        SELECT qa.id
+        FROM question_attempts qa
+        WHERE qa.user_id = ? AND qa.questao_id = questoes.id
+        ORDER BY qa.created_at DESC, qa.id DESC
+        LIMIT 1
+      )
+    WHERE questoes.id = ?
+      AND provas.status = 'published'
+      AND questoes.status_revisao = 'approved'
+    LIMIT 1
+  `).get(userId, userId, questionId);
+
+  if (!row) {
+    return null;
+  }
+
+  return serializeStudentQuestionRow(
+    row,
+    listQuestionAlternativesForQuestionStatement.all(questionId),
+    {
+      includeFullText: true,
+      includeCorrectAnswer: Boolean(options.includeCorrectAnswer),
+    }
+  );
+}
+
+function getRoutineExamTemplates() {
+  return Object.entries(ROUTINE_EXAM_METADATA)
+    .map(([key, metadata]) => ({
+      key,
+      label: metadata.label,
+      group: metadata.group,
+      featured: metadata.featured === true,
+      searchTerms: Array.isArray(metadata.searchTerms) ? [...metadata.searchTerms] : [],
+      scoreScaleType: getRoutineExamScoreScale(key),
+      percentAdjustment: Number(ROUTINE_EXAM_PERCENT_ADJUSTMENTS[key] || 0),
+      subjectWeights: {
+        ...(ROUTINE_EXAM_WEIGHT_PROFILES[metadata.profile] || ROUTINE_EXAM_WEIGHT_PROFILES.federal_tradicional),
+      },
+    }))
+    .sort((left, right) => {
+      if (left.featured !== right.featured) {
+        return left.featured ? -1 : 1;
+      }
+
+      if (left.group !== right.group) {
+        return left.group.localeCompare(right.group, "pt-BR");
+      }
+
+      return left.label.localeCompare(right.label, "pt-BR");
+    });
+}
+
+function getRoutineCourseTemplates() {
+  return Object.entries(ROUTINE_COURSE_METADATA)
+    .map(([key, metadata]) => ({
+      key,
+      label: metadata.label,
+      group: metadata.group,
+      featured: metadata.featured === true,
+      recommendedTrackKey: metadata.recommendedTrackKey || "geral",
+      recommendedTrackLabel: ROUTINE_TRACK_LABELS[metadata.recommendedTrackKey] || "Geral",
+      searchTerms: Array.isArray(metadata.searchTerms) ? [...metadata.searchTerms] : [],
+      subjectBoosts: { ...(metadata.subjectBoosts || {}) },
+      targetScores: { ...(metadata.targetScores || {}) },
+    }))
+    .sort((left, right) => {
+      if (left.featured !== right.featured) {
+        return left.featured ? -1 : 1;
+      }
+
+      if (left.group !== right.group) {
+        return left.group.localeCompare(right.group, "pt-BR");
+      }
+
+      return left.label.localeCompare(right.label, "pt-BR");
+    });
+}
+
+function getRoutineAdmissionCategoryTemplates() {
+  return Object.entries(ROUTINE_ADMISSION_CATEGORY_LABELS).map(([key, label]) => ({
+    key,
+    label,
+    shortLabel: ROUTINE_ADMISSION_CATEGORY_SHORT_LABELS[key] || label,
+    detail: ROUTINE_ADMISSION_CATEGORY_DETAILS[key] || "",
+  }));
+}
+
+function getRoutineTrackTemplates() {
+  return Object.entries(ROUTINE_TRACK_LABELS).map(([key, label]) => ({
+    key,
+    label,
+    description: ROUTINE_TRACK_DETAILS[key] || "",
+    multipliers: { ...(ROUTINE_TRACK_MULTIPLIERS[key] || {}) },
+  }));
+}
+
+function getRoutineTemplates() {
+  return {
+    version: ROUTINE_SUMMARY_VERSION,
+    exams: getRoutineExamTemplates(),
+    courses: getRoutineCourseTemplates(),
+    admissionCategories: getRoutineAdmissionCategoryTemplates(),
+    courseTracks: getRoutineTrackTemplates(),
+    subjects: ROUTINE_SUBJECT_ORDER.map((subjectKey) => ({
+      key: subjectKey,
+      label: SUBJECT_LABELS[subjectKey] || subjectKey,
+    })),
+    manualDeltas: [-2, -1, 0, 1, 2, 3, 4, 5],
+    difficultyLevels: [
+      { key: "normal", label: "Normal" },
+      { key: "atencao", label: "Atenção" },
+      { key: "reforco", label: "Reforço" },
+    ],
+    weekdayLabels: [...ROUTINE_WEEKDAY_LABELS],
+  };
+}
+
+function getDefaultRoutinePreferences() {
+  const studyDays = [...ROUTINE_DEFAULT_STUDY_DAYS];
+  const weekdayMinutes = normalizeRoutineWeekdayMinutes({}, studyDays);
+
+  return {
+    primaryExamKey: "enem",
+    secondaryExamKey: "",
+    courseKey: "",
+    admissionCategoryKey: "ac",
+    courseTrackKey: "geral",
+    courseName: "",
+    studyDays,
+    weekdayMinutes,
+    weeklyGoalMinutes: getRoutineWeeklyGoalMinutes(weekdayMinutes),
+    subjectPreferences: [],
+    updatedAt: "",
+  };
+}
+
+function sanitizeRoutineSubjectPreferenceEntry(entry) {
+  const subjectKey = sanitizeSubjectKey(entry?.subjectKey, DEFAULT_SUBJECT_KEY);
+  const customSubjectName = subjectKey === "outras"
+    ? sanitizeSubjectName(entry?.customSubjectName ?? entry?.subjectName ?? "", 80)
+    : "";
+  const manualDelta = sanitizeRoutineManualDelta(entry?.manualDelta);
+  const difficultyLevel = sanitizeRoutineDifficultyLevel(entry?.difficultyLevel);
+
+  if (subjectKey === "outras" && !customSubjectName) {
+    throw createError(400, "Informe o nome da matéria personalizada da rotina.");
+  }
+
+  return {
+    subjectKey,
+    customSubjectName,
+    manualDelta,
+    difficultyLevel,
+    subjectLabel: getRoutineSubjectLabel(subjectKey, customSubjectName),
+  };
+}
+
+function normalizeRoutineSubjectPreferences(entries) {
+  const rawEntries = Array.isArray(entries) ? entries : [];
+  const uniquePreferences = [];
+  const seenKeys = new Set();
+
+  rawEntries.forEach((entry) => {
+    const normalizedEntry = sanitizeRoutineSubjectPreferenceEntry(entry);
+    const preferenceKey = getRoutinePreferenceKey(
+      normalizedEntry.subjectKey,
+      normalizedEntry.customSubjectName
+    );
+
+    if (seenKeys.has(preferenceKey)) {
+      return;
+    }
+
+    seenKeys.add(preferenceKey);
+
+    if (
+      normalizedEntry.manualDelta !== 0 ||
+      normalizedEntry.difficultyLevel !== "normal" ||
+      normalizedEntry.subjectKey === "outras"
+    ) {
+      uniquePreferences.push(normalizedEntry);
+    }
+  });
+
+  return uniquePreferences.sort((left, right) => {
+    const leftIndex = ROUTINE_SUBJECT_ORDER.indexOf(left.subjectKey);
+    const rightIndex = ROUTINE_SUBJECT_ORDER.indexOf(right.subjectKey);
+
+    if (left.subjectKey !== right.subjectKey) {
+      return (leftIndex === -1 ? 999 : leftIndex) - (rightIndex === -1 ? 999 : rightIndex);
+    }
+
+    return left.subjectLabel.localeCompare(right.subjectLabel, "pt-BR");
+  });
+}
+
+function sanitizeRoutinePreferencesPayload(payload, currentPreferences = getDefaultRoutinePreferences()) {
+  const rawStudyDays = payload?.studyDays === undefined ? currentPreferences.studyDays : payload.studyDays;
+  const nextPrimaryExamKey = sanitizeRoutineExamKey(
+    payload?.primaryExamKey === undefined ? currentPreferences.primaryExamKey : payload.primaryExamKey
+  );
+  const requestedSecondaryExamKey = sanitizeRoutineExamKey(
+    payload?.secondaryExamKey === undefined ? currentPreferences.secondaryExamKey : payload.secondaryExamKey,
+    true
+  );
+  const secondaryExamKey = requestedSecondaryExamKey === nextPrimaryExamKey ? "" : requestedSecondaryExamKey;
+  const courseKey = sanitizeRoutineCourseKey(
+    payload?.courseKey === undefined ? currentPreferences.courseKey : payload.courseKey,
+    true
+  );
+  const admissionCategoryKey = sanitizeRoutineAdmissionCategoryKey(
+    payload?.admissionCategoryKey === undefined
+      ? currentPreferences.admissionCategoryKey
+      : payload.admissionCategoryKey
+  );
+  const courseTrackKey = sanitizeRoutineTrackKey(
+    payload?.courseTrackKey === undefined ? currentPreferences.courseTrackKey : payload.courseTrackKey
+  );
+  const courseName = sanitizeShortText(
+    payload?.courseName === undefined ? currentPreferences.courseName : payload.courseName,
+    80
+  );
+  const studyDays = normalizeRoutineStudyDays(rawStudyDays);
+  const weekdayMinutes = normalizeRoutineWeekdayMinutes(
+    payload?.weekdayMinutes === undefined ? currentPreferences.weekdayMinutes : payload.weekdayMinutes,
+    studyDays
+  );
+  const weeklyGoalMinutes = getRoutineWeeklyGoalMinutes(
+    weekdayMinutes,
+    payload?.weeklyGoalMinutes === undefined ? currentPreferences.weeklyGoalMinutes : payload.weeklyGoalMinutes
+  );
+  const subjectPreferences = normalizeRoutineSubjectPreferences(
+    payload?.subjectPreferences === undefined ? currentPreferences.subjectPreferences : payload.subjectPreferences
+  );
+
+  if (Array.isArray(rawStudyDays) && !rawStudyDays.length) {
+    throw createError(400, "Selecione ao menos um dia de estudo para a rotina.");
+  }
+
+  return {
+    primaryExamKey: nextPrimaryExamKey,
+    secondaryExamKey,
+    courseKey,
+    admissionCategoryKey,
+    courseTrackKey,
+    courseName,
+    studyDays,
+    weekdayMinutes,
+    weeklyGoalMinutes,
+    subjectPreferences,
+  };
+}
+
+function sanitizeRoutinePreferencesRow(row, subjectPreferenceRows = []) {
+  const defaults = getDefaultRoutinePreferences();
+
+  if (!row) {
+    return defaults;
+  }
+
+  const studyDays = normalizeRoutineStudyDays(parseStoredJson(row.studyDaysJson, defaults.studyDays));
+  const weekdayMinutes = normalizeRoutineWeekdayMinutes(
+    parseStoredJson(row.weekdayMinutesJson, defaults.weekdayMinutes),
+    studyDays
+  );
+
+  return {
+    primaryExamKey: sanitizeRoutineExamKey(row.primaryExamKey),
+    secondaryExamKey: sanitizeRoutineExamKey(row.secondaryExamKey, true),
+    courseKey: sanitizeRoutineCourseKey(row.courseKey, true),
+    admissionCategoryKey: sanitizeRoutineAdmissionCategoryKey(row.admissionCategoryKey),
+    courseTrackKey: sanitizeRoutineTrackKey(row.courseTrackKey),
+    courseName: sanitizeShortText(row.courseName, 80),
+    studyDays,
+    weekdayMinutes,
+    weeklyGoalMinutes: getRoutineWeeklyGoalMinutes(weekdayMinutes, row.weeklyGoalMinutes),
+    subjectPreferences: normalizeRoutineSubjectPreferences(subjectPreferenceRows),
+    updatedAt: row.updatedAt || "",
+  };
+}
+
+function getRoutinePreferences(userId) {
+  const row = getRoutinePreferencesStatement.get(userId);
+  const subjectPreferenceRows = listRoutineSubjectPreferencesStatement.all(userId);
+  return sanitizeRoutinePreferencesRow(row, subjectPreferenceRows);
+}
+
+function saveRoutinePreferences(userId, payload) {
+  const currentPreferences = getRoutinePreferences(userId);
+  const nextPreferences = sanitizeRoutinePreferencesPayload(payload, currentPreferences);
+  const updatedAt = nowIso();
+
+  withTransaction(() => {
+    upsertRoutinePreferencesStatement.run(
+      userId,
+      nextPreferences.primaryExamKey,
+      nextPreferences.secondaryExamKey,
+      nextPreferences.courseKey,
+      nextPreferences.admissionCategoryKey,
+      nextPreferences.courseTrackKey,
+      nextPreferences.courseName,
+      JSON.stringify(nextPreferences.studyDays),
+      JSON.stringify(nextPreferences.weekdayMinutes),
+      nextPreferences.weeklyGoalMinutes,
+      updatedAt
+    );
+
+    deleteRoutineSubjectPreferencesStatement.run(userId);
+
+    nextPreferences.subjectPreferences.forEach((entry) => {
+      insertRoutineSubjectPreferenceStatement.run(
+        userId,
+        entry.subjectKey,
+        entry.customSubjectName,
+        entry.manualDelta,
+        entry.difficultyLevel,
+        updatedAt
+      );
+    });
+  });
+
+  return getRoutinePreferences(userId);
+}
+
+function getRoutineCustomSubjectSuggestions(userId) {
+  const orderedNames = [];
+  const seenNames = new Set();
+
+  listStructuredUserSessions(userId)
+    .filter((session) => session.subjectKey === "outras" && String(session.customSubjectName || "").trim())
+    .forEach((session) => {
+      const label = String(session.customSubjectName).trim();
+      const key = label.toLowerCase();
+
+      if (!seenNames.has(key)) {
+        seenNames.add(key);
+        orderedNames.push(label);
+      }
+    });
+
+  return orderedNames.slice(0, 12);
+}
+
+function buildRoutinePreferenceLookup(subjectPreferences = []) {
+  const lookup = new Map();
+
+  subjectPreferences.forEach((entry) => {
+    lookup.set(getRoutinePreferenceKey(entry.subjectKey, entry.customSubjectName), entry);
+  });
+
+  return lookup;
+}
+
+function buildRoutineHistoryStats(userId) {
+  const thresholdDateKey = toDateKey(addDays(new Date(), -ROUTINE_HISTORY_LOOKBACK_DAYS + 1));
+  const minutesBySubject = new Map();
+  const weekStartKey = getWeekStartDateKey(new Date());
+  const currentWeekMinutesBySubject = new Map();
+
+  listStructuredUserSessions(userId).forEach((session) => {
+    const statKey = getRoutinePreferenceKey(session.subjectKey, session.customSubjectName);
+    const sessionMinutes = Number(session.minutes) || 0;
+
+    if (session.dateKey >= thresholdDateKey) {
+      minutesBySubject.set(statKey, roundToNearestFive((minutesBySubject.get(statKey) || 0) + sessionMinutes));
+    }
+
+    if (isDateKeyInRange(session.dateKey, weekStartKey, getWeekEndDateKey(weekStartKey))) {
+      currentWeekMinutesBySubject.set(
+        statKey,
+        roundToNearestFive((currentWeekMinutesBySubject.get(statKey) || 0) + sessionMinutes)
+      );
+    }
+  });
+
+  return {
+    minutesBySubject,
+    currentWeekMinutesBySubject,
+  };
+}
+
+function getRoutineCompositeExamWeight(primaryExamKey, secondaryExamKey, subjectKey) {
+  const primaryWeight = Number(
+    ROUTINE_EXAM_WEIGHT_PROFILES[ROUTINE_EXAM_METADATA[primaryExamKey]?.profile]?.[subjectKey] || 0
+  );
+  const secondaryWeight = secondaryExamKey
+    ? Number(
+        ROUTINE_EXAM_WEIGHT_PROFILES[ROUTINE_EXAM_METADATA[secondaryExamKey]?.profile]?.[subjectKey] || 0
+      )
+    : 0;
+
+  if (!secondaryExamKey) {
+    return primaryWeight;
+  }
+
+  return (primaryWeight * ROUTINE_PRIMARY_EXAM_WEIGHT) + (secondaryWeight * ROUTINE_SECONDARY_EXAM_WEIGHT);
+}
+
+function getRoutineTrackMultiplier(courseTrackKey, subjectKey) {
+  return Number(ROUTINE_TRACK_MULTIPLIERS[courseTrackKey]?.[subjectKey] || 1);
+}
+
+function buildRoutinePriorityEntries(userId, user, preferences) {
+  const preferenceLookup = buildRoutinePreferenceLookup(preferences.subjectPreferences);
+  const historyStats = buildRoutineHistoryStats(userId);
+  const candidates = [];
+  const focusPreferenceKey = getRoutinePreferenceKey(user.focusSubjectKey, user.focusSubjectName);
+  const customSubjectPreferences = [...preferences.subjectPreferences.filter((entry) => entry.subjectKey === "outras")];
+
+  if (user.focusSubjectKey === "outras" && user.focusSubjectName) {
+    const alreadyTracked = customSubjectPreferences.some((entry) =>
+      String(entry.customSubjectName || "").trim().toLowerCase() ===
+        String(user.focusSubjectName || "").trim().toLowerCase()
+    );
+
+    if (!alreadyTracked) {
+      customSubjectPreferences.push({
+        subjectKey: "outras",
+        customSubjectName: sanitizeSubjectName(user.focusSubjectName, 80),
+        manualDelta: 0,
+        difficultyLevel: "normal",
+        subjectLabel: sanitizeSubjectName(user.focusSubjectName, 80),
+      });
+    }
+  }
+
+  ROUTINE_SUBJECT_ORDER.filter((subjectKey) => subjectKey !== "outras").forEach((subjectKey) => {
+    const statKey = getRoutinePreferenceKey(subjectKey);
+    const subjectPreference = preferenceLookup.get(statKey) || {
+      subjectKey,
+      customSubjectName: "",
+      manualDelta: 0,
+      difficultyLevel: "normal",
+      subjectLabel: getRoutineSubjectLabel(subjectKey),
+    };
+    const baseWeight = getRoutineCompositeExamWeight(
+      preferences.primaryExamKey,
+      preferences.secondaryExamKey,
+      subjectKey
+    );
+    const isFocusSubject = focusPreferenceKey === statKey;
+
+    if (
+      baseWeight <= 0 &&
+      subjectPreference.manualDelta === 0 &&
+      subjectPreference.difficultyLevel === "normal" &&
+      !isFocusSubject
+    ) {
+      return;
+    }
+
+    const manualMultiplier = ROUTINE_MANUAL_DELTA_MULTIPLIERS[String(subjectPreference.manualDelta)] || 1;
+    const difficultyMultiplier = ROUTINE_DIFFICULTY_MULTIPLIERS[subjectPreference.difficultyLevel] || 1;
+    const trackMultiplier = getRoutineTrackMultiplier(preferences.courseTrackKey, subjectKey);
+    const courseMultiplier = getRoutineCourseMultiplier(preferences.courseKey, subjectKey);
+    const historyMinutes = Number(historyStats.minutesBySubject.get(statKey) || 0);
+    const lowHistoryBoost = historyMinutes < 45 && baseWeight >= 8 ? 1.08 : 1;
+    const highHistoryPenalty = historyMinutes > 220 ? 0.94 : 1;
+    const focusMultiplier = isFocusSubject ? ROUTINE_PRIORITY_FOCUS_MULTIPLIER : 1;
+    const finalWeight = Math.max(
+      1.5,
+      baseWeight *
+        manualMultiplier *
+        difficultyMultiplier *
+        trackMultiplier *
+        courseMultiplier *
+        lowHistoryBoost *
+        highHistoryPenalty *
+        focusMultiplier
+    );
+    const suggestedReinforcement =
+      subjectPreference.difficultyLevel !== "normal" || (historyMinutes < 35 && baseWeight >= 9);
+
+    candidates.push({
+      subjectKey,
+      customSubjectName: "",
+      subjectLabel: getRoutineSubjectLabel(subjectKey),
+      preferenceKey: statKey,
+      baseWeight,
+      finalWeight,
+      historyMinutes,
+      manualDelta: subjectPreference.manualDelta,
+      difficultyLevel: subjectPreference.difficultyLevel,
+      courseBoosted: courseMultiplier > 1.04,
+      suggestedReinforcement,
+      isFocusSubject,
+    });
+  });
+
+  customSubjectPreferences.forEach((entry) => {
+    const statKey = getRoutinePreferenceKey(entry.subjectKey, entry.customSubjectName);
+    const historyMinutes = Number(historyStats.minutesBySubject.get(statKey) || 0);
+    const baseWeight = Math.max(3, 3 + (entry.manualDelta * 0.8) + (historyMinutes > 0 ? 1 : 0));
+    const focusMultiplier = focusPreferenceKey === statKey ? ROUTINE_PRIORITY_FOCUS_MULTIPLIER : 1;
+
+    candidates.push({
+      subjectKey: "outras",
+      customSubjectName: entry.customSubjectName,
+      subjectLabel: entry.subjectLabel,
+      preferenceKey: statKey,
+      baseWeight,
+      finalWeight: Math.max(
+        2.5,
+        baseWeight *
+          (ROUTINE_MANUAL_DELTA_MULTIPLIERS[String(entry.manualDelta)] || 1) *
+          (ROUTINE_DIFFICULTY_MULTIPLIERS[entry.difficultyLevel] || 1) *
+          focusMultiplier
+      ),
+      historyMinutes,
+      manualDelta: entry.manualDelta,
+      difficultyLevel: entry.difficultyLevel,
+      courseBoosted: false,
+      suggestedReinforcement: entry.difficultyLevel !== "normal" || historyMinutes < 30,
+      isFocusSubject: focusPreferenceKey === statKey,
+    });
+  });
+
+  return candidates.sort((left, right) => {
+    if (right.finalWeight !== left.finalWeight) {
+      return right.finalWeight - left.finalWeight;
+    }
+
+    return left.subjectLabel.localeCompare(right.subjectLabel, "pt-BR");
+  });
+}
+
+function buildRoutineDaySlots(preferences) {
+  return preferences.studyDays.map((dayOfWeek) => {
+    const totalMinutes = clampInteger(
+      preferences.weekdayMinutes?.[String(dayOfWeek)] || ROUTINE_DEFAULT_WEEKDAY_MINUTES,
+      ROUTINE_MIN_DAY_MINUTES,
+      ROUTINE_MAX_DAY_MINUTES
+    );
+    const slots = [];
+    const hasSecondarySlot = totalMinutes >= 75;
+
+    if (!hasSecondarySlot) {
+      slots.push({
+        dayOfWeek,
+        slotType: "base",
+        plannedMinutes: totalMinutes,
+      });
+      return { dayOfWeek, totalMinutes, slots };
+    }
+
+    const baseMinutes = roundToNearestFive(Math.max(ROUTINE_MIN_BLOCK_MINUTES, totalMinutes * 0.64));
+    const secondaryMinutes = totalMinutes - baseMinutes;
+
+    slots.push({
+      dayOfWeek,
+      slotType: "base",
+      plannedMinutes: baseMinutes,
+    });
+
+    if (secondaryMinutes >= ROUTINE_MIN_BLOCK_MINUTES) {
+      slots.push({
+        dayOfWeek,
+        slotType: "reforco",
+        plannedMinutes: secondaryMinutes,
+      });
+    }
+
+    return { dayOfWeek, totalMinutes, slots };
+  });
+}
+
+function buildRoutineSubjectTargets(priorityEntries, totalMinutes) {
+  const safeTotalMinutes = Math.max(ROUTINE_MIN_TOTAL_WEEKLY_MINUTES, roundToNearestFive(totalMinutes));
+  const totalWeight = priorityEntries.reduce((total, entry) => total + entry.finalWeight, 0) || 1;
+  let allocatedMinutes = 0;
+
+  return priorityEntries.map((entry, index) => {
+    const isLastEntry = index === priorityEntries.length - 1;
+    const proportionalMinutes = isLastEntry
+      ? Math.max(0, safeTotalMinutes - allocatedMinutes)
+      : Math.max(0, roundToNearestFive((entry.finalWeight / totalWeight) * safeTotalMinutes));
+
+    allocatedMinutes += proportionalMinutes;
+
+    return {
+      ...entry,
+      targetMinutes: proportionalMinutes,
+    };
+  });
+}
+
+function chooseRoutineSubjectForSlot(priorityEntries, remainingMinutesMap, context = {}) {
+  const {
+    slotType = "base",
+    lastBasePreferenceKey = "",
+    currentDayBasePreferenceKey = "",
+    reinforcementOutstanding = new Set(),
+  } = context;
+
+  return [...priorityEntries]
+    .map((entry) => {
+      let score = Number(remainingMinutesMap.get(entry.preferenceKey) || entry.targetMinutes || 0) + (entry.finalWeight * 4);
+
+      if (slotType === "base" && entry.preferenceKey === lastBasePreferenceKey) {
+        score -= 35;
+      }
+
+      if (slotType === "reforco" && entry.preferenceKey === currentDayBasePreferenceKey) {
+        score -= 14;
+      }
+
+      if (slotType === "reforco" && entry.difficultyLevel === "reforco") {
+        score += 28;
+      }
+
+      if (slotType === "reforco" && reinforcementOutstanding.has(entry.preferenceKey)) {
+        score += 24;
+      }
+
+      if (entry.suggestedReinforcement && slotType === "reforco") {
+        score += 12;
+      }
+
+      return {
+        entry,
+        score,
+      };
+    })
+    .sort((left, right) => right.score - left.score)[0]?.entry || priorityEntries[0] || null;
+}
+
+function buildRoutineReasonLabel(entry, slotType, primaryExamKey) {
+  if (slotType === "reforco" && entry.difficultyLevel === "reforco") {
+    return "Reforço da matéria mais difícil";
+  }
+
+  if (slotType === "reforco" && entry.suggestedReinforcement) {
+    return "Reforço sugerido pelo histórico";
+  }
+
+  if (entry.manualDelta > 0) {
+    return "Ajuste manual de prioridade";
+  }
+
+  if (entry.isFocusSubject) {
+    return "Matéria foco da sua conta";
+  }
+
+  if (entry.courseBoosted) {
+    return "Materia puxada pelo curso escolhido";
+  }
+
+  return `Peso de ${ROUTINE_EXAM_LABELS[primaryExamKey] || "prova principal"}`;
+}
+
+function createRoutineWeekPlanItems(userId, user, preferences, weekStartKey) {
+  const daySlots = buildRoutineDaySlots(preferences);
+  const totalPlannedMinutes = daySlots.reduce((total, day) => total + day.totalMinutes, 0);
+  const priorityEntries = buildRoutineSubjectTargets(
+    buildRoutinePriorityEntries(userId, user, preferences),
+    totalPlannedMinutes
+  );
+  const remainingMinutesMap = new Map(
+    priorityEntries.map((entry) => [entry.preferenceKey, entry.targetMinutes])
+  );
+  const reinforcementOutstanding = new Set(
+    priorityEntries
+      .filter((entry) => entry.difficultyLevel === "reforco")
+      .map((entry) => entry.preferenceKey)
+  );
+  const items = [];
+  let lastBasePreferenceKey = "";
+
+  daySlots.forEach((day) => {
+    let currentDayBasePreferenceKey = "";
+
+    day.slots.forEach((slot, slotIndex) => {
+      const selectedEntry = chooseRoutineSubjectForSlot(priorityEntries, remainingMinutesMap, {
+        slotType: slot.slotType,
+        lastBasePreferenceKey,
+        currentDayBasePreferenceKey,
+        reinforcementOutstanding,
+      });
+
+      if (!selectedEntry) {
+        return;
+      }
+
+      if (slotIndex === 0) {
+        currentDayBasePreferenceKey = selectedEntry.preferenceKey;
+        lastBasePreferenceKey = selectedEntry.preferenceKey;
+      }
+
+      const remainingMinutes = Number(remainingMinutesMap.get(selectedEntry.preferenceKey) || 0);
+      remainingMinutesMap.set(
+        selectedEntry.preferenceKey,
+        Math.max(0, remainingMinutes - slot.plannedMinutes)
+      );
+
+      if (slot.slotType === "reforco" && selectedEntry.difficultyLevel === "reforco") {
+        reinforcementOutstanding.delete(selectedEntry.preferenceKey);
+      }
+
+      items.push({
+        dayOfWeek: day.dayOfWeek,
+        subjectKey: selectedEntry.subjectKey,
+        customSubjectName: selectedEntry.customSubjectName,
+        plannedMinutes: slot.plannedMinutes,
+        slotType: slot.slotType,
+        reasonLabel: buildRoutineReasonLabel(selectedEntry, slot.slotType, preferences.primaryExamKey),
+      });
+    });
+  });
+
+  return {
+    items,
+    priorityEntries,
+    totalPlannedMinutes,
+  };
+}
+
+function saveRoutineWeekPlan(userId, weekStartKey, generationSource, items) {
+  const generatedAt = nowIso();
+
+  return withTransaction(() => {
+    const existingPlan = getRoutineWeekPlanStatement.get(userId, weekStartKey);
+    let planId = Number(existingPlan?.id || 0);
+
+    if (planId > 0) {
+      updateRoutineWeekPlanStatement.run(
+        JSON.stringify(generationSource),
+        generatedAt,
+        planId,
+        userId
+      );
+    } else {
+      const insertResult = insertRoutineWeekPlanStatement.run(
+        userId,
+        weekStartKey,
+        JSON.stringify(generationSource),
+        generatedAt
+      );
+      planId = Number(insertResult.lastInsertRowid);
+    }
+
+    deleteRoutineWeekPlanItemsStatement.run(planId);
+
+    items.forEach((item) => {
+      insertRoutineWeekPlanItemStatement.run(
+        planId,
+        item.dayOfWeek,
+        item.subjectKey,
+        item.customSubjectName,
+        clampInteger(item.plannedMinutes, ROUTINE_MIN_BLOCK_MINUTES, ROUTINE_MAX_DAY_MINUTES),
+        item.slotType === "reforco" ? "reforco" : "base",
+        sanitizeShortText(item.reasonLabel, 120)
+      );
+    });
+
+    return planId;
+  });
+}
+
+function sanitizeRoutinePlanItemRow(row) {
+  const subjectKey = sanitizeSubjectKey(row.subjectKey, DEFAULT_SUBJECT_KEY);
+  const customSubjectName = subjectKey === "outras" ? sanitizeSubjectName(row.customSubjectName, 80) : "";
+
+  return {
+    id: Number(row.id),
+    planId: Number(row.planId),
+    dayOfWeek: clampInteger(row.dayOfWeek, 0, 6),
+    subjectKey,
+    customSubjectName,
+    subjectLabel: getRoutineSubjectLabel(subjectKey, customSubjectName),
+    plannedMinutes: clampInteger(row.plannedMinutes, 0, ROUTINE_MAX_DAY_MINUTES),
+    slotType: row.slotType === "reforco" ? "reforco" : "base",
+    reasonLabel: sanitizeShortText(row.reasonLabel, 120),
+  };
+}
+
+function getRoutinePlanRecord(userId, weekStartKey) {
+  const planRow = getRoutineWeekPlanStatement.get(userId, weekStartKey);
+
+  if (!planRow) {
+    return null;
+  }
+
+  return {
+    id: Number(planRow.id),
+    userId: Number(planRow.userId),
+    weekStart: planRow.weekStart,
+    generationSource: parseStoredJson(planRow.generationSourceJson, {}),
+    generatedAt: planRow.generatedAt,
+    items: listRoutineWeekPlanItemsStatement.all(planRow.id).map((row) => sanitizeRoutinePlanItemRow(row)),
+  };
+}
+
+function buildRoutineActualStats(userId, weekStartKey) {
+  const weekStartDate = parseDateKey(weekStartKey);
+  const weekEndKey = getWeekEndDateKey(weekStartKey);
+  const actualByDay = new Map();
+  const actualBySubject = new Map();
+  const actualByDaySubject = new Map();
+  const sessions = listStructuredUserSessions(userId).filter((session) =>
+    isDateKeyInRange(session.dateKey, weekStartKey, weekEndKey)
+  );
+
+  sessions.forEach((session) => {
+    const sessionDate = parseDateKey(session.dateKey);
+
+    if (!weekStartDate || !sessionDate) {
+      return;
+    }
+
+    const dayOfWeek = Math.round((sessionDate.getTime() - weekStartDate.getTime()) / 86_400_000);
+
+    if (dayOfWeek < 0 || dayOfWeek > 6) {
+      return;
+    }
+
+    const subjectKey = getRoutinePreferenceKey(session.subjectKey, session.customSubjectName);
+    const subjectDayKey = `${dayOfWeek}:${subjectKey}`;
+    const sessionMinutes = roundToNearestFive(Number(session.minutes) || 0);
+
+    actualByDay.set(dayOfWeek, roundToNearestFive((actualByDay.get(dayOfWeek) || 0) + sessionMinutes));
+    actualBySubject.set(
+      subjectKey,
+      roundToNearestFive((actualBySubject.get(subjectKey) || 0) + sessionMinutes)
+    );
+    actualByDaySubject.set(
+      subjectDayKey,
+      roundToNearestFive((actualByDaySubject.get(subjectDayKey) || 0) + sessionMinutes)
+    );
+  });
+
+  return {
+    sessions,
+    actualByDay,
+    actualBySubject,
+    actualByDaySubject,
+  };
+}
+
+function buildRoutinePrioritySummary(priorityEntries = [], preferences = {}) {
+  const lead = priorityEntries[0];
+  const reinforcementLead = priorityEntries.find(
+    (entry) => entry.difficultyLevel === "reforco" || entry.suggestedReinforcement
+  );
+  const courseLabel = getRoutineCourseLabel(preferences.courseKey, preferences.courseName);
+
+  if (!lead) {
+    return "Defina seus dias e gere a rotina para ver a prioridade da semana.";
+  }
+
+  if (reinforcementLead) {
+    return courseLabel
+      ? `${lead.subjectLabel} lidera a semana para ${courseLabel}. ${reinforcementLead.subjectLabel} entra com reforço extra.`
+      : `${lead.subjectLabel} lidera a semana. ${reinforcementLead.subjectLabel} entra com reforço extra.`;
+  }
+
+  return courseLabel
+    ? `${lead.subjectLabel} lidera a semana para ${courseLabel}, com base no vestibular e no curso escolhido.`
+    : `${lead.subjectLabel} lidera a semana com base no vestibular e no seu ajuste atual.`;
+}
+
+function buildRoutineWeekPlanResponse(userId, user, preferences, planRecord) {
+  if (!planRecord) {
+    return null;
+  }
+
+  const actualStats = buildRoutineActualStats(userId, planRecord.weekStart);
+  const weekEnd = getWeekEndDateKey(planRecord.weekStart);
+  const snapshotStudyDays = Array.isArray(planRecord.generationSource?.studyDays)
+    ? normalizeRoutineStudyDays(planRecord.generationSource.studyDays)
+    : preferences.studyDays;
+  const snapshotWeeklyGoalMinutes = Number(planRecord.generationSource?.weeklyGoalMinutes || preferences.weeklyGoalMinutes);
+  const subjectTotalsMap = new Map();
+  const planItemsByDay = new Map();
+
+  planRecord.items.forEach((item) => {
+    if (!planItemsByDay.has(item.dayOfWeek)) {
+      planItemsByDay.set(item.dayOfWeek, []);
+    }
+
+    const actualMinutes = Number(
+      actualStats.actualByDaySubject.get(
+        `${item.dayOfWeek}:${getRoutinePreferenceKey(item.subjectKey, item.customSubjectName)}`
+      ) || 0
+    );
+
+    const enrichedItem = {
+      ...item,
+      actualMinutes,
+      executionPercent: item.plannedMinutes > 0
+        ? Math.round((actualMinutes / item.plannedMinutes) * 100)
+        : 0,
+    };
+
+    planItemsByDay.get(item.dayOfWeek).push(enrichedItem);
+
+    const totalKey = getRoutinePreferenceKey(item.subjectKey, item.customSubjectName);
+    const currentTotal = subjectTotalsMap.get(totalKey) || {
+      subjectKey: item.subjectKey,
+      customSubjectName: item.customSubjectName,
+      subjectLabel: item.subjectLabel,
+      plannedMinutes: 0,
+    };
+
+    currentTotal.plannedMinutes += item.plannedMinutes;
+    subjectTotalsMap.set(totalKey, currentTotal);
+  });
+
+  const subjectTotals = [...subjectTotalsMap.entries()]
+    .map(([statKey, total]) => {
+      const actualMinutes = Number(actualStats.actualBySubject.get(statKey) || 0);
+
+      return {
+        ...total,
+        actualMinutes,
+        executionPercent: total.plannedMinutes > 0
+          ? Math.round((actualMinutes / total.plannedMinutes) * 100)
+          : 0,
+      };
+    })
+    .sort((left, right) => right.plannedMinutes - left.plannedMinutes);
+
+  const days = ROUTINE_WEEKDAY_LABELS.map((label, dayOfWeek) => {
+    const items = planItemsByDay.get(dayOfWeek) || [];
+    const plannedMinutes = items.reduce((total, item) => total + item.plannedMinutes, 0);
+    const actualMinutes = Number(actualStats.actualByDay.get(dayOfWeek) || 0);
+
+    return {
+      dayOfWeek,
+      label,
+      isActive: snapshotStudyDays.includes(dayOfWeek),
+      plannedMinutes,
+      actualMinutes,
+      executionPercent: plannedMinutes > 0 ? Math.round((actualMinutes / plannedMinutes) * 100) : 0,
+      items,
+    };
+  });
+
+  const totalPlannedMinutes = days.reduce((total, day) => total + day.plannedMinutes, 0);
+  const totalActualMinutes = days.reduce((total, day) => total + day.actualMinutes, 0);
+  const reinforcementSubjects = subjectTotals.filter((entry) => {
+    const preferenceKey = getRoutinePreferenceKey(entry.subjectKey, entry.customSubjectName);
+    const matchedPriorityEntry = (planRecord.generationSource?.priorityEntries || []).find(
+      (priorityEntry) => priorityEntry.preferenceKey === preferenceKey
+    );
+
+    return matchedPriorityEntry?.difficultyLevel === "reforco" || matchedPriorityEntry?.suggestedReinforcement;
+  });
+  const nextPriority = [...subjectTotals]
+    .sort((left, right) => (right.plannedMinutes - right.actualMinutes) - (left.plannedMinutes - left.actualMinutes))[0] || null;
+
+  return {
+    weekStart: planRecord.weekStart,
+    weekEnd,
+    generatedAt: planRecord.generatedAt,
+    metadata: {
+      primaryExamKey: String(planRecord.generationSource?.primaryExamKey || preferences.primaryExamKey || "enem"),
+      secondaryExamKey: String(planRecord.generationSource?.secondaryExamKey || preferences.secondaryExamKey || ""),
+      courseKey: String(planRecord.generationSource?.courseKey || preferences.courseKey || ""),
+      admissionCategoryKey: String(
+        planRecord.generationSource?.admissionCategoryKey || preferences.admissionCategoryKey || "ac"
+      ),
+      courseTrackKey: String(planRecord.generationSource?.courseTrackKey || preferences.courseTrackKey || "geral"),
+      courseName: String(planRecord.generationSource?.courseName || preferences.courseName || ""),
+      weeklyGoalMinutes: snapshotWeeklyGoalMinutes,
+    },
+    summaryText:
+      String(planRecord.generationSource?.summaryText || "").trim() ||
+      buildRoutinePrioritySummary(planRecord.generationSource?.priorityEntries || [], {
+        courseKey: String(planRecord.generationSource?.courseKey || preferences.courseKey || ""),
+        courseName: String(planRecord.generationSource?.courseName || preferences.courseName || ""),
+      }),
+    totalPlannedMinutes,
+    totalActualMinutes,
+    executionPercent: totalPlannedMinutes > 0
+      ? Math.round((totalActualMinutes / totalPlannedMinutes) * 100)
+      : 0,
+    nextPriority,
+    reinforcementSubjects,
+    totalsBySubject: subjectTotals,
+    days,
+    generationSource: planRecord.generationSource,
+    customSubjectSuggestions: getRoutineCustomSubjectSuggestions(userId),
+    focusSubjectLabel: getRoutineSubjectLabel(user.focusSubjectKey, user.focusSubjectName),
+    courseTarget: buildRoutineCourseTarget({
+      primaryExamKey: String(planRecord.generationSource?.primaryExamKey || preferences.primaryExamKey || "enem"),
+      courseKey: String(planRecord.generationSource?.courseKey || preferences.courseKey || ""),
+      courseName: String(planRecord.generationSource?.courseName || preferences.courseName || ""),
+      admissionCategoryKey: String(
+        planRecord.generationSource?.admissionCategoryKey || preferences.admissionCategoryKey || "ac"
+      ),
+    }),
+  };
+}
+
+function generateRoutinePlan(userId) {
+  const user = sanitizeUser(findUserByIdStatement.get(userId));
+
+  if (!user) {
+    throw createError(404, "Usuário não encontrado.");
+  }
+
+  const preferences = getRoutinePreferences(userId);
+  const weekStartKey = getWeekStartDateKey(new Date());
+  const generation = createRoutineWeekPlanItems(userId, user, preferences, weekStartKey);
+  const generationSource = {
+    version: ROUTINE_SUMMARY_VERSION,
+    primaryExamKey: preferences.primaryExamKey,
+    secondaryExamKey: preferences.secondaryExamKey,
+    courseKey: preferences.courseKey,
+    admissionCategoryKey: preferences.admissionCategoryKey,
+    courseTrackKey: preferences.courseTrackKey,
+    courseName: preferences.courseName,
+    studyDays: [...preferences.studyDays],
+    weekdayMinutes: { ...preferences.weekdayMinutes },
+    weeklyGoalMinutes: preferences.weeklyGoalMinutes,
+    priorityEntries: generation.priorityEntries.map((entry) => ({
+      preferenceKey: entry.preferenceKey,
+      subjectKey: entry.subjectKey,
+      customSubjectName: entry.customSubjectName,
+      subjectLabel: entry.subjectLabel,
+      finalWeight: Math.round(entry.finalWeight * 100) / 100,
+      baseWeight: Math.round(entry.baseWeight * 100) / 100,
+      manualDelta: entry.manualDelta,
+      difficultyLevel: entry.difficultyLevel,
+      suggestedReinforcement: entry.suggestedReinforcement,
+      historyMinutes: entry.historyMinutes,
+      courseBoosted: entry.courseBoosted,
+      isFocusSubject: entry.isFocusSubject,
+    })),
+    summaryText: buildRoutinePrioritySummary(generation.priorityEntries, preferences),
+    courseTarget: buildRoutineCourseTarget(preferences),
+  };
+
+  saveRoutineWeekPlan(userId, weekStartKey, generationSource, generation.items);
+  const planRecord = getRoutinePlanRecord(userId, weekStartKey);
+
+  return buildRoutineWeekPlanResponse(userId, user, preferences, planRecord);
+}
+
+function getRoutinePlanResponse(userId, weekStartKey) {
+  const user = sanitizeUser(findUserByIdStatement.get(userId));
+
+  if (!user) {
+    throw createError(404, "Usuário não encontrado.");
+  }
+
+  const planRecord = getRoutinePlanRecord(userId, weekStartKey);
+
+  if (!planRecord) {
+    return null;
+  }
+
+  return buildRoutineWeekPlanResponse(userId, user, getRoutinePreferences(userId), planRecord);
 }
 
 function sanitizeEssayFeedbackText(value, maxLength = 420) {
@@ -4399,7 +8743,7 @@ function isValidRole(value) {
 
 function normalizeSessionPayload(payload) {
   const minutes = Number(payload.minutes);
-  const state = String(payload.state || "").trim().toLowerCase();
+  const state = String(payload.state || DEFAULT_SESSION_STATE).trim().toLowerCase();
   const type = String(payload.type || (minutes > 20 ? "extra" : "padrao")).trim();
   const startedAt = payload.startedAt ? new Date(payload.startedAt) : new Date();
   const activities = (Array.isArray(payload.activities) ? payload.activities : [])
@@ -4409,8 +8753,8 @@ function normalizeSessionPayload(payload) {
   const phrasesText = String(payload.phrasesText || "").trim();
   const notes = String(payload.notes || "").trim();
 
-  if (!Number.isFinite(minutes) || minutes <= 0) {
-    throw createError(400, "Minutos inválidos.");
+  if (!Number.isFinite(minutes) || minutes < MIN_START_SESSION_MINUTES) {
+    throw createError(400, `Informe pelo menos ${MIN_START_SESSION_MINUTES} minutos.`);
   }
 
   if (!ALLOWED_STATES.has(state)) {
@@ -4471,7 +8815,7 @@ function listUserSessions(userId) {
 
 function normalizeStructuredSessionPayload(payload, options = {}) {
   const minutes = Number(payload.minutes);
-  const state = String(payload.state || "").trim().toLowerCase();
+  const state = String(payload.state || DEFAULT_SESSION_STATE).trim().toLowerCase();
   const startedAtSource = payload.startedAt || options.startedAt || new Date().toISOString();
   const startedAt = new Date(startedAtSource);
   const activitiesSource = Array.isArray(payload.activities)
@@ -4500,8 +8844,8 @@ function normalizeStructuredSessionPayload(payload, options = {}) {
   );
   const allowLooseMigration = options.allowLooseMigration === true;
 
-  if (!Number.isFinite(minutes) || minutes <= 0) {
-    throw createError(400, "Minutos inv\u00e1lidos.");
+  if (!Number.isFinite(minutes) || minutes < MIN_START_SESSION_MINUTES) {
+    throw createError(400, `Informe pelo menos ${MIN_START_SESSION_MINUTES} minutos.`);
   }
 
   if (!ALLOWED_STATES.has(state)) {
@@ -5080,6 +9424,97 @@ async function handleUpdateProfile(request, response) {
   });
 }
 
+function handleRoutineTemplates(request, response) {
+  const user = getAuthenticatedUser(request);
+
+  if (!user) {
+    throw createError(401, "Sessão não encontrada.");
+  }
+
+  sendJson(response, 200, { templates: getRoutineTemplates() });
+}
+
+function handleRoutinePreferences(request, response) {
+  const user = getAuthenticatedUser(request);
+
+  if (!user) {
+    throw createError(401, "Sessão não encontrada.");
+  }
+
+  sendJson(response, 200, {
+    preferences: getRoutinePreferences(user.id),
+    customSubjectSuggestions: getRoutineCustomSubjectSuggestions(user.id),
+  });
+}
+
+async function handleUpdateRoutinePreferences(request, response) {
+  const user = getAuthenticatedUser(request);
+
+  if (!user) {
+    throw createError(401, "Sessão não encontrada.");
+  }
+
+  const payload = await readRequestBody(request);
+  const preferences = saveRoutinePreferences(user.id, payload);
+
+  sendJson(response, 200, {
+    preferences,
+    customSubjectSuggestions: getRoutineCustomSubjectSuggestions(user.id),
+  });
+}
+
+function handleCurrentRoutinePlan(request, response) {
+  const user = getAuthenticatedUser(request);
+
+  if (!user) {
+    throw createError(401, "Sessão não encontrada.");
+  }
+
+  sendJson(response, 200, {
+    plan: getRoutinePlanResponse(user.id, getWeekStartDateKey(new Date())),
+  });
+}
+
+async function handleGenerateRoutinePlan(request, response) {
+  const user = getAuthenticatedUser(request);
+
+  if (!user) {
+    throw createError(401, "Sessão não encontrada.");
+  }
+
+  const payload = await readRequestBody(request);
+
+  if (Object.keys(payload || {}).length) {
+    saveRoutinePreferences(user.id, payload);
+  }
+
+  sendJson(response, 201, {
+    plan: generateRoutinePlan(user.id),
+  });
+}
+
+function handleRoutinePlanByWeek(request, response, rawWeekStart) {
+  const user = getAuthenticatedUser(request);
+
+  if (!user) {
+    throw createError(401, "Sessão não encontrada.");
+  }
+
+  const weekStartKey = String(rawWeekStart || "").trim();
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(weekStartKey)) {
+    throw createError(400, "Semana inválida.");
+  }
+
+  const plan = getRoutinePlanResponse(user.id, weekStartKey);
+
+  if (!plan) {
+    throw createError(404, "Rotina da semana não encontrada.");
+  }
+
+  sendJson(response, 200, { plan });
+}
+
 function handleListSessions(request, response) {
   const user = getAuthenticatedUser(request);
 
@@ -5268,6 +9703,664 @@ async function handleCreateEssaySubmission(request, response) {
       });
     }
   }
+}
+
+function handleAdminQuestionBankReference(request, response) {
+  const user = getAuthenticatedUser(request);
+  ensureAdmin(user);
+
+  sendJson(response, 200, {
+    reference: buildQuestionBankReferenceData(),
+    overview: questionBankAdminOverviewStatement.get(),
+  });
+}
+
+async function handleCreateQuestionBankExam(request, response) {
+  const user = getAuthenticatedUser(request);
+  ensureAdmin(user);
+
+  const payload = await readRequestBody(request);
+  const nome = sanitizeQuestionBankExamName(payload.nome);
+  const sigla = sanitizeQuestionBankExamSigla(payload.sigla);
+  const descricao = sanitizeQuestionBankDescription(payload.descricao);
+
+  if (!nome || !sigla) {
+    throw createError(400, "Informe nome e sigla do vestibular.");
+  }
+
+  const existingExam = findQuestionBankExamBySiglaStatement.get(sigla);
+
+  if (existingExam) {
+    throw createError(409, "Ja existe um vestibular com essa sigla.");
+  }
+
+  const result = insertQuestionBankExamStatement.run(nome, sigla, descricao, 1, nowIso());
+  sendJson(response, 201, {
+    vestibular: serializeQuestionBankExam(findQuestionBankExamByIdStatement.get(result.lastInsertRowid)),
+  });
+}
+
+function handleListQuestionProofs(request, response) {
+  const user = getAuthenticatedUser(request);
+  ensureAdmin(user);
+
+  sendJson(response, 200, {
+    overview: questionBankAdminOverviewStatement.get(),
+    proofs: listQuestionProofsStatement.all().map((row) => serializeQuestionProofRow(row)),
+  });
+}
+
+async function handleCreateQuestionProof(request, response) {
+  const user = getAuthenticatedUser(request);
+  ensureAdmin(user);
+
+  const payload = await readRequestBody(request, {
+    maxBytes: QUESTION_BANK_UPLOAD_LIMIT_BYTES,
+  });
+  const vestibularId = resolveQuestionBankExamId(payload);
+  const normalizedProof = sanitizeQuestionProofPayload(payload);
+
+  if (!payload?.pdfFile) {
+    throw createError(400, "Envie o PDF original da prova.");
+  }
+
+  const savedPdf = await saveQuestionBankPdfFile(payload.pdfFile);
+
+  if (!savedPdf) {
+    throw createError(400, "Nao foi possivel salvar o PDF da prova.");
+  }
+
+  try {
+    const timestamp = nowIso();
+    const result = insertQuestionProofStatement.run(
+      vestibularId,
+      normalizedProof.ano,
+      normalizedProof.fase,
+      normalizedProof.versao,
+      normalizedProof.materiaGeral,
+      savedPdf.storedFileName,
+      savedPdf.originalName,
+      savedPdf.mimeType,
+      savedPdf.sizeBytes,
+      normalizedProof.extractedText,
+      normalizedProof.processStatus,
+      normalizedProof.status,
+      timestamp,
+      timestamp
+    );
+
+    sendJson(response, 201, {
+      proof: serializeQuestionProofRow(
+        getQuestionProofByIdStatement.get(result.lastInsertRowid),
+        { includeExtractedText: true }
+      ),
+    });
+  } catch (error) {
+    try {
+      await unlink(getQuestionBankUploadFilePath(savedPdf.storedFileName));
+    } catch {
+      // Mantem o foco no erro principal do fluxo.
+    }
+
+    throw error;
+  }
+}
+
+function handleGetQuestionProof(request, response, rawProofId) {
+  const user = getAuthenticatedUser(request);
+  ensureAdmin(user);
+
+  const proofId = Number(rawProofId);
+
+  if (!Number.isInteger(proofId) || proofId <= 0) {
+    throw createError(400, "Prova invalida.");
+  }
+
+  const proofRow = getQuestionProofByIdStatement.get(proofId);
+
+  if (!proofRow) {
+    throw createError(404, "Prova nao encontrada.");
+  }
+
+  sendJson(response, 200, {
+    proof: serializeQuestionProofRow(proofRow, { includeExtractedText: true }),
+    questions: listAdminQuestionsByProof(proofId),
+  });
+}
+
+async function handleUpdateQuestionProof(request, response, rawProofId) {
+  const user = getAuthenticatedUser(request);
+  ensureAdmin(user);
+
+  const proofId = Number(rawProofId);
+
+  if (!Number.isInteger(proofId) || proofId <= 0) {
+    throw createError(400, "Prova invalida.");
+  }
+
+  const currentProofRow = getQuestionProofByIdStatement.get(proofId);
+
+  if (!currentProofRow) {
+    throw createError(404, "Prova nao encontrada.");
+  }
+
+  const currentProof = serializeQuestionProofRow(currentProofRow, { includeExtractedText: true });
+  const payload = await readRequestBody(request, {
+    maxBytes: QUESTION_BANK_UPLOAD_LIMIT_BYTES,
+  });
+  const vestibularId =
+    payload?.vestibularId !== undefined ||
+    payload?.examId !== undefined ||
+    payload?.vestibularNome !== undefined ||
+    payload?.vestibularSigla !== undefined
+      ? resolveQuestionBankExamId(payload)
+      : currentProof.vestibular.id;
+  const normalizedProof = sanitizeQuestionProofPayload(payload, currentProof);
+  let savedPdf = null;
+
+  if (payload?.pdfFile) {
+    savedPdf = await saveQuestionBankPdfFile(payload.pdfFile);
+  }
+
+  const previousPdfFilePath = currentProof.pdf.filePath;
+
+  try {
+    updateQuestionProofStatement.run(
+      vestibularId,
+      normalizedProof.ano,
+      normalizedProof.fase,
+      normalizedProof.versao,
+      normalizedProof.materiaGeral,
+      savedPdf?.storedFileName || previousPdfFilePath,
+      savedPdf?.originalName || currentProof.pdf.originalName,
+      savedPdf?.mimeType || currentProof.pdf.mimeType || "application/pdf",
+      savedPdf?.sizeBytes || currentProof.pdf.sizeBytes || 0,
+      normalizedProof.extractedText,
+      normalizedProof.processStatus,
+      normalizedProof.status,
+      nowIso(),
+      proofId
+    );
+
+    if (savedPdf && previousPdfFilePath && previousPdfFilePath !== savedPdf.storedFileName) {
+      try {
+        await unlink(getQuestionBankUploadFilePath(previousPdfFilePath));
+      } catch {
+        // O arquivo antigo nao deve impedir o fluxo principal.
+      }
+    }
+
+    sendJson(response, 200, {
+      proof: serializeQuestionProofRow(
+        getQuestionProofByIdStatement.get(proofId),
+        { includeExtractedText: true }
+      ),
+      questions: listAdminQuestionsByProof(proofId),
+    });
+  } catch (error) {
+    if (savedPdf?.storedFileName) {
+      try {
+        await unlink(getQuestionBankUploadFilePath(savedPdf.storedFileName));
+      } catch {
+        // Mantem o foco no erro principal do fluxo.
+      }
+    }
+
+    throw error;
+  }
+}
+
+async function handleProcessQuestionProof(request, response, rawProofId) {
+  const user = getAuthenticatedUser(request);
+  ensureAdmin(user);
+
+  const proofId = Number(rawProofId);
+
+  if (!Number.isInteger(proofId) || proofId <= 0) {
+    throw createError(400, "Prova invalida.");
+  }
+
+  const proofRow = getQuestionProofByIdStatement.get(proofId);
+
+  if (!proofRow) {
+    throw createError(404, "Prova nao encontrada.");
+  }
+
+  const proof = serializeQuestionProofRow(proofRow, { includeExtractedText: true });
+  const payload = await readRequestBody(request, {
+    maxBytes: QUESTION_BANK_UPLOAD_LIMIT_BYTES,
+  });
+  const replaceExisting = Boolean(payload?.replaceExisting);
+  const attemptsOnProof = Number(countQuestionAttemptsForProofStatement.get(proofId)?.total) || 0;
+
+  if (attemptsOnProof > 0) {
+    throw createError(400, "Essa prova ja tem tentativas registradas e nao pode ser reprocessada.");
+  }
+
+  if (proof.counts.totalQuestions > 0 && !replaceExisting) {
+    throw createError(400, "Essa prova ja possui questoes. Use a opcao de reprocessar substituindo as anteriores.");
+  }
+
+  let extractedText = payload?.extractedText === undefined
+    ? String(proof.extractedText || "")
+    : sanitizeQuestionBankMultilineText(payload.extractedText, 220_000);
+
+  if (!extractedText) {
+    extractedText = tryExtractTextFromPdfFile(proof.pdf.filePath);
+  }
+
+  const parsedQuestions = parseQuestionsFromExtractedText(extractedText, {
+    fallbackMatter: proof.materiaGeral,
+    originLabel: `${proof.vestibular.sigla} ${proof.ano}`.trim(),
+  });
+
+  withTransaction(() => {
+    if (replaceExisting) {
+      deleteQuestionsByProofStatement.run(proofId);
+    }
+
+    parsedQuestions.forEach((questionDraft) => {
+      const createdAt = nowIso();
+      const insertResult = insertQuestionStatement.run(
+        proofId,
+        sanitizeQuestionNumber(questionDraft.numero || 0, { allowEmpty: true }),
+        sanitizeQuestionBankMultilineText(questionDraft.enunciado || "", 20_000),
+        normalizeQuestionBankTerm(questionDraft.materia || proof.materiaGeral || "", 80),
+        normalizeQuestionBankTerm(questionDraft.tema || "", 120),
+        sanitizeQuestionDifficulty(questionDraft.dificuldade, "media"),
+        sanitizeQuestionAlternativeLetter(questionDraft.respostaCorreta, true),
+        sanitizeQuestionReviewStatus(questionDraft.statusRevisao || "pending"),
+        sanitizeQuestionBankMultilineText(questionDraft.origemPdf || "", 220).replace(/\n+/g, " ").trim(),
+        "",
+        normalizeQuestionBankTerm(questionDraft.sugestaoMateria || questionDraft.materia || "", 80),
+        normalizeQuestionBankTerm(questionDraft.sugestaoTema || questionDraft.tema || "", 120),
+        sanitizeQuestionDifficulty(questionDraft.sugestaoDificuldade || questionDraft.dificuldade || "media"),
+        createdAt,
+        createdAt,
+        ""
+      );
+      const questionId = Number(insertResult.lastInsertRowid) || 0;
+
+      saveQuestionAlternatives(
+        questionId,
+        sanitizeQuestionAlternatives(questionDraft.alternativas || [], { includeEmptySlots: true })
+      );
+      refreshQuestionStats(questionId);
+    });
+
+    updateQuestionProofProcessStatement.run(
+      extractedText,
+      parsedQuestions.length ? "processed" : "needs_review",
+      parsedQuestions.length ? "review" : sanitizeQuestionProofStatus(proof.status),
+      nowIso(),
+      proofId
+    );
+  });
+
+  sendJson(response, 200, {
+    proof: serializeQuestionProofRow(
+      getQuestionProofByIdStatement.get(proofId),
+      { includeExtractedText: true }
+    ),
+    importedQuestions: parsedQuestions.length,
+    questions: listAdminQuestionsByProof(proofId),
+    warning: parsedQuestions.length ? "" : "Nao foi possivel separar questoes automaticamente a partir do texto informado.",
+  });
+}
+
+function handlePublishQuestionProof(request, response, rawProofId) {
+  const user = getAuthenticatedUser(request);
+  ensureAdmin(user);
+
+  const proofId = Number(rawProofId);
+
+  if (!Number.isInteger(proofId) || proofId <= 0) {
+    throw createError(400, "Prova invalida.");
+  }
+
+  const proofRow = getQuestionProofByIdStatement.get(proofId);
+
+  if (!proofRow) {
+    throw createError(404, "Prova nao encontrada.");
+  }
+
+  const proof = serializeQuestionProofRow(proofRow);
+
+  if (proof.counts.approvedQuestions <= 0) {
+    throw createError(400, "A prova precisa ter pelo menos uma questao aprovada antes da publicacao.");
+  }
+
+  const publishedAt = nowIso();
+
+  withTransaction(() => {
+    updateQuestionProofStatusStatement.run("published", publishedAt, proofId);
+    publishApprovedQuestionsByProofStatement.run(publishedAt, publishedAt, proofId);
+  });
+
+  sendJson(response, 200, {
+    proof: serializeQuestionProofRow(
+      getQuestionProofByIdStatement.get(proofId),
+      { includeExtractedText: true }
+    ),
+    questions: listAdminQuestionsByProof(proofId),
+  });
+}
+
+async function handleCreateAdminQuestion(request, response) {
+  const user = getAuthenticatedUser(request);
+  ensureAdmin(user);
+
+  const payload = await readRequestBody(request);
+  const normalizedQuestion = sanitizeQuestionPayload(payload, {
+    allowEmptyNumber: false,
+  });
+  const proofRow = getQuestionProofByIdStatement.get(normalizedQuestion.proofId);
+
+  if (!proofRow) {
+    throw createError(404, "Prova nao encontrada.");
+  }
+
+  const publishedAt = resolveQuestionPublishedAt(proofRow, normalizedQuestion.statusRevisao);
+  let questionId = 0;
+
+  withTransaction(() => {
+    const createdAt = nowIso();
+    const result = insertQuestionStatement.run(
+      normalizedQuestion.proofId,
+      normalizedQuestion.numero,
+      normalizedQuestion.enunciado,
+      normalizedQuestion.materia,
+      normalizedQuestion.tema,
+      normalizedQuestion.dificuldade,
+      normalizedQuestion.respostaCorreta,
+      normalizedQuestion.statusRevisao,
+      normalizedQuestion.origemPdf,
+      normalizedQuestion.observacoesAdm,
+      normalizedQuestion.sugestaoMateria,
+      normalizedQuestion.sugestaoTema,
+      normalizedQuestion.sugestaoDificuldade,
+      createdAt,
+      createdAt,
+      publishedAt
+    );
+    questionId = Number(result.lastInsertRowid) || 0;
+    saveQuestionAlternatives(questionId, normalizedQuestion.alternatives);
+    refreshQuestionStats(questionId);
+  });
+
+  sendJson(response, 201, {
+    question: getAdminQuestionById(questionId),
+  });
+}
+
+async function handleUpdateAdminQuestion(request, response, rawQuestionId) {
+  const user = getAuthenticatedUser(request);
+  ensureAdmin(user);
+
+  const questionId = Number(rawQuestionId);
+
+  if (!Number.isInteger(questionId) || questionId <= 0) {
+    throw createError(400, "Questao invalida.");
+  }
+
+  const currentQuestion = getQuestionByIdStatement.get(questionId);
+
+  if (!currentQuestion) {
+    throw createError(404, "Questao nao encontrada.");
+  }
+
+  const payload = await readRequestBody(request);
+  const normalizedQuestion = sanitizeQuestionPayload(
+    {
+      ...payload,
+      provaId: currentQuestion.proofId,
+    },
+    {
+      proofId: currentQuestion.proofId,
+      allowEmptyNumber: false,
+      defaultStatusRevisao: currentQuestion.statusRevisao,
+    }
+  );
+  const proofRow = getQuestionProofByIdStatement.get(currentQuestion.proofId);
+  const publishedAt = resolveQuestionPublishedAt(
+    proofRow,
+    normalizedQuestion.statusRevisao,
+    currentQuestion.publishedAt
+  );
+
+  withTransaction(() => {
+    updateQuestionStatement.run(
+      normalizedQuestion.numero,
+      normalizedQuestion.enunciado,
+      normalizedQuestion.materia,
+      normalizedQuestion.tema,
+      normalizedQuestion.dificuldade,
+      normalizedQuestion.respostaCorreta,
+      normalizedQuestion.statusRevisao,
+      normalizedQuestion.origemPdf,
+      normalizedQuestion.observacoesAdm,
+      normalizedQuestion.sugestaoMateria,
+      normalizedQuestion.sugestaoTema,
+      normalizedQuestion.sugestaoDificuldade,
+      nowIso(),
+      publishedAt,
+      questionId
+    );
+    saveQuestionAlternatives(questionId, normalizedQuestion.alternatives);
+    refreshQuestionStats(questionId);
+  });
+
+  sendJson(response, 200, {
+    question: getAdminQuestionById(questionId),
+  });
+}
+
+async function handleDownloadQuestionProofFile(request, response, rawProofId) {
+  const user = getAuthenticatedUser(request);
+  ensureAdmin(user);
+
+  const proofId = Number(rawProofId);
+
+  if (!Number.isInteger(proofId) || proofId <= 0) {
+    throw createError(400, "Prova invalida.");
+  }
+
+  const proofRow = getQuestionProofByIdStatement.get(proofId);
+
+  if (!proofRow || !proofRow.pdfFilePath) {
+    throw createError(404, "Arquivo da prova nao encontrado.");
+  }
+
+  const filePath = getQuestionBankUploadFilePath(proofRow.pdfFilePath);
+
+  if (!filePath || !existsSync(filePath)) {
+    throw createError(404, "Arquivo da prova nao encontrado.");
+  }
+
+  const file = await readFile(filePath);
+  const downloadName = sanitizeShortText(proofRow.pdfOriginalName || `prova-${proofId}.pdf`, 180) || `prova-${proofId}.pdf`;
+
+  response.writeHead(200, {
+    "Content-Type": "application/pdf",
+    "Content-Disposition": `inline; filename="${downloadName}"`,
+    "Cache-Control": "no-store",
+  });
+  response.end(file);
+}
+
+async function handleQuestionBankReference(request, response) {
+  const user = getAuthenticatedUser(request);
+
+  if (!user) {
+    throw createError(401, "Sessao nao encontrada.");
+  }
+
+  const overview = buildQuestionBankStudentOverview(user.id);
+  const catalog = await buildQuestionBankCatalogFallback();
+
+  sendJson(response, 200, {
+    reference: buildQuestionBankReferenceData({ publishedOnly: true }),
+    overview,
+    catalog: {
+      ...catalog,
+      active: overview.totalAvailable === 0 && catalog.available,
+    },
+  });
+}
+
+async function handleListQuestionBankQuestions(request, response) {
+  const user = getAuthenticatedUser(request);
+
+  if (!user) {
+    throw createError(401, "Sessao nao encontrada.");
+  }
+
+  const requestUrl = new URL(request.url, `http://${request.headers.host}`);
+  const questions = listPublishedQuestionBankQuestions(user.id, {
+    vestibularId: requestUrl.searchParams.get("vestibular"),
+    ano: requestUrl.searchParams.get("ano"),
+    materia: requestUrl.searchParams.get("materia"),
+    dificuldade: requestUrl.searchParams.get("dificuldade"),
+    status: requestUrl.searchParams.get("status"),
+    limit: requestUrl.searchParams.get("limit"),
+  });
+  const overview = buildQuestionBankStudentOverview(user.id);
+  const catalog = await buildQuestionBankCatalogFallback({
+    vestibular: requestUrl.searchParams.get("vestibular"),
+    ano: requestUrl.searchParams.get("ano"),
+    dia: requestUrl.searchParams.get("dia"),
+    caderno: requestUrl.searchParams.get("caderno"),
+  });
+
+  sendJson(response, 200, {
+    reference: buildQuestionBankReferenceData({ publishedOnly: true }),
+    overview,
+    questions,
+    catalog: {
+      ...catalog,
+      active: overview.totalAvailable === 0 && catalog.available,
+    },
+  });
+}
+
+function handleGetQuestionBankQuestion(request, response, rawQuestionId) {
+  const user = getAuthenticatedUser(request);
+
+  if (!user) {
+    throw createError(401, "Sessao nao encontrada.");
+  }
+
+  const questionId = Number(rawQuestionId);
+
+  if (!Number.isInteger(questionId) || questionId <= 0) {
+    throw createError(400, "Questao invalida.");
+  }
+
+  const question = getPublishedQuestionForUser(user.id, questionId);
+
+  if (!question) {
+    throw createError(404, "Questao nao encontrada.");
+  }
+
+  sendJson(response, 200, { question });
+}
+
+async function handleCreateQuestionAttempt(request, response, rawQuestionId) {
+  const user = getAuthenticatedUser(request);
+
+  if (!user) {
+    throw createError(401, "Sessao nao encontrada.");
+  }
+
+  const questionId = Number(rawQuestionId);
+
+  if (!Number.isInteger(questionId) || questionId <= 0) {
+    throw createError(400, "Questao invalida.");
+  }
+
+  const payload = await readRequestBody(request);
+  const question = getPublishedQuestionForUser(user.id, questionId, {
+    includeCorrectAnswer: true,
+  });
+
+  if (!question) {
+    throw createError(404, "Questao nao encontrada.");
+  }
+
+  const respostaMarcada = sanitizeQuestionAlternativeLetter(payload?.respostaMarcada || payload?.answer);
+
+  if (!question.alternatives.some((alternative) => alternative.letra === respostaMarcada)) {
+    throw createError(400, "Escolha uma alternativa valida.");
+  }
+
+  const acertou = question.respostaCorreta === respostaMarcada ? 1 : 0;
+  const createdAt = nowIso();
+
+  insertQuestionAttemptStatement.run(
+    user.id,
+    questionId,
+    respostaMarcada,
+    acertou,
+    sanitizeQuestionBankTimeSpent(payload?.tempoGastoSegundos ?? payload?.timeSpentSeconds),
+    createdAt
+  );
+
+  sendJson(response, 201, {
+    result: {
+      questaoId: questionId,
+      respostaMarcada,
+      respostaCorreta: question.respostaCorreta,
+      acertou: Boolean(acertou),
+      createdAt,
+    },
+    question: getPublishedQuestionForUser(user.id, questionId, {
+      includeCorrectAnswer: true,
+    }),
+    overview: buildQuestionBankStudentOverview(user.id),
+  });
+}
+
+async function handleUpdateQuestionState(request, response, rawQuestionId) {
+  const user = getAuthenticatedUser(request);
+
+  if (!user) {
+    throw createError(401, "Sessao nao encontrada.");
+  }
+
+  const questionId = Number(rawQuestionId);
+
+  if (!Number.isInteger(questionId) || questionId <= 0) {
+    throw createError(400, "Questao invalida.");
+  }
+
+  const question = getPublishedQuestionForUser(user.id, questionId);
+
+  if (!question) {
+    throw createError(404, "Questao nao encontrada.");
+  }
+
+  const payload = await readRequestBody(request);
+  const currentState = getQuestionUserStateStatement.get(user.id, questionId);
+  const nextFavorite = Object.prototype.hasOwnProperty.call(payload || {}, "isFavorite")
+    ? Boolean(payload.isFavorite)
+    : Boolean(currentState?.isFavorite);
+  const nextReviewLater = Object.prototype.hasOwnProperty.call(payload || {}, "reviewLater")
+    ? Boolean(payload.reviewLater)
+    : Boolean(currentState?.reviewLater);
+
+  upsertQuestionUserStateStatement.run(
+    user.id,
+    questionId,
+    nextFavorite ? 1 : 0,
+    nextReviewLater ? 1 : 0,
+    nowIso()
+  );
+
+  sendJson(response, 200, {
+    state: serializeQuestionStateRow(getQuestionUserStateStatement.get(user.id, questionId)),
+    question: getPublishedQuestionForUser(user.id, questionId),
+    overview: buildQuestionBankStudentOverview(user.id),
+  });
 }
 
 function handleAdminOverview(request, response) {
@@ -5475,6 +10568,39 @@ async function handleApiRequest(request, response, pathname) {
     return;
   }
 
+  if (request.method === "GET" && pathname === "/api/routine/templates") {
+    handleRoutineTemplates(request, response);
+    return;
+  }
+
+  if (request.method === "GET" && pathname === "/api/routine/preferences") {
+    handleRoutinePreferences(request, response);
+    return;
+  }
+
+  if (request.method === "PATCH" && pathname === "/api/routine/preferences") {
+    await handleUpdateRoutinePreferences(request, response);
+    return;
+  }
+
+  if (request.method === "POST" && pathname === "/api/routine/plans/generate") {
+    await handleGenerateRoutinePlan(request, response);
+    return;
+  }
+
+  if (request.method === "GET" && pathname === "/api/routine/plans/current") {
+    handleCurrentRoutinePlan(request, response);
+    return;
+  }
+
+  const routinePlanByWeekMatch =
+    request.method === "GET" && pathname.match(/^\/api\/routine\/plans\/(\d{4}-\d{2}-\d{2})$/);
+
+  if (routinePlanByWeekMatch) {
+    handleRoutinePlanByWeek(request, response, routinePlanByWeekMatch[1]);
+    return;
+  }
+
   if (request.method === "GET" && pathname === "/api/sessions") {
     handleListSessions(request, response);
     return;
@@ -5526,6 +10652,110 @@ async function handleApiRequest(request, response, pathname) {
 
   if (essaySubmissionMatch) {
     handleGetEssaySubmission(request, response, essaySubmissionMatch[1]);
+    return;
+  }
+
+  if (request.method === "GET" && pathname === "/api/admin/question-bank/reference") {
+    handleAdminQuestionBankReference(request, response);
+    return;
+  }
+
+  if (request.method === "POST" && pathname === "/api/admin/question-bank/vestibulares") {
+    await handleCreateQuestionBankExam(request, response);
+    return;
+  }
+
+  if (request.method === "GET" && pathname === "/api/admin/question-bank/provas") {
+    handleListQuestionProofs(request, response);
+    return;
+  }
+
+  if (request.method === "POST" && pathname === "/api/admin/question-bank/provas") {
+    await handleCreateQuestionProof(request, response);
+    return;
+  }
+
+  const adminQuestionProofFileMatch =
+    request.method === "GET" && pathname.match(/^\/api\/admin\/question-bank\/provas\/(\d+)\/file$/);
+
+  if (adminQuestionProofFileMatch) {
+    await handleDownloadQuestionProofFile(request, response, adminQuestionProofFileMatch[1]);
+    return;
+  }
+
+  const adminQuestionProofProcessMatch =
+    request.method === "POST" && pathname.match(/^\/api\/admin\/question-bank\/provas\/(\d+)\/process$/);
+
+  if (adminQuestionProofProcessMatch) {
+    await handleProcessQuestionProof(request, response, adminQuestionProofProcessMatch[1]);
+    return;
+  }
+
+  const adminQuestionProofPublishMatch =
+    request.method === "POST" && pathname.match(/^\/api\/admin\/question-bank\/provas\/(\d+)\/publish$/);
+
+  if (adminQuestionProofPublishMatch) {
+    handlePublishQuestionProof(request, response, adminQuestionProofPublishMatch[1]);
+    return;
+  }
+
+  const adminQuestionProofMatch =
+    pathname.match(/^\/api\/admin\/question-bank\/provas\/(\d+)$/);
+
+  if (request.method === "GET" && adminQuestionProofMatch) {
+    handleGetQuestionProof(request, response, adminQuestionProofMatch[1]);
+    return;
+  }
+
+  if (request.method === "PATCH" && adminQuestionProofMatch) {
+    await handleUpdateQuestionProof(request, response, adminQuestionProofMatch[1]);
+    return;
+  }
+
+  if (request.method === "POST" && pathname === "/api/admin/question-bank/questoes") {
+    await handleCreateAdminQuestion(request, response);
+    return;
+  }
+
+  const adminQuestionMatch =
+    request.method === "PATCH" && pathname.match(/^\/api\/admin\/question-bank\/questoes\/(\d+)$/);
+
+  if (adminQuestionMatch) {
+    await handleUpdateAdminQuestion(request, response, adminQuestionMatch[1]);
+    return;
+  }
+
+  if (request.method === "GET" && pathname === "/api/question-bank/reference") {
+    await handleQuestionBankReference(request, response);
+    return;
+  }
+
+  if (request.method === "GET" && pathname === "/api/question-bank/questions") {
+    await handleListQuestionBankQuestions(request, response);
+    return;
+  }
+
+  const questionBankQuestionAttemptMatch =
+    request.method === "POST" && pathname.match(/^\/api\/question-bank\/questions\/(\d+)\/attempts$/);
+
+  if (questionBankQuestionAttemptMatch) {
+    await handleCreateQuestionAttempt(request, response, questionBankQuestionAttemptMatch[1]);
+    return;
+  }
+
+  const questionBankQuestionStateMatch =
+    request.method === "PATCH" && pathname.match(/^\/api\/question-bank\/questions\/(\d+)\/state$/);
+
+  if (questionBankQuestionStateMatch) {
+    await handleUpdateQuestionState(request, response, questionBankQuestionStateMatch[1]);
+    return;
+  }
+
+  const questionBankQuestionMatch =
+    request.method === "GET" && pathname.match(/^\/api\/question-bank\/questions\/(\d+)$/);
+
+  if (questionBankQuestionMatch) {
+    handleGetQuestionBankQuestion(request, response, questionBankQuestionMatch[1]);
     return;
   }
 
@@ -5581,6 +10811,7 @@ async function handleApiRequest(request, response, pathname) {
 
 validateRuntimeConfiguration();
 migrateLegacySessionsToStructured();
+ensureQuestionBankSeedData();
 ensureAdminUser();
 
 const server = createServer(async (request, response) => {
