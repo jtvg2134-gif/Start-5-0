@@ -1,0 +1,42 @@
+export function buildResolveGoalResponse({
+  matchedOffer,
+  offerDiscovery,
+  quotaMatch,
+  target,
+  priorityAreas,
+  studyPlan,
+  persistence,
+  summary,
+}) {
+  return {
+    matchedOffer,
+    offerDiscovery: {
+      fallbackUsed: offerDiscovery.fallbackUsed,
+      fallbackRuleCode: offerDiscovery.fallbackRuleCode,
+      confidenceLevel: offerDiscovery.confidenceLevel,
+      sourceType: offerDiscovery.sourceType,
+      matchType: offerDiscovery.matchType,
+      audit: offerDiscovery.audit,
+    },
+    quotaMatch,
+    target: {
+      referenceCutoff: target.referenceCutoff,
+      targetScore: target.targetScore,
+      suggestedGoalScore: target.suggestedGoalScore,
+      scoreType: target.scoreType,
+      competitivenessLevel: target.competitivenessLevel,
+      distanceFromCurrentScore: target.distanceFromCurrentScore,
+      effortLevel: target.effortLevel,
+      recommendedWeeklyHours: target.recommendedWeeklyHours,
+      weeklyGoalStatus: target.weeklyGoalStatus,
+      confidenceLevel: target.confidenceLevel,
+      fallbackUsed: target.fallbackUsed,
+      sourceType: target.sourceType,
+      audit: target.audit,
+    },
+    priorityAreas,
+    studyPlan,
+    summary,
+    persistence,
+  };
+}

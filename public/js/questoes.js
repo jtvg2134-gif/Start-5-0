@@ -39,11 +39,8 @@
   const questionBankFilterForm = document.getElementById("questionBankFilterForm");
   const questionBankVestibularFilter = document.getElementById("questionBankVestibularFilter");
   const questionBankYearFilter = document.getElementById("questionBankYearFilter");
-  const questionBankMatterFilter = document.getElementById("questionBankMatterFilter");
-  const questionBankDifficultyFilter = document.getElementById("questionBankDifficultyFilter");
   const questionBankDayFilter = document.getElementById("questionBankDayFilter");
   const questionBankBookletFilter = document.getElementById("questionBankBookletFilter");
-  const questionBankStatusFilter = document.getElementById("questionBankStatusFilter");
   const questionBankSearchButton = document.getElementById("questionBankSearchButton");
   const questionBankResetButton = document.getElementById("questionBankResetButton");
   const questionBankPageFeedback = document.getElementById("questionBankPageFeedback");
@@ -272,11 +269,8 @@
     return {
       vestibular: questionBankVestibularFilter?.value || "",
       ano: questionBankYearFilter?.value || "",
-      materia: questionBankMatterFilter?.value || "",
-      dificuldade: questionBankDifficultyFilter?.value || "",
       dia: questionBankDayFilter?.value || "",
       caderno: questionBankBookletFilter?.value || "",
-      status: questionBankStatusFilter?.value || "all",
     };
   }
 
@@ -338,40 +332,11 @@
   function syncFilterMode() {
     const catalogMode = isCatalogMode();
 
-    if (questionBankMatterFilter) {
-      if (catalogMode) {
-        questionBankMatterFilter.value = "";
-      }
-      questionBankMatterFilter.disabled = catalogMode;
-    }
-
-    if (questionBankDifficultyFilter) {
-      if (catalogMode) {
-        questionBankDifficultyFilter.value = "";
-      }
-      questionBankDifficultyFilter.disabled = catalogMode;
-    }
-
-    if (questionBankStatusFilter) {
-      if (catalogMode) {
-        questionBankStatusFilter.value = "all";
-      }
-      questionBankStatusFilter.disabled = catalogMode;
-    }
-
-    if (questionBankDayFilter) {
-      questionBankDayFilter.disabled = !catalogMode;
-    }
-
-    if (questionBankBookletFilter) {
-      questionBankBookletFilter.disabled = !catalogMode;
-    }
-
     if (questionBankSearchButton) {
       if (state.isLoadingList) {
         questionBankSearchButton.textContent = catalogMode ? "Montando..." : "Buscando...";
       } else {
-        questionBankSearchButton.textContent = catalogMode ? "Montar sessao" : "Buscar questoes";
+        questionBankSearchButton.textContent = catalogMode ? "Montar sessao" : "Buscar provas";
       }
     }
   }
@@ -434,8 +399,12 @@
           ano: Number(question.prova?.ano) || 0,
           fase: String(question.prova?.fase || ""),
           versao: String(question.prova?.versao || ""),
+          dia: Number(question.prova?.dia) || 0,
+          caderno: String(question.prova?.caderno || ""),
           pdfViewerUrl: String(question.prova?.pdfViewerUrl || ""),
           pdfOriginalName: String(question.prova?.pdfOriginalName || ""),
+          answerKeyViewerUrl: String(question.prova?.answerKeyViewerUrl || ""),
+          answerKeyOriginalName: String(question.prova?.answerKeyOriginalName || ""),
           questions: [],
           totalQuestions: 0,
           answeredCount: 0,
@@ -455,6 +424,14 @@
 
       if (!session.pdfOriginalName && question.prova?.pdfOriginalName) {
         session.pdfOriginalName = String(question.prova.pdfOriginalName || "");
+      }
+
+      if (!session.answerKeyViewerUrl && question.prova?.answerKeyViewerUrl) {
+        session.answerKeyViewerUrl = String(question.prova.answerKeyViewerUrl || "");
+      }
+
+      if (!session.answerKeyOriginalName && question.prova?.answerKeyOriginalName) {
+        session.answerKeyOriginalName = String(question.prova.answerKeyOriginalName || "");
       }
     });
 
@@ -592,6 +569,14 @@
   function buildQuestionSessionSubtitle(session) {
     const parts = [];
 
+    if (session?.dia) {
+      parts.push(`Dia ${session.dia}`);
+    }
+
+    if (session?.caderno) {
+      parts.push(session.caderno);
+    }
+
     if (session?.fase) {
       parts.push(session.fase);
     }
@@ -679,10 +664,6 @@
     return session.questions.filter((question) => Boolean(state.draftAnswers?.[Number(question.id) || 0])).length;
   }
 
-  function hasSessionCorrectionAvailable(session) {
-    return Boolean(session?.questions?.length);
-  }
-
   async function loadProofSession(proofId) {
     const normalizedProofId = Number(proofId) || 0;
 
@@ -699,10 +680,10 @@
       limit: "200",
     });
 
-    ["vestibular", "ano", "materia", "dificuldade", "status"].forEach((key) => {
+    ["vestibular", "ano", "dia", "caderno"].forEach((key) => {
       const value = String(filters[key] || "").trim();
 
-      if (value && !(key === "status" && value === "all")) {
+      if (value) {
         searchParams.set(key, value);
       }
     });
@@ -782,7 +763,7 @@
       </article>
       <article class="question-bank-status-card">
         <strong>${escapeHtml(accuracyText)}</strong>
-        <span>${escapeHtml(hasSessionCorrectionAvailable(session) ? "Correcao ativa." : "Sem gabarito cadastrado.")}</span>
+        <span>${escapeHtml(session.answerKeyViewerUrl ? "PDF de gabarito vinculado." : "Correcao vinculada por questao.")}</span>
       </article>
     `;
   }
@@ -942,9 +923,6 @@
       filters.ano ? `Ano ${filters.ano}` : "",
       filters.dia ? `Dia ${filters.dia}` : "",
       filters.caderno ? filters.caderno : "",
-      !isCatalogMode() && filters.materia ? formatLabel(filters.materia) : "",
-      !isCatalogMode() && filters.dificuldade ? formatLabel(filters.dificuldade) : "",
-      !isCatalogMode() && filters.status && filters.status !== "all" ? formatLabel(filters.status) : "",
     ].filter(Boolean);
 
     if (isCatalogMode()) {
@@ -989,20 +967,14 @@
       "Todos"
     );
     populateSelect(
-      questionBankMatterFilter,
-      state.reference?.materias || [],
-      filters.materia,
-      "Todas"
-    );
-    populateSelect(
       questionBankDayFilter,
-      catalogMode ? (catalogReference.dias || []) : [],
+      catalogMode ? (catalogReference.dias || []) : (state.reference?.dias || []),
       filters.dia,
       "Todos"
     );
     populateSelect(
       questionBankBookletFilter,
-      catalogMode ? (catalogReference.cadernos || []) : [],
+      catalogMode ? (catalogReference.cadernos || []) : (state.reference?.cadernos || []),
       filters.caderno,
       "Todos"
     );
@@ -1092,12 +1064,17 @@
 
     const activeProofUrl = getPdfFrameUrl(state.questionDetail?.prova?.pdfViewerUrl || session.pdfViewerUrl);
     const activeProofName = String(state.questionDetail?.prova?.pdfOriginalName || session.pdfOriginalName || "");
+    const activeAnswerKeyUrl = String(
+      state.questionDetail?.prova?.answerKeyViewerUrl || session.answerKeyViewerUrl || ""
+    ).trim();
 
     questionBankProofTitle.textContent = joinInline([
       buildQuestionSessionTitle(session),
       buildQuestionSessionSubtitle(session),
     ]);
     questionBankProofCaption.textContent = joinInline([
+      session.dia ? `Dia ${session.dia}` : "",
+      session.caderno || "",
       `${session.totalQuestions} questoes`,
       session.answeredCount ? `${session.answeredCount} respondidas` : "sessao pronta",
     ]);
@@ -1116,6 +1093,9 @@
             </select>
           </label>
         `
+        : "",
+      activeAnswerKeyUrl
+        ? `<a class="question-bank-proof-link" href="${escapeHtml(activeAnswerKeyUrl)}" target="_blank" rel="noreferrer">Ver gabarito</a>`
         : "",
       activeProofUrl
         ? `<a class="question-bank-proof-link" href="${escapeHtml(activeProofUrl)}" target="_blank" rel="noreferrer">Abrir PDF</a>`
@@ -1313,6 +1293,12 @@
       : (question.user?.lastAttempt
         ? `Ultima tentativa em ${formatDate(question.user.lastAttempt.createdAt)}.`
         : "Selecione uma alternativa e verifique a resposta.");
+    const resolutionMarkup = question.resolucao && (showResult || Boolean(question.user?.lastAttempt)) ? `
+      <div class="question-workspace-state question-workspace-state-soft">
+        <strong class="question-workspace-feedback-title">Resolucao</strong>
+        <p class="question-workspace-copy">${escapeHtml(question.resolucao)}</p>
+      </div>
+    ` : "";
     const footerMarkup = (footerPills.length || footerCopy) ? `
       <div class="question-workspace-state question-workspace-state-soft">
         ${footerPills.length ? `
@@ -1328,8 +1314,9 @@
       <div class="question-workspace-shell">
         <div class="question-workspace-meta question-workspace-meta-quiet">
           <span class="question-pill">${escapeHtml(question.vestibular.sigla)} ${escapeHtml(String(question.prova.ano || ""))}</span>
-          <span class="question-pill">${escapeHtml(formatLabel(question.materia, "Sem materia"))}</span>
-          <span class="question-pill">${escapeHtml(formatLabel(question.dificuldade))}</span>
+          ${question.prova?.dia ? `<span class="question-pill">${escapeHtml(`Dia ${question.prova.dia}`)}</span>` : ""}
+          ${question.prova?.caderno ? `<span class="question-pill">${escapeHtml(question.prova.caderno)}</span>` : ""}
+          ${question.materia ? `<span class="question-pill">${escapeHtml(formatLabel(question.materia, "Sem materia"))}</span>` : ""}
         </div>
 
         <div class="question-workspace-prompt-row">
@@ -1385,6 +1372,7 @@
         ` : '<div class="question-bank-empty">Alternativas ainda nao publicadas.</div>'}
 
         ${feedbackMarkup}
+        ${resolutionMarkup}
         ${footerMarkup}
       </div>
     `;
@@ -1828,10 +1816,6 @@
 
   questionBankResetButton?.addEventListener("click", async () => {
     questionBankFilterForm?.reset();
-
-    if (questionBankStatusFilter) {
-      questionBankStatusFilter.value = "all";
-    }
 
     await loadQuestionList({ preserveSelection: false });
   });

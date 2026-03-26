@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Start 5 | Onboarding - Objetivo</title>
+  <meta
+    name="description"
+    content="Primeira etapa do onboarding Start 5 para definir curso, prova, cidade e base inicial da rotina."
+  />
+  <meta name="theme-color" content="#05080d" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Instrument+Sans:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <link rel="stylesheet" href="css/onboarding.css" />
+</head>
+<body class="onboarding-page" data-onboarding-step="1">
+  <a class="skip-link" href="#mainContent">Pular para o conteudo principal</a>
+
+  <div class="onboarding-shell">
+    <main class="onboarding-stage" id="mainContent">
+      <header class="onboarding-head">
+        <a href="index.html" class="onboarding-brand">Start5</a>
+        <p class="onboarding-kicker">Onboarding inicial</p>
+        <h1 class="onboarding-title">Defina seu objetivo antes de entrar no sistema.</h1>
+        <p class="onboarding-copy">
+          Em vez de jogar a rotina como aba solta do site, o Start 5 passa a montar essa base aqui:
+          curso, categoria, meta semanal, prova e contexto do objetivo.
+        </p>
+      </header>
+
+      <section class="onboarding-progress" aria-label="Progresso do onboarding">
+        <div class="onboarding-progress-top">
+          <strong class="onboarding-progress-label" id="onboardingProgressLabel">Etapa 1 de 3</strong>
+          <div class="onboarding-inline-actions">
+            <span class="onboarding-pill" id="onboardingAccountName">Conta Start 5</span>
+            <span class="onboarding-pill" id="onboardingAccountEmail"></span>
+            <button type="button" class="onboarding-button onboarding-button-secondary" data-logout>Sair</button>
+          </div>
+        </div>
+
+        <div class="onboarding-progress-track">
+          <article class="onboarding-progress-step is-active" data-onboarding-progress-step="1">
+            <span class="onboarding-progress-index">1</span>
+            <strong>Objetivo</strong>
+            <span>Curso, prova, categoria e direcao academica.</span>
+          </article>
+          <article class="onboarding-progress-step" data-onboarding-progress-step="2">
+            <span class="onboarding-progress-index">2</span>
+            <strong>Semana</strong>
+            <span>Tempo real por dia para a rotina caber na vida.</span>
+          </article>
+          <article class="onboarding-progress-step" data-onboarding-progress-step="3">
+            <span class="onboarding-progress-index">3</span>
+            <strong>Prioridades</strong>
+            <span>Materias sugeridas e ajustes finos antes de entrar.</span>
+          </article>
+        </div>
+      </section>
+
+      <section class="onboarding-card">
+        <header class="onboarding-card-head">
+          <h2 class="onboarding-card-title">Etapa 1. Meta academica</h2>
+          <p class="onboarding-card-copy">
+            Aqui entra o que realmente muda a base da sua semana. O restante do sistema so aparece depois
+            que esse contexto inicial estiver fechado.
+          </p>
+        </header>
+
+        <form id="onboardingStepOneForm" class="onboarding-form-grid">
+          <label class="onboarding-field onboarding-field-wide">
+            <span class="onboarding-label">Curso desejado</span>
+            <select id="onboardingCourseSelect" class="onboarding-select" required></select>
+          </label>
+
+          <label class="onboarding-field">
+            <span class="onboarding-label">Categoria de ingresso</span>
+            <select id="onboardingAdmissionSelect" class="onboarding-select" required></select>
+          </label>
+
+          <label class="onboarding-field">
+            <span class="onboarding-label">Meta semanal de estudo</span>
+            <select id="onboardingWeeklyGoalSelect" class="onboarding-select" required></select>
+          </label>
+
+          <label class="onboarding-field">
+            <span class="onboarding-label">Vestibular principal</span>
+            <select id="onboardingPrimaryExamSelect" class="onboarding-select" required></select>
+          </label>
+
+          <label class="onboarding-field">
+            <span class="onboarding-label">Vestibular secundario</span>
+            <select id="onboardingSecondaryExamSelect" class="onboarding-select"></select>
+          </label>
+
+          <label class="onboarding-field">
+            <span class="onboarding-label">Cidade do objetivo</span>
+            <div class="onboarding-combobox" id="onboardingCityCombobox">
+              <input
+                id="onboardingCitySearchInput"
+                class="onboarding-input onboarding-combobox-input"
+                type="text"
+                inputmode="search"
+                autocomplete="off"
+                spellcheck="false"
+                placeholder="Selecione a cidade"
+                aria-autocomplete="list"
+                aria-expanded="false"
+                aria-controls="onboardingCityOptions"
+              />
+              <div
+                class="onboarding-options-panel"
+                id="onboardingCityOptions"
+                role="listbox"
+                hidden
+              ></div>
+            </div>
+            <p class="onboarding-field-hint" id="onboardingCityHint">
+              Digite apenas para filtrar e escolha uma cidade valida da lista.
+            </p>
+          </label>
+
+          <label class="onboarding-field">
+            <span class="onboarding-label">Perfil do curso</span>
+            <select id="onboardingTrackSelect" class="onboarding-select"></select>
+          </label>
+
+          <label class="onboarding-field">
+            <span class="onboarding-label">Universidade alvo</span>
+            <select id="onboardingUniversitySelect" class="onboarding-select"></select>
+          </label>
+
+          <label class="onboarding-field">
+            <span class="onboarding-label">Campus</span>
+            <select id="onboardingCampusSelect" class="onboarding-select"></select>
+          </label>
+
+          <label class="onboarding-field">
+            <span class="onboarding-label">Turno</span>
+            <select id="onboardingShiftSelect" class="onboarding-select"></select>
+          </label>
+
+          <p class="onboarding-feedback onboarding-field-wide" id="onboardingFeedback" aria-live="polite"></p>
+
+          <div class="onboarding-actions onboarding-field-wide">
+            <button
+              type="button"
+              class="onboarding-button onboarding-button-secondary"
+              id="onboardingBackButton"
+              hidden
+            >
+              Voltar
+            </button>
+            <button
+              type="submit"
+              class="onboarding-button onboarding-button-primary"
+              id="onboardingSubmitButton"
+              data-idle-label="Continuar para a semana"
+            >
+              Continuar para a semana
+            </button>
+          </div>
+        </form>
+      </section>
+    </main>
+  </div>
+
+  <script src="js/auth.js"></script>
+  <script src="js/onboarding.js"></script>
+</body>
+</html>

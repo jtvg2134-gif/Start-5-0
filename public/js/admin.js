@@ -37,6 +37,7 @@ const adminEditFields = document.getElementById("adminEditFields");
 const adminPermissionsFields = document.getElementById("adminPermissionsFields");
 const adminEditEmailInput = document.getElementById("adminEditEmailInput");
 const adminEditPasswordInput = document.getElementById("adminEditPasswordInput");
+const adminCanManageAdminsInput = document.getElementById("adminCanManageAdminsInput");
 const closeAdminModalButtons = document.querySelectorAll("[data-close-admin-modal]");
 const roleOptionButtons = [...document.querySelectorAll("[data-role-option]")];
 
@@ -45,6 +46,30 @@ let openUserMenuId = null;
 let modalMode = "edit";
 let modalUserId = null;
 let selectedRole = "user";
+
+function getAdminSession() {
+  return window.Start5Auth?.getSession?.() || null;
+}
+
+function currentAdminCanManageAdmins() {
+  return Boolean(window.Start5Auth?.canManageAdmins?.(getAdminSession()));
+}
+
+function currentAdminIsPrimary() {
+  return Boolean(window.Start5Auth?.isPrimaryAdmin?.(getAdminSession()));
+}
+
+function getAdminRoleLabel(user) {
+  if (user?.isPrimaryAdmin) {
+    return "Admin principal";
+  }
+
+  if (user?.adminCanManageAdmins) {
+    return "Admin gestor";
+  }
+
+  return user?.role === "admin" ? "Admin" : "Usuario";
+}
 
 function isDialogElement(element) {
   return typeof HTMLDialogElement !== "undefined" && element instanceof HTMLDialogElement;
@@ -298,6 +323,10 @@ function updateModalFieldAvailability() {
   roleOptionButtons.forEach((button) => {
     button.disabled = !isPermissionsMode;
   });
+
+  if (adminCanManageAdminsInput) {
+    adminCanManageAdminsInput.disabled = !isPermissionsMode || !currentAdminIsPrimary() || selectedRole !== "admin";
+  }
 }
 
 function resetModalState() {
@@ -307,6 +336,7 @@ function resetModalState() {
 
   if (adminEditEmailInput) adminEditEmailInput.value = "";
   if (adminEditPasswordInput) adminEditPasswordInput.value = "";
+  if (adminCanManageAdminsInput) adminCanManageAdminsInput.checked = false;
 
   if (adminModalSubmitButton) {
     adminModalSubmitButton.disabled = false;
@@ -415,6 +445,10 @@ async function openEditModal(userId) {
 function openPermissionsModal(userId) {
   closeUserMenus();
 
+  if (!currentAdminCanManageAdmins()) {
+    return;
+  }
+
   const user = getUserById(userId);
 
   if (!user) {
@@ -424,6 +458,9 @@ function openPermissionsModal(userId) {
   modalMode = "permissions";
   modalUserId = user.id;
   selectedRole = user.role || "user";
+  if (adminCanManageAdminsInput) {
+    adminCanManageAdminsInput.checked = Boolean(user.adminCanManageAdmins);
+  }
 
   if (adminModalTitle) adminModalTitle.textContent = "Permiss\u00f5es";
   if (adminModalSubtitle) {
@@ -477,7 +514,10 @@ async function submitPermissionsMode() {
   try {
     await window.Start5Auth.apiRequest(`/api/admin/users/${modalUserId}/role`, {
       method: "PATCH",
-      body: { role: selectedRole },
+      body: {
+        role: selectedRole,
+        ...(currentAdminIsPrimary() ? { adminCanManageAdmins: Boolean(adminCanManageAdminsInput?.checked) } : {}),
+      },
     });
 
     await loadAdminData();
@@ -489,8 +529,13 @@ async function submitPermissionsMode() {
 }
 
 function createActionsCell(user) {
+  if (!currentAdminCanManageAdmins()) {
+    return null;
+  }
+
   const cell = document.createElement("td");
   cell.className = "admin-actions-cell";
+  cell.dataset.adminManagerOnly = "true";
 
   const wrapper = document.createElement("div");
   wrapper.className = "admin-user-actions";
@@ -548,11 +593,14 @@ function renderAdminUsers(users) {
     const row = document.createElement("tr");
     row.appendChild(createCell(user.name || "Sem nome"));
     row.appendChild(createCell(user.maskedEmail || "Privado"));
-    row.appendChild(createCell(user.role === "admin" ? "Admin" : "Usu\u00e1rio"));
+    row.appendChild(createCell(getAdminRoleLabel(user)));
     row.appendChild(createCell(formatAdminNumber(user.totalSessions)));
     row.appendChild(createCell(formatAdminMinutes(user.totalMinutes)));
     row.appendChild(createCell(formatAdminDate(user.lastSessionAt)));
-    row.appendChild(createActionsCell(user));
+    const actionsCell = createActionsCell(user);
+    if (actionsCell) {
+      row.appendChild(actionsCell);
+    }
     return row;
   });
 
@@ -602,7 +650,7 @@ function renderAdminProfile() {
   const session = window.Start5Auth?.getSession?.() || null;
   const displayName = session?.name || [session?.firstName, session?.lastName].filter(Boolean).join(" ").trim() || "Administrador";
   const displayEmail = session?.email || "Sem email";
-  const displayRole = session?.role === "admin" ? "Admin" : "Usuario";
+  const displayRole = getAdminRoleLabel(session);
   const displayFocus = session?.focusSubjectLabel || "Sem foco definido";
 
   if (adminProfileAvatar) {
@@ -629,6 +677,11 @@ function renderAdminProfile() {
 async function loadAdminData() {
   try {
     await window.Start5Auth?.ready;
+
+    if (!window.Start5Auth?.canAccessAdmin?.(getAdminSession())) {
+      window.location.replace("index.html");
+      return;
+    }
 
     const [overviewResponse, usersResponse, essayMetricsResponse] = await Promise.all([
       window.Start5Auth.apiRequest("/api/admin/overview"),
@@ -680,7 +733,11 @@ if (adminModalBackdrop) {
 roleOptionButtons.forEach((button) => {
   button.addEventListener("click", () => {
     selectedRole = button.dataset.roleOption || "user";
+    if (selectedRole !== "admin" && adminCanManageAdminsInput) {
+      adminCanManageAdminsInput.checked = false;
+    }
     updateRoleOptionButtons();
+    updateModalFieldAvailability();
   });
 });
 

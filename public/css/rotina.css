@@ -39,6 +39,198 @@
   gap: 10px;
 }
 
+.routine-card-head-wizard {
+  gap: 14px;
+}
+
+.routine-wizard-copy {
+  max-width: 62ch;
+  margin-top: 8px;
+  color: rgba(255, 255, 255, 0.66);
+  line-height: 1.72;
+}
+
+.routine-wizard-nav {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.routine-step-chip {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  color: #fff;
+  text-align: left;
+  transition:
+    border-color 180ms ease,
+    background-color 180ms ease,
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    opacity 180ms ease;
+}
+
+.routine-step-chip:not(:disabled):hover {
+  transform: translateY(-1px);
+  border-color: rgba(240, 193, 107, 0.18);
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.routine-step-chip:disabled {
+  opacity: 0.56;
+  cursor: not-allowed;
+}
+
+.routine-step-chip.is-active {
+  border-color: rgba(240, 193, 107, 0.28);
+  background:
+    radial-gradient(circle at top left, rgba(240, 193, 107, 0.12), transparent 48%),
+    rgba(255, 255, 255, 0.04);
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.18);
+}
+
+.routine-step-chip.is-complete {
+  border-color: rgba(240, 193, 107, 0.2);
+}
+
+.routine-step-chip-index {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 0.82rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.routine-step-chip.is-active .routine-step-chip-index,
+.routine-step-chip.is-complete .routine-step-chip-index {
+  border-color: rgba(240, 193, 107, 0.24);
+  background: rgba(240, 193, 107, 0.14);
+  color: rgba(255, 245, 226, 0.96);
+}
+
+.routine-step-chip-copy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.routine-step-chip-copy strong {
+  color: #fff;
+  font-size: 0.98rem;
+}
+
+.routine-step-chip-copy span:last-child {
+  color: rgba(255, 255, 255, 0.56);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.routine-wizard-stage {
+  display: grid;
+  gap: 20px;
+}
+
+.routine-wizard-step {
+  display: grid;
+  gap: 20px;
+}
+
+.routine-step-intro {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 16px;
+  padding: 18px 20px;
+  border-radius: 24px;
+  border: 1px solid rgba(240, 193, 107, 0.12);
+  background:
+    radial-gradient(circle at top left, rgba(240, 193, 107, 0.08), transparent 48%),
+    rgba(255, 255, 255, 0.025);
+}
+
+.routine-step-kicker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 74px;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(240, 193, 107, 0.18);
+  background: rgba(240, 193, 107, 0.1);
+  color: rgba(255, 243, 221, 0.94);
+  font-size: 0.74rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.routine-step-title {
+  color: #fff;
+  font-size: clamp(1.08rem, 1.45vw, 1.36rem);
+  letter-spacing: -0.03em;
+}
+
+.routine-step-copy {
+  margin-top: 6px;
+  max-width: 62ch;
+  color: rgba(255, 255, 255, 0.62);
+  line-height: 1.7;
+}
+
+.routine-form-grid-support {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.routine-course-custom-shell[hidden] {
+  display: none;
+}
+
+.routine-goal-details {
+  margin-top: 2px;
+}
+
+.routine-wizard-footer {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.routine-wizard-status {
+  display: grid;
+  gap: 6px;
+  max-width: 54ch;
+}
+
+.routine-wizard-status-step {
+  color: rgba(240, 193, 107, 0.82);
+  font-size: 0.76rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.routine-wizard-status-copy {
+  color: rgba(255, 255, 255, 0.62);
+  line-height: 1.7;
+}
+
+.routine-card-actions-wizard {
+  align-items: center;
+  justify-content: flex-end;
+}
+
 .routine-form-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -724,6 +916,18 @@
     grid-template-columns: 1fr;
   }
 
+  .routine-wizard-nav {
+    grid-template-columns: 1fr;
+  }
+
+  .routine-wizard-footer {
+    display: grid;
+  }
+
+  .routine-card-actions-wizard {
+    justify-content: flex-start;
+  }
+
   .routine-plan-grid {
     grid-template-columns: 1fr;
   }
@@ -778,6 +982,28 @@
 
   .routine-form-grid-advanced {
     grid-template-columns: 1fr;
+  }
+
+  .routine-step-intro {
+    grid-template-columns: 1fr;
+    padding: 16px 18px;
+  }
+
+  .routine-form-grid-support {
+    grid-template-columns: 1fr;
+  }
+
+  .routine-wizard-footer,
+  .routine-card-actions-wizard {
+    grid-template-columns: 1fr;
+  }
+
+  .routine-card-actions-wizard {
+    display: grid;
+  }
+
+  .routine-card-actions-wizard button {
+    width: 100%;
   }
 
   .routine-picker-panel {

@@ -76,12 +76,11 @@
             <a href="dashboard.html" class="menu-link">Painel</a>
             <a href="questoes.html" class="menu-link">Questoes</a>
             <a href="profile.html" class="menu-link">Perfil</a>
-            <a href="rotina.html" class="menu-link">Rotina</a>
           </div>
 
           <div class="menu-column">
             <a href="redacao.html" class="menu-link">Reda&ccedil;&atilde;o</a>
-            <a href="admin.html" class="menu-link">Admin</a>
+            <a href="admin.html" class="menu-link" data-admin-only hidden>Admin</a>
             <button type="button" class="menu-link menu-link-button" data-logout>Sair</button>
           </div>
         </nav>
@@ -115,7 +114,7 @@
         <span class="admin-shortcut-copy">Cadastre provas, processe texto e publique o banco estruturado.</span>
       </a>
 
-      <a class="admin-shortcut-card" href="#adminPermissionsSection">
+      <a class="admin-shortcut-card" href="#adminPermissionsSection" data-admin-manager-only hidden>
         <span class="admin-shortcut-label">Permissoes</span>
         <strong class="admin-shortcut-title">Acessos do painel</strong>
         <span class="admin-shortcut-copy">Gerencie perfis administrativos e controle as acoes por conta.</span>
@@ -232,7 +231,7 @@
       </div>
     </section>
 
-    <section class="admin-section" id="adminPermissionsSection">
+    <section class="admin-section" id="adminPermissionsSection" data-admin-manager-only hidden>
       <div class="admin-panel">
         <div class="admin-section-head">
           <div>
@@ -253,7 +252,7 @@
                 <th scope="col">Sessoes</th>
                 <th scope="col">Minutos</th>
                 <th scope="col">Ultima sessao</th>
-                <th scope="col">Acoes</th>
+                <th scope="col" data-admin-manager-only hidden>Acoes</th>
               </tr>
             </thead>
             <tbody id="adminUsersTableBody">
@@ -458,6 +457,28 @@
             </label>
           </div>
 
+          <div class="question-bank-grid">
+            <label class="question-bank-field">
+              <span class="question-bank-label">Dia</span>
+              <select id="questionProofDaySelect" name="dia" class="admin-modal-input">
+                <option value="0">Nao informar</option>
+                <option value="1">Dia 1</option>
+                <option value="2">Dia 2</option>
+              </select>
+            </label>
+
+            <label class="question-bank-field">
+              <span class="question-bank-label">Caderno</span>
+              <select id="questionProofBookletSelect" name="caderno" class="admin-modal-input">
+                <option value="">Nao informar</option>
+                <option value="CD1">CD1</option>
+                <option value="CD2">CD2</option>
+                <option value="CD3">CD3</option>
+                <option value="CD4">CD4</option>
+              </select>
+            </label>
+          </div>
+
           <label class="question-bank-field">
             <span class="question-bank-label">Materia geral</span>
             <input
@@ -478,6 +499,17 @@
               class="admin-modal-input"
               accept="application/pdf,.pdf"
               required
+            />
+          </label>
+
+          <label class="question-bank-field">
+            <span class="question-bank-label">PDF do gabarito</span>
+            <input
+              type="file"
+              id="questionProofAnswerKeyInput"
+              name="answerKeyPdf"
+              class="admin-modal-input"
+              accept="application/pdf,.pdf"
             />
           </label>
 
@@ -577,6 +609,9 @@
             <button type="button" class="module-link" id="questionProofDownloadButton" disabled>
               Baixar PDF
             </button>
+            <button type="button" class="module-link" id="questionProofAnswerKeyDownloadButton" disabled>
+              Baixar gabarito
+            </button>
           </div>
         </div>
 
@@ -620,15 +655,6 @@
             </label>
 
             <label class="question-bank-field">
-              <span class="question-bank-label">Dificuldade</span>
-              <select id="questionEditorDifficultySelect" name="dificuldade" class="admin-modal-input" required>
-                <option value="facil">Facil</option>
-                <option value="media">Media</option>
-                <option value="dificil">Dificil</option>
-              </select>
-            </label>
-
-            <label class="question-bank-field">
               <span class="question-bank-label">Status de revisao</span>
               <select id="questionEditorReviewStatusSelect" name="statusRevisao" class="admin-modal-input" required>
                 <option value="pending">Pendente</option>
@@ -647,7 +673,6 @@
                 name="materia"
                 class="admin-modal-input"
                 placeholder="Ex.: matematica"
-                required
               />
             </label>
 
@@ -752,6 +777,17 @@
             ></textarea>
           </label>
 
+          <label class="question-bank-field">
+            <span class="question-bank-label">Resolucao</span>
+            <textarea
+              id="questionEditorResolutionInput"
+              name="resolucao"
+              class="admin-modal-input question-bank-textarea"
+              rows="6"
+              placeholder="Explique a resposta correta e o raciocinio que deve aparecer para esta questao."
+            ></textarea>
+          </label>
+
           <p class="admin-modal-feedback question-bank-feedback" id="questionEditorFeedback" aria-live="polite"></p>
 
           <div class="admin-modal-actions question-bank-actions">
@@ -841,6 +877,11 @@
           <p class="admin-modal-hint">
             Somente admins podem alterar o perfil de acesso.
           </p>
+
+          <label class="admin-modal-switch" data-admin-primary-only hidden>
+            <input type="checkbox" id="adminCanManageAdminsInput" />
+            <span>Pode liberar outros admins</span>
+          </label>
         </fieldset>
 
         <p class="admin-modal-feedback" id="adminModalFeedback" aria-live="polite"></p>

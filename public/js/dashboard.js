@@ -1296,6 +1296,7 @@ const ANALYTICS_RANGE_DEFINITIONS = {
   "7d": { label: "ultimos 7 dias", days: 7 },
   "30d": { label: "ultimos 30 dias", days: 30 },
   "90d": { label: "ultimos 90 dias", days: 90 },
+  "1y": { label: "ultimos 12 meses", days: 365 },
   all: { label: "todo o historico", days: null },
 };
 
@@ -4571,6 +4572,315 @@ function buildValueMapByDate(list, getDateKey, getValue) {
   return map;
 }
 
+function toMonthKey(date) {
+  if (!isValidDate(date)) {
+    return "";
+  }
+
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function buildDashboardFocusMonthKeys(limit = 12, referenceDate = getRangeEndDate()) {
+  const baseDate = isValidDate(referenceDate) ? referenceDate : new Date();
+  const monthKeys = [];
+
+  for (let index = limit - 1; index >= 0; index -= 1) {
+    const current = new Date(baseDate.getFullYear(), baseDate.getMonth() - index, 1);
+    monthKeys.push(toMonthKey(current));
+  }
+
+  return monthKeys;
+}
+
+function formatMonthLabel(monthKey) {
+  const [year, month] = String(monthKey || "").split("-");
+
+  if (!year || !month) {
+    return "";
+  }
+
+  const referenceDate = new Date(Number(year), Number(month) - 1, 1);
+  const label = new Intl.DateTimeFormat("pt-BR", { month: "short" }).format(referenceDate).replace(".", "");
+  const shortYear = String(year).slice(-2);
+  return `${label.charAt(0).toUpperCase()}${label.slice(1)}/${shortYear}`;
+}
+
+function getDaysInMonthFromKey(monthKey) {
+  const [year, month] = String(monthKey || "").split("-");
+
+  if (!year || !month) {
+    return 30;
+  }
+
+  return new Date(Number(year), Number(month), 0).getDate();
+}
+
+function buildValueMapByMonth(list, getDate, getValue) {
+  const map = new Map();
+
+  list.forEach((item) => {
+    const date = getDate(item);
+    const monthKey = toMonthKey(date);
+
+    if (!monthKey) {
+      return;
+    }
+
+    map.set(monthKey, roundOne((map.get(monthKey) || 0) + (Number(getValue(item)) || 0)));
+  });
+
+  return map;
+}
+
+function buildQuestionStatsMapByMonth(list) {
+  const map = new Map();
+
+  list.forEach((attempt) => {
+    const monthKey = toMonthKey(getQuestionAttemptDate(attempt));
+
+    if (!monthKey) {
+      return;
+    }
+
+    const current = map.get(monthKey) || { total: 0, correct: 0 };
+    current.total += 1;
+    current.correct += attempt.isCorrect ? 1 : 0;
+    map.set(monthKey, current);
+  });
+
+  return map;
+}
+
+function buildEssayStatsMapByMonth(list) {
+  const map = new Map();
+
+  list.forEach((essay) => {
+    const monthKey = toMonthKey(getEssayReferenceDate(essay));
+
+    if (!monthKey) {
+      return;
+    }
+
+    const current = map.get(monthKey) || { total: 0, score: 0 };
+    current.total += 1;
+    current.score += Number(essay.totalScore) || 0;
+    map.set(monthKey, current);
+  });
+
+  return map;
+}
+
+function buildOverallScoreMapByMonth(rangeSessions, rangeQuestions, rangeEssays) {
+  const map = new Map();
+
+  rangeSessions.forEach((session) => {
+    const monthKey = toMonthKey(getSessionStartDate(session));
+
+    if (!monthKey) {
+      return;
+    }
+
+    map.set(monthKey, roundOne((map.get(monthKey) || 0) + (Number(session.minutes) || 0)));
+  });
+
+  rangeQuestions.forEach((attempt) => {
+    const monthKey = toMonthKey(getQuestionAttemptDate(attempt));
+
+    if (!monthKey) {
+      return;
+    }
+
+    map.set(monthKey, roundOne((map.get(monthKey) || 0) + (attempt.isCorrect ? 18 : 9)));
+  });
+
+  rangeEssays.forEach((essay) => {
+    const monthKey = toMonthKey(getEssayReferenceDate(essay));
+
+    if (!monthKey) {
+      return;
+    }
+
+    map.set(monthKey, roundOne((map.get(monthKey) || 0) + Math.max(24, roundOne((Number(essay.totalScore) || 0) / 20))));
+  });
+
+  return map;
+}
+
+function buildActiveDayRateMapByMonth(rangeSessions, monthKeys) {
+  const activeDateMap = new Map();
+
+  rangeSessions.forEach((session) => {
+    const sessionDate = getSessionStartDate(session);
+    const monthKey = toMonthKey(sessionDate);
+    const dateKey = toDateKey(sessionDate);
+
+    if (!monthKey || !dateKey) {
+      return;
+    }
+
+    if (!activeDateMap.has(monthKey)) {
+      activeDateMap.set(monthKey, new Set());
+    }
+
+    activeDateMap.get(monthKey)?.add(dateKey);
+  });
+
+  return new Map(monthKeys.map((monthKey) => {
+    const activeDays = activeDateMap.get(monthKey)?.size || 0;
+    const daysInMonth = getDaysInMonthFromKey(monthKey);
+    const value = daysInMonth ? roundOne((activeDays / daysInMonth) * 100) : 0;
+    return [monthKey, value];
+  }));
+}
+
+function buildAnnualEstimateFocusConfig(monthKeys) {
+  const baseline = [
+    { study: 880, english: 220, consistency: 48, questionTotal: 32, questionAccuracy: 57, essays: 1, essayAverage: 610, overall: 46 },
+    { study: 940, english: 235, consistency: 52, questionTotal: 36, questionAccuracy: 58, essays: 1, essayAverage: 630, overall: 49 },
+    { study: 1010, english: 250, consistency: 55, questionTotal: 40, questionAccuracy: 60, essays: 1, essayAverage: 645, overall: 53 },
+    { study: 980, english: 242, consistency: 53, questionTotal: 38, questionAccuracy: 61, essays: 1, essayAverage: 650, overall: 52 },
+    { study: 1100, english: 272, consistency: 58, questionTotal: 44, questionAccuracy: 62, essays: 2, essayAverage: 668, overall: 57 },
+    { study: 1080, english: 268, consistency: 57, questionTotal: 46, questionAccuracy: 63, essays: 1, essayAverage: 676, overall: 58 },
+    { study: 1160, english: 292, consistency: 61, questionTotal: 50, questionAccuracy: 64, essays: 2, essayAverage: 689, overall: 62 },
+    { study: 1210, english: 304, consistency: 63, questionTotal: 52, questionAccuracy: 65, essays: 2, essayAverage: 701, overall: 64 },
+    { study: 1260, english: 318, consistency: 65, questionTotal: 56, questionAccuracy: 66, essays: 2, essayAverage: 710, overall: 67 },
+    { study: 1320, english: 332, consistency: 67, questionTotal: 58, questionAccuracy: 67, essays: 2, essayAverage: 722, overall: 70 },
+    { study: 1380, english: 346, consistency: 69, questionTotal: 60, questionAccuracy: 68, essays: 2, essayAverage: 735, overall: 73 },
+    { study: 1440, english: 360, consistency: 72, questionTotal: 64, questionAccuracy: 69, essays: 2, essayAverage: 748, overall: 76 },
+  ];
+  const records = monthKeys.map((monthKey, index) => ({
+    monthKey,
+    label: formatMonthLabel(monthKey),
+    ...baseline[index],
+  }));
+  const totalMinutes = records.reduce((sum, item) => sum + item.study, 0);
+  const averageConsistency = roundOne(records.reduce((sum, item) => sum + item.consistency, 0) / records.length);
+  const totalQuestions = records.reduce((sum, item) => sum + item.questionTotal, 0);
+  const weightedAccuracy = totalQuestions
+    ? roundOne(records.reduce((sum, item) => sum + ((item.questionTotal * item.questionAccuracy) / 100), 0) / totalQuestions * 100)
+    : 0;
+  const totalEssays = records.reduce((sum, item) => sum + item.essays, 0);
+  const weightedEssayAverage = totalEssays
+    ? roundOne(records.reduce((sum, item) => sum + (item.essayAverage * item.essays), 0) / totalEssays)
+    : 0;
+  const metrics = [
+    { label: "Tempo total", value: formatMinutesOnly(totalMinutes) },
+    { label: "Frequencia", value: formatPercent(averageConsistency) },
+    { label: "Questoes", value: formatPercent(weightedAccuracy) },
+    { label: "Redacao", value: `${Math.round(weightedEssayAverage)} / 1000` },
+  ];
+
+  const panoramaConfig = {
+    title: "Panorama anual",
+    note: "Estimativa anual de teste com uma rotina mediana consistente. Passe o mouse para comparar os valores por mes.",
+    emptyMessage: "Sem dados suficientes para montar o panorama anual.",
+    labels: records.map((item) => item.label),
+    metrics,
+    series: [
+      {
+        label: "Indice geral",
+        color: "#8db4ff",
+        points: records.map((item) => ({ value: item.overall })),
+        formatValue: (point) => `${Math.round(point.value || 0)} pts`,
+      },
+      {
+        label: "Consistencia",
+        color: "#f0c16b",
+        points: records.map((item) => ({ value: item.consistency })),
+        formatValue: (point) => formatPercent(point.value || 0),
+      },
+      {
+        label: "Questoes",
+        color: "#7ed8c2",
+        points: records.map((item) => ({ value: item.questionAccuracy, meta: { total: item.questionTotal } })),
+        formatValue: (point) => `${formatPercent(point.value)} em ${formatCountLabel(point.meta?.total || 0, "tentativa", "tentativas")}`,
+      },
+      {
+        label: "Redacao",
+        color: "#f3a6c6",
+        points: records.map((item) => ({ value: item.essayAverage, meta: { total: item.essays } })),
+        formatValue: (point) => `${Math.round(point.value || 0)} / 1000`,
+      },
+    ],
+  };
+
+  const evolutionConfig = {
+    title: "Evolucao anual",
+    note: "Leitura mensal de teste para validar o comportamento do grafico em um ano completo.",
+    emptyMessage: "Sem dados suficientes para montar a evolucao anual.",
+    labels: records.map((item) => item.label),
+    metrics,
+    series: [
+      {
+        label: "Estudo",
+        color: "#8db4ff",
+        points: records.map((item) => ({ value: item.study })),
+        formatValue: (point) => formatMinutesOnly(point.value || 0),
+      },
+      {
+        label: "Ingles",
+        color: "#c7b3ff",
+        points: records.map((item) => ({ value: item.english })),
+        formatValue: (point) => formatMinutesOnly(point.value || 0),
+      },
+      {
+        label: "Questoes",
+        color: "#7ed8c2",
+        points: records.map((item) => ({ value: item.questionTotal })),
+        formatValue: (point) => formatCountLabel(point.value, "resposta", "respostas"),
+      },
+      {
+        label: "Redacao",
+        color: "#f3a6c6",
+        points: records.map((item) => ({ value: item.essays })),
+        formatValue: (point) => formatCountLabel(point.value, "redacao", "redacoes"),
+      },
+    ],
+  };
+
+  const rhythmConfig = {
+    title: "Ritmo semanal anual",
+    note: "Distribuicao semanal simulada para um ano de rotina mediana consistente.",
+    emptyMessage: "Sem dados suficientes para montar o ritmo anual.",
+    labels: WEEKDAY_LABELS,
+    metrics,
+    series: [
+      {
+        label: "Estudo",
+        color: "#8db4ff",
+        points: [42, 46, 48, 47, 54, 28, 22].map((value) => ({ value })),
+        formatValue: (point) => formatMinutesOnly(point.value || 0),
+      },
+      {
+        label: "Ingles",
+        color: "#c7b3ff",
+        points: [16, 18, 20, 19, 22, 12, 9].map((value) => ({ value })),
+        formatValue: (point) => formatMinutesOnly(point.value || 0),
+      },
+      {
+        label: "Questoes",
+        color: "#7ed8c2",
+        points: [7, 8, 9, 9, 11, 5, 3].map((value) => ({ value })),
+        formatValue: (point) => formatCountLabel(point.value, "tentativa", "tentativas"),
+      },
+      {
+        label: "Redacao",
+        color: "#f3a6c6",
+        points: [0, 0, 0, 1, 0, 1, 0].map((value) => ({ value })),
+        formatValue: (point) => formatCountLabel(point.value, "redacao", "redacoes"),
+      },
+    ],
+  };
+
+  const configMap = {
+    panorama: panoramaConfig,
+    evolucao: evolutionConfig,
+    ritmo: rhythmConfig,
+  };
+
+  return configMap[dashboardFocusView] || panoramaConfig;
+}
+
 function buildQuestionStatsMapByDate(list) {
   const map = new Map();
 
@@ -4702,6 +5012,179 @@ function updateDashboardFocusViewUI() {
 }
 
 function buildDashboardFocusConfig(rangeSessions, rangeEssays, rangeQuestions) {
+  if (analyticsRange === "1y") {
+    const monthKeys = buildDashboardFocusMonthKeys(12);
+    const hasAnnualData = rangeSessions.length || rangeQuestions.length || rangeEssays.length;
+
+    if (!hasAnnualData) {
+      return buildAnnualEstimateFocusConfig(monthKeys);
+    }
+
+    const englishSessionsAnnual = rangeSessions.filter((session) => session.subjectKey === DEFAULT_SUBJECT_KEY);
+    const totalMinutesAnnual = sumMinutes(rangeSessions);
+    const activeDaysAnnual = countActiveDays(rangeSessions);
+    const routineFrequencyAnnual = rangeSessions.length
+      ? roundOne((activeDaysAnnual / getRangeDayCount()) * 100)
+      : 0;
+    const questionCountAnnual = rangeQuestions.length;
+    const questionCorrectAnnual = rangeQuestions.filter((attempt) => attempt.isCorrect).length;
+    const questionAccuracyAnnual = questionCountAnnual ? roundOne((questionCorrectAnnual / questionCountAnnual) * 100) : 0;
+    const essayAverageAnnual = getEssayAverageScore(rangeEssays);
+    const sessionMinutesByMonth = buildValueMapByMonth(rangeSessions, (session) => getSessionStartDate(session), (session) => session.minutes);
+    const englishMinutesByMonth = buildValueMapByMonth(englishSessionsAnnual, (session) => getSessionStartDate(session), (session) => session.minutes);
+    const questionStatsByMonth = buildQuestionStatsMapByMonth(rangeQuestions);
+    const essayStatsByMonth = buildEssayStatsMapByMonth(rangeEssays);
+    const overallScoreByMonth = buildOverallScoreMapByMonth(rangeSessions, rangeQuestions, rangeEssays);
+    const activeDayRateByMonth = buildActiveDayRateMapByMonth(rangeSessions, monthKeys);
+    const monthLabels = monthKeys.map((monthKey) => formatMonthLabel(monthKey));
+    const metricsAnnual = [
+      { label: "Tempo total", value: formatMinutesOnly(totalMinutesAnnual) },
+      { label: "Frequencia", value: formatPercent(routineFrequencyAnnual) },
+      { label: "Questoes", value: formatPercent(questionAccuracyAnnual) },
+      { label: "Redacao", value: rangeEssays.length ? `${Math.round(essayAverageAnnual)} / 1000` : "0 / 1000" },
+    ];
+
+    const annualPanoramaConfig = {
+      title: "Panorama anual",
+      note: "Leitura mensal do ultimo ano. Passe o mouse para comparar o comportamento de cada frente ao longo dos meses.",
+      emptyMessage: "Sem dados suficientes para montar o panorama anual.",
+      labels: monthLabels,
+      metrics: metricsAnnual,
+      series: [
+        {
+          label: "Indice geral",
+          color: "#8db4ff",
+          points: monthKeys.map((monthKey) => ({ value: overallScoreByMonth.get(monthKey) || 0 })),
+          formatValue: (point) => `${Math.round(point.value || 0)} pts`,
+        },
+        {
+          label: "Consistencia",
+          color: "#f0c16b",
+          points: monthKeys.map((monthKey) => ({ value: activeDayRateByMonth.get(monthKey) || 0 })),
+          formatValue: (point) => formatPercent(point.value || 0),
+        },
+        {
+          label: "Questoes",
+          color: "#7ed8c2",
+          points: monthKeys.map((monthKey) => {
+            const stats = questionStatsByMonth.get(monthKey) || { total: 0, correct: 0 };
+            return {
+              value: stats.total ? roundOne((stats.correct / stats.total) * 100) : 0,
+              meta: stats,
+            };
+          }),
+          formatValue: (point) => (
+            point.meta?.total
+              ? `${formatPercent(point.value)} em ${formatCountLabel(point.meta.total, "tentativa", "tentativas")}`
+              : "Sem tentativas"
+          ),
+        },
+        {
+          label: "Redacao",
+          color: "#f3a6c6",
+          points: monthKeys.map((monthKey) => {
+            const stats = essayStatsByMonth.get(monthKey) || { total: 0, score: 0 };
+            return {
+              value: stats.total ? roundOne(stats.score / stats.total) : 0,
+              meta: stats,
+            };
+          }),
+          formatValue: (point) => (
+            point.meta?.total
+              ? `${Math.round(point.value || 0)} / 1000`
+              : "Sem redacoes"
+          ),
+        },
+      ],
+    };
+
+    const annualEvolutionConfig = {
+      title: "Evolucao anual",
+      note: "Volume mensal do ultimo ano. Passe o mouse para ver a distribuicao por modulo.",
+      emptyMessage: "Sem dados suficientes para montar a evolucao anual.",
+      labels: monthLabels,
+      metrics: metricsAnnual,
+      series: [
+        {
+          label: "Estudo",
+          color: "#8db4ff",
+          points: monthKeys.map((monthKey) => ({ value: sessionMinutesByMonth.get(monthKey) || 0 })),
+          formatValue: (point) => formatMinutesOnly(point.value || 0),
+        },
+        {
+          label: "Ingles",
+          color: "#c7b3ff",
+          points: monthKeys.map((monthKey) => ({ value: englishMinutesByMonth.get(monthKey) || 0 })),
+          formatValue: (point) => formatMinutesOnly(point.value || 0),
+        },
+        {
+          label: "Questoes",
+          color: "#7ed8c2",
+          points: monthKeys.map((monthKey) => {
+            const stats = questionStatsByMonth.get(monthKey) || { total: 0, correct: 0 };
+            return { value: stats.total, meta: stats };
+          }),
+          formatValue: (point) => formatCountLabel(point.value, "resposta", "respostas"),
+        },
+        {
+          label: "Redacao",
+          color: "#f3a6c6",
+          points: monthKeys.map((monthKey) => {
+            const stats = essayStatsByMonth.get(monthKey) || { total: 0, score: 0 };
+            return { value: stats.total, meta: stats };
+          }),
+          formatValue: (point) => formatCountLabel(point.value, "redacao", "redacoes"),
+        },
+      ],
+    };
+
+    const annualRhythmConfig = {
+      title: "Ritmo semanal anual",
+      note: "Distribuicao do ultimo ano por dia da semana. Passe o mouse para ver onde o ritmo concentrou mais volume.",
+      emptyMessage: "Sem dados suficientes para montar o ritmo semanal anual.",
+      labels: WEEKDAY_LABELS,
+      metrics: metricsAnnual,
+      series: [
+        {
+          label: "Estudo",
+          color: "#8db4ff",
+          points: buildWeekdayAggregatePoints(rangeSessions).map((point) => ({ value: point.value })),
+          formatValue: (point) => formatMinutesOnly(point.value || 0),
+        },
+        {
+          label: "Ingles",
+          color: "#c7b3ff",
+          points: buildWeekdayAggregatePoints(englishSessionsAnnual).map((point) => ({ value: point.value })),
+          formatValue: (point) => formatMinutesOnly(point.value || 0),
+        },
+        {
+          label: "Questoes",
+          color: "#7ed8c2",
+          points: buildWeekdayCountPoints(rangeQuestions, (attempt) => getQuestionAttemptDate(attempt)).map((point) => ({
+            value: point.value,
+          })),
+          formatValue: (point) => formatCountLabel(point.value, "tentativa", "tentativas"),
+        },
+        {
+          label: "Redacao",
+          color: "#f3a6c6",
+          points: buildWeekdayCountPoints(rangeEssays, (essay) => getEssayReferenceDate(essay)).map((point) => ({
+            value: point.value,
+          })),
+          formatValue: (point) => formatCountLabel(point.value, "redacao", "redacoes"),
+        },
+      ],
+    };
+
+    const annualConfigMap = {
+      panorama: annualPanoramaConfig,
+      evolucao: annualEvolutionConfig,
+      ritmo: annualRhythmConfig,
+    };
+
+    return annualConfigMap[dashboardFocusView] || annualPanoramaConfig;
+  }
+
   const englishSessions = rangeSessions.filter((session) => session.subjectKey === DEFAULT_SUBJECT_KEY);
   const totalMinutes = sumMinutes(rangeSessions);
   const activeDays = countActiveDays(rangeSessions);
@@ -4920,6 +5403,43 @@ function renderDashboardFocusMetrics(metrics) {
   `).join("");
 }
 
+function buildSmoothSvgPath(coordinates, tension = 0.11) {
+  const points = Array.isArray(coordinates) ? coordinates : [];
+
+  if (!points.length) {
+    return "";
+  }
+
+  if (points.length === 1) {
+    const point = points[0];
+    return `M ${point.x.toFixed(2)} ${point.y.toFixed(2)}`;
+  }
+
+  if (points.length === 2) {
+    return points
+      .map((point, index) => `${index === 0 ? "M" : "L"} ${point.x.toFixed(2)} ${point.y.toFixed(2)}`)
+      .join(" ");
+  }
+
+  let path = `M ${points[0].x.toFixed(2)} ${points[0].y.toFixed(2)}`;
+
+  for (let index = 0; index < points.length - 1; index += 1) {
+    const current = points[index];
+    const next = points[index + 1];
+    const previous = points[index - 1] || current;
+    const following = points[index + 2] || next;
+
+    const controlPoint1X = current.x + ((next.x - previous.x) * tension);
+    const controlPoint1Y = current.y + ((next.y - previous.y) * tension);
+    const controlPoint2X = next.x - ((following.x - current.x) * tension);
+    const controlPoint2Y = next.y - ((following.y - current.y) * tension);
+
+    path += ` C ${controlPoint1X.toFixed(2)} ${controlPoint1Y.toFixed(2)} ${controlPoint2X.toFixed(2)} ${controlPoint2Y.toFixed(2)} ${next.x.toFixed(2)} ${next.y.toFixed(2)}`;
+  }
+
+  return path;
+}
+
 function renderMultiSeriesChart(container, config, emptyMessage) {
   if (!container) {
     return;
@@ -4953,7 +5473,7 @@ function renderMultiSeriesChart(container, config, emptyMessage) {
   svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
   svg.setAttribute("preserveAspectRatio", "none");
 
-  [0, 0.5, 1].forEach((ratio) => {
+  [0, 0.25, 0.5, 0.75, 1].forEach((ratio) => {
     const grid = createSvgElement("line");
     const y = startY + (usableHeight * ratio);
     grid.setAttribute("x1", "0");
@@ -4984,25 +5504,41 @@ function renderMultiSeriesChart(container, config, emptyMessage) {
     return { ...item, coordinates };
   });
 
-  normalizedSeries.forEach((item) => {
+  const pointNodes = [];
+
+  normalizedSeries.forEach((item, seriesIndex) => {
+    const linePath = buildSmoothSvgPath(item.coordinates);
+    const glowPath = createSvgElement("path");
+    glowPath.setAttribute("d", linePath);
+    glowPath.setAttribute("class", "multi-line-path-glow");
+    glowPath.style.setProperty("--series-color", item.color);
+    svg.appendChild(glowPath);
+
     const path = createSvgElement("path");
-    const linePath = item.coordinates
-      .map((coordinate, index) => `${index === 0 ? "M" : "L"} ${coordinate.x.toFixed(2)} ${coordinate.y.toFixed(2)}`)
-      .join(" ");
     path.setAttribute("d", linePath);
     path.setAttribute("class", "multi-line-path");
     path.style.setProperty("--series-color", item.color);
     svg.appendChild(path);
 
-    item.coordinates.forEach((coordinate) => {
+    const seriesPointNodes = [];
+
+    item.coordinates.forEach((coordinate, pointIndex) => {
       const point = createSvgElement("circle");
       point.setAttribute("cx", coordinate.x.toFixed(2));
       point.setAttribute("cy", coordinate.y.toFixed(2));
-      point.setAttribute("r", "2.6");
+      point.setAttribute("r", pointIndex === item.coordinates.length - 1 ? "2.15" : "1.3");
       point.setAttribute("class", "multi-line-point");
+      if (pointIndex === item.coordinates.length - 1) {
+        point.classList.add("is-terminal");
+      }
+      point.dataset.seriesIndex = String(seriesIndex);
+      point.dataset.pointIndex = String(pointIndex);
       point.style.setProperty("--series-color", item.color);
       svg.appendChild(point);
+      seriesPointNodes.push(point);
     });
+
+    pointNodes.push(seriesPointNodes);
   });
 
   const tooltip = document.createElement("div");
@@ -5034,6 +5570,12 @@ function renderMultiSeriesChart(container, config, emptyMessage) {
     tooltip.style.left = `${left}px`;
     tooltip.style.top = `${top}px`;
 
+    pointNodes.forEach((seriesNodes) => {
+      seriesNodes.forEach((node, pointIndex) => {
+        node.classList.toggle("is-active", pointIndex === index);
+      });
+    });
+
     const x = xPositions[index];
     activeGuide.setAttribute("x1", x.toFixed(2));
     activeGuide.setAttribute("x2", x.toFixed(2));
@@ -5043,6 +5585,9 @@ function renderMultiSeriesChart(container, config, emptyMessage) {
   const hideTooltip = () => {
     tooltip.classList.remove("is-visible");
     activeGuide.style.opacity = "0";
+    pointNodes.forEach((seriesNodes) => {
+      seriesNodes.forEach((node) => node.classList.remove("is-active"));
+    });
   };
 
   labels.forEach((_, index) => {

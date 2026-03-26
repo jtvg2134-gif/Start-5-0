@@ -75,7 +75,6 @@
             <a href="dashboard.html" class="menu-link">Painel</a>
             <a href="questoes.html" class="menu-link">Questoes</a>
             <a href="profile.html" class="menu-link">Perfil</a>
-            <a href="rotina.html" class="menu-link">Rotina</a>
           </div>
 
           <div class="menu-column">
@@ -102,33 +101,94 @@
 
     <section class="routine-layout">
       <article class="routine-card routine-config-card">
-        <div class="routine-card-head">
+        <div class="routine-card-head routine-card-head-wizard">
           <div>
-            <p class="section-label">Configura&ccedil;&atilde;o</p>
-            <h2 class="routine-card-title">Base da sua rotina</h2>
-          </div>
-          <div class="routine-card-actions">
-            <button type="button" class="modal-button modal-button-secondary" id="routineSaveButton">
-              Salvar ajustes
-            </button>
-            <button type="button" class="start-button" id="routineGenerateButton">
-              Gerar semana
-            </button>
+            <p class="section-label">Configura&ccedil;&atilde;o guiada</p>
+            <h2 class="routine-card-title">Monte sua rotina por etapas</h2>
+            <p class="routine-wizard-copy">
+              Preencha aos poucos. O Start 5 usa sua meta, seu tempo real e suas prioridades para montar uma base de rotina mais inteligente.
+            </p>
           </div>
         </div>
 
-        <div class="routine-course-focus">
+        <div class="routine-wizard-nav" id="routineWizardNav" role="tablist" aria-label="Etapas da rotina">
+          <button
+            type="button"
+            class="routine-step-chip is-active"
+            id="routineWizardTrigger1"
+            role="tab"
+            data-routine-step-trigger="1"
+            aria-selected="true"
+            aria-controls="routineWizardStep1"
+          >
+            <span class="routine-step-chip-index">1</span>
+            <span class="routine-step-chip-copy">
+              <strong>Meta</strong>
+              <span>Curso, prova e dire&ccedil;&atilde;o inicial</span>
+            </span>
+          </button>
+          <button
+            type="button"
+            class="routine-step-chip"
+            id="routineWizardTrigger2"
+            role="tab"
+            data-routine-step-trigger="2"
+            aria-selected="false"
+            aria-controls="routineWizardStep2"
+          >
+            <span class="routine-step-chip-index">2</span>
+            <span class="routine-step-chip-copy">
+              <strong>Dias</strong>
+              <span>Distribui&ccedil;&atilde;o real da semana</span>
+            </span>
+          </button>
+          <button
+            type="button"
+            class="routine-step-chip"
+            id="routineWizardTrigger3"
+            role="tab"
+            data-routine-step-trigger="3"
+            aria-selected="false"
+            aria-controls="routineWizardStep3"
+          >
+            <span class="routine-step-chip-index">3</span>
+            <span class="routine-step-chip-copy">
+              <strong>Prioridades</strong>
+              <span>Mat&eacute;rias sugeridas e ajustes manuais</span>
+            </span>
+          </button>
+        </div>
+
+        <div class="routine-wizard-stage">
+          <section
+            class="routine-wizard-step"
+            id="routineWizardStep1"
+            role="tabpanel"
+            aria-labelledby="routineWizardTrigger1"
+            data-routine-step="1"
+          >
+            <div class="routine-step-intro">
+              <span class="routine-step-kicker">Etapa 1</span>
+              <div>
+                <h3 class="routine-step-title">Defina sua meta acad&ecirc;mica</h3>
+                <p class="routine-step-copy">
+                  Comece pelo essencial. O Start 5 usa esse bloco para entender seu objetivo e puxar uma base mais coerente para a rotina.
+                </p>
+              </div>
+            </div>
+
+            <div class="routine-course-focus">
           <div class="routine-course-lead">
-            <p class="routine-course-eyebrow">Curso desejado</p>
-            <h3 class="routine-course-title">Comece pelo curso que voce quer passar</h3>
+            <p class="routine-course-eyebrow">Meta inicial</p>
+            <h3 class="routine-course-title">Curso, categoria, meta de tempo e vestibular</h3>
             <p class="routine-course-copy">
-              Engenharia, Medicina, Fisioterapia, Psicologia e outros cursos entram primeiro aqui. A rotina usa esse objetivo para puxar as materias que mais pesam na sua semana.
+              Sem polui&ccedil;&atilde;o visual. Primeiro entra o que realmente orienta sua rotina; o resto pode ser refinado depois.
             </p>
           </div>
 
           <div class="routine-form-grid routine-form-grid-primary">
             <div class="routine-field routine-field-wide">
-              <span class="routine-field-label">Curso alvo</span>
+              <span class="routine-field-label">Curso desejado</span>
               <div class="routine-picker" id="routineCoursePicker">
                 <button type="button" class="routine-picker-trigger" id="routineCourseTrigger" aria-expanded="false">
                   <span class="routine-picker-trigger-copy">
@@ -152,8 +212,8 @@
               <div class="routine-picker" id="routineAdmissionPicker">
                 <button type="button" class="routine-picker-trigger" id="routineAdmissionTrigger" aria-expanded="false">
                   <span class="routine-picker-trigger-copy">
-                    <strong class="routine-picker-value" id="routineAdmissionValue">AC</strong>
-                    <span class="routine-picker-meta" id="routineAdmissionMeta">Troque entre AC, EP e PPE.</span>
+                    <strong class="routine-picker-value" id="routineAdmissionValue">Escolha a categoria</strong>
+                    <span class="routine-picker-meta" id="routineAdmissionMeta">AC — modalidade geral sem reserva espec&iacute;fica.</span>
                   </span>
                   <span class="routine-picker-trigger-icon" aria-hidden="true">+</span>
                 </button>
@@ -163,54 +223,52 @@
               </div>
             </div>
 
+            <label
+              class="routine-field routine-field-wide routine-course-custom-shell"
+              id="routineCustomCourseShell"
+              hidden
+            >
+              <span class="routine-field-label">Nome do curso</span>
+              <input
+                id="routineCustomCourseInput"
+                type="text"
+                maxlength="80"
+                placeholder="Ex.: Rela&ccedil;&otilde;es Internacionais, Cinema, Design"
+              />
+            </label>
+
             <label class="routine-field">
-              <span class="routine-field-label">Meta semanal</span>
+              <span class="routine-field-label">Meta semanal de tempo</span>
               <input id="routineWeeklyGoalInput" type="number" min="60" max="2000" step="5" />
             </label>
 
-            <label class="routine-field">
-              <span class="routine-field-label">Universidade alvo</span>
-              <input
-                id="routineUniversityInput"
-                type="text"
-                maxlength="60"
-                placeholder="Ex.: USP, UFMG, UNICAMP"
-              />
-            </label>
-
-            <label class="routine-field">
-              <span class="routine-field-label">Campus / unidade</span>
-              <input
-                id="routineCampusInput"
-                type="text"
-                maxlength="60"
-                placeholder="Ex.: Butanta, Pinheiros, Campinas"
-              />
-            </label>
-
             <div class="routine-field">
-              <span class="routine-field-label">Turno</span>
-              <div class="routine-picker" id="routineShiftPicker">
-                <button type="button" class="routine-picker-trigger" id="routineShiftTrigger" aria-expanded="false">
+              <span class="routine-field-label">Vestibular principal</span>
+              <div class="routine-picker" id="routinePrimaryExamPicker">
+                <button type="button" class="routine-picker-trigger" id="routinePrimaryExamTrigger" aria-expanded="false">
                   <span class="routine-picker-trigger-copy">
-                    <strong class="routine-picker-value" id="routineShiftValue">Escolha o turno</strong>
-                    <span class="routine-picker-meta" id="routineShiftMeta">Integral, manha, tarde, noite ou flexivel.</span>
+                    <strong class="routine-picker-value" id="routinePrimaryExamValue">Escolha o vestibular principal</strong>
+                    <span class="routine-picker-meta" id="routinePrimaryExamMeta">Mais conhecidos primeiro, com busca e rolagem.</span>
                   </span>
                   <span class="routine-picker-trigger-icon" aria-hidden="true">+</span>
                 </button>
-                <div class="routine-picker-panel routine-picker-panel-compact" id="routineShiftPanel" hidden>
-                  <div class="routine-picker-list" id="routineShiftList"></div>
+                <div class="routine-picker-panel" id="routinePrimaryExamPanel" hidden>
+                  <div class="routine-picker-search-shell">
+                    <label class="visually-hidden" for="routinePrimaryExamSearch">Buscar vestibular principal</label>
+                    <input id="routinePrimaryExamSearch" type="text" name="primaryExamSearch" autocomplete="off" placeholder="Buscar vestibular" />
+                  </div>
+                  <div class="routine-picker-list" id="routinePrimaryExamList"></div>
                 </div>
               </div>
             </div>
 
-            <label class="routine-field routine-field-wide">
-              <span class="routine-field-label">Observacao do objetivo</span>
+            <label class="routine-field">
+              <span class="routine-field-label">Cidade</span>
               <input
-                id="routineContextNoteInput"
+                id="routineCityInput"
                 type="text"
-                maxlength="120"
-                placeholder="Ex.: foco em medicina na capital, segunda fase ou campus especifico"
+                maxlength="60"
+                placeholder="Ex.: S&atilde;o Paulo, Belo Horizonte, Recife"
               />
             </label>
 
@@ -240,33 +298,49 @@
           </p>
         </div>
 
-        <details class="routine-advanced-shell" id="routineAdvancedDetails">
+        <details class="routine-advanced-shell routine-goal-details" id="routineAdvancedDetails">
           <summary class="routine-advanced-toggle" id="routineAdvancedToggle" aria-controls="routineAdvancedPanel">
             <span class="routine-advanced-toggle-copy">
-              <strong>Refinar por vestibular</strong>
-              <span id="routineAdvancedSummary">Opcional. Abra se quiser alinhar a rotina a uma prova especifica.</span>
+              <strong>Mais contexto do objetivo</strong>
+              <span id="routineAdvancedSummary">Opcional. Abra se quiser refinar universidade, campus, turno e ajustes finos da prova.</span>
             </span>
             <span class="routine-advanced-toggle-icon" id="routineAdvancedIcon" aria-hidden="true">+</span>
           </summary>
 
           <div class="routine-advanced-panel" id="routineAdvancedPanel">
-            <div class="routine-form-grid routine-form-grid-advanced">
+            <div class="routine-form-grid routine-form-grid-advanced routine-form-grid-support">
+              <label class="routine-field">
+                <span class="routine-field-label">Universidade alvo</span>
+                <input
+                  id="routineUniversityInput"
+                  type="text"
+                  maxlength="60"
+                  placeholder="Ex.: USP, UFMG, UNICAMP"
+                />
+              </label>
+
+              <label class="routine-field">
+                <span class="routine-field-label">Campus / unidade</span>
+                <input
+                  id="routineCampusInput"
+                  type="text"
+                  maxlength="60"
+                  placeholder="Ex.: Butanta, Pinheiros, Campinas"
+                />
+              </label>
+
               <div class="routine-field">
-                <span class="routine-field-label">Vestibular principal</span>
-                <div class="routine-picker" id="routinePrimaryExamPicker">
-                  <button type="button" class="routine-picker-trigger" id="routinePrimaryExamTrigger" aria-expanded="false">
+                <span class="routine-field-label">Turno</span>
+                <div class="routine-picker" id="routineShiftPicker">
+                  <button type="button" class="routine-picker-trigger" id="routineShiftTrigger" aria-expanded="false">
                     <span class="routine-picker-trigger-copy">
-                      <strong class="routine-picker-value" id="routinePrimaryExamValue">Escolha o vestibular principal</strong>
-                      <span class="routine-picker-meta" id="routinePrimaryExamMeta">Mais conhecidos primeiro, com busca e rolagem.</span>
+                      <strong class="routine-picker-value" id="routineShiftValue">Escolha o turno</strong>
+                      <span class="routine-picker-meta" id="routineShiftMeta">Integral, manha, tarde, noite ou flexivel.</span>
                     </span>
                     <span class="routine-picker-trigger-icon" aria-hidden="true">+</span>
                   </button>
-                  <div class="routine-picker-panel" id="routinePrimaryExamPanel" hidden>
-                    <div class="routine-picker-search-shell">
-                      <label class="visually-hidden" for="routinePrimaryExamSearch">Buscar vestibular principal</label>
-                      <input id="routinePrimaryExamSearch" type="text" name="primaryExamSearch" autocomplete="off" placeholder="Buscar vestibular" />
-                    </div>
-                    <div class="routine-picker-list" id="routinePrimaryExamList"></div>
+                  <div class="routine-picker-panel routine-picker-panel-compact" id="routineShiftPanel" hidden>
+                    <div class="routine-picker-list" id="routineShiftList"></div>
                   </div>
                 </div>
               </div>
@@ -306,14 +380,44 @@
                   </div>
                 </div>
               </div>
+
+              <label class="routine-field routine-field-wide">
+                <span class="routine-field-label">Observacao do objetivo</span>
+                <input
+                  id="routineContextNoteInput"
+                  type="text"
+                  maxlength="120"
+                  placeholder="Ex.: foco em medicina na capital, segunda fase ou campus especifico"
+                />
+              </label>
             </div>
           </div>
         </details>
 
+        </section>
+
+        <section
+          class="routine-wizard-step"
+          id="routineWizardStep2"
+          role="tabpanel"
+          aria-labelledby="routineWizardTrigger2"
+          data-routine-step="2"
+          hidden
+        >
+        <div class="routine-step-intro">
+          <span class="routine-step-kicker">Etapa 2</span>
+          <div>
+            <h3 class="routine-step-title">Organize seus dias da semana</h3>
+            <p class="routine-step-copy">
+              Agora a rotina sai do ideal e encosta na vida real. Marque seus dias e distribua quanto tempo cabe em cada um.
+            </p>
+          </div>
+        </div>
+
         <div class="routine-section-block">
           <div class="detail-panel-head">
             <h3>Dias dispon&iacute;veis</h3>
-            <p>Marque os dias da semana e quantos minutos cabem em cada um.</p>
+            <p>Defina quanto tempo realmente cabe em cada dia, sem transformar isso em uma planilha seca.</p>
           </div>
 
           <div class="routine-capacity-grid">
@@ -384,6 +488,26 @@
           </div>
         </div>
 
+        </section>
+
+        <section
+          class="routine-wizard-step"
+          id="routineWizardStep3"
+          role="tabpanel"
+          aria-labelledby="routineWizardTrigger3"
+          data-routine-step="3"
+          hidden
+        >
+        <div class="routine-step-intro">
+          <span class="routine-step-kicker">Etapa 3</span>
+          <div>
+            <h3 class="routine-step-title">Ajuste prioridades com ajuda do sistema</h3>
+            <p class="routine-step-copy">
+              O Start 5 sugere o foco das mat&eacute;rias com base no curso e na prova. Voc&ecirc; ainda pode refor&ccedil;ar, suavizar ou adicionar novas mat&eacute;rias manualmente.
+            </p>
+          </div>
+        </div>
+
         <div class="routine-section-block">
           <div class="detail-panel-head">
             <h3>Mat&eacute;rias e refor&ccedil;os</h3>
@@ -410,6 +534,33 @@
           </div>
 
           <div class="routine-subject-list" id="routineSubjectList"></div>
+        </div>
+
+        </section>
+        </div>
+
+        <div class="routine-wizard-footer">
+          <div class="routine-wizard-status">
+            <span class="routine-wizard-status-step" id="routineWizardStepState">Etapa 1 de 3</span>
+            <p class="routine-wizard-status-copy" id="routineWizardStepCopy">
+              Comece pela meta academica para dar direcao ao restante da rotina.
+            </p>
+          </div>
+
+          <div class="routine-card-actions routine-card-actions-wizard">
+            <button type="button" class="modal-button modal-button-secondary" id="routineStepBackButton">
+              Anterior
+            </button>
+            <button type="button" class="modal-button modal-button-secondary" id="routineSaveButton">
+              Salvar base
+            </button>
+            <button type="button" class="start-button" id="routineStepNextButton">
+              Proxima etapa
+            </button>
+            <button type="button" class="start-button" id="routineGenerateButton">
+              Gerar semana
+            </button>
+          </div>
         </div>
 
         <p class="form-helper" id="routineFeedback">

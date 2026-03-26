@@ -8,17 +8,39 @@ const protectedPages = new Set([
   "questoes.html",
   "redacao.html",
   "rotina.html",
+  "onboarding-curso.html",
+  "onboarding-semana.html",
+  "onboarding-prioridades.html",
 ]);
 const adminPages = new Set(["admin.html"]);
+const onboardingPages = new Set([
+  "onboarding-curso.html",
+  "onboarding-semana.html",
+  "onboarding-prioridades.html",
+]);
 const isLoginPage = currentPage === "login.html";
 const MONTHLY_MEDAL_LEVELS = [
   { key: "gold", minMinutes: 600 },
   { key: "silver", minMinutes: 300 },
   { key: "bronze", minMinutes: 150 },
 ];
+const DEFAULT_AVATAR_URL = "/images/foto-inicial-de-perfil.jpg";
+const DEFAULT_AVATAR_FALLBACK_URL = "/images/default-avatar.svg";
 
 let currentSession = null;
 let authRedirecting = false;
+
+function canAccessAdmin(session = currentSession) {
+  return Boolean(session?.permissions?.canAccessAdmin || session?.role === "admin");
+}
+
+function canManageAdmins(session = currentSession) {
+  return Boolean(session?.permissions?.canManageAdmins || session?.adminCanManageAdmins);
+}
+
+function isPrimaryAdmin(session = currentSession) {
+  return Boolean(session?.permissions?.isPrimaryAdmin || session?.isPrimaryAdmin);
+}
 
 function getServerAccessHint() {
   return "Execute node server.js e abra http://localhost:3000/login.html no navegador.";
@@ -32,15 +54,98 @@ function getDefaultPage() {
   return "index.html";
 }
 
+function normalizeOnboardingStep(value) {
+  const nextStep = Number(value || 1);
+
+  if (!Number.isInteger(nextStep)) {
+    return 1;
+  }
+
+  return Math.max(1, Math.min(3, nextStep));
+}
+
+function getOnboardingPage(stepNumber) {
+  const safeStep = normalizeOnboardingStep(stepNumber);
+
+  if (safeStep === 2) {
+    return "onboarding-semana.html";
+  }
+
+  if (safeStep === 3) {
+    return "onboarding-prioridades.html";
+  }
+
+  return "onboarding-curso.html";
+}
+
+async function getOnboardingStatus() {
+  try {
+    const response = await apiRequest("/api/onboarding/status");
+    const onboarding = response?.onboarding || null;
+
+    if (!onboarding) {
+      return {
+        required: false,
+        completed: true,
+        currentStep: 3,
+        page: getDefaultPage(),
+      };
+    }
+
+    return {
+      required: Boolean(onboarding.required),
+      completed: Boolean(onboarding.completed),
+      currentStep: normalizeOnboardingStep(onboarding.currentStep || 1),
+      page: String(onboarding.page || "") || getOnboardingPage(onboarding.currentStep),
+    };
+  } catch (error) {
+    if (error.status === 401) {
+      return null;
+    }
+
+    return {
+      required: false,
+      completed: true,
+      currentStep: 3,
+      page: getDefaultPage(),
+    };
+  }
+}
+
+async function getPostAuthPage() {
+  const fallbackPage = getDefaultPage();
+  const onboarding = await getOnboardingStatus();
+
+  if (!onboarding) {
+    return fallbackPage;
+  }
+
+  if (onboarding.required) {
+    return onboarding.page || getOnboardingPage(onboarding.currentStep);
+  }
+
+  return fallbackPage;
+}
+
 function setAuthReady() {
   document.body?.classList.add("auth-ready");
 }
 
 function updateAdminVisibility() {
-  const isAdmin = currentSession?.role === "admin";
+  const isAdmin = canAccessAdmin(currentSession);
+  const isAdminManager = canManageAdmins(currentSession);
+  const isPrimary = isPrimaryAdmin(currentSession);
 
   document.querySelectorAll("[data-admin-only]").forEach((element) => {
     element.hidden = !isAdmin;
+  });
+
+  document.querySelectorAll("[data-admin-manager-only]").forEach((element) => {
+    element.hidden = !isAdminManager;
+  });
+
+  document.querySelectorAll("[data-admin-primary-only]").forEach((element) => {
+    element.hidden = !isPrimary;
   });
 }
 
@@ -150,6 +255,11 @@ function getSessionAvatarDataUrl(session = currentSession) {
   return String(session?.avatarDataUrl || "").trim();
 }
 
+function getResolvedSessionAvatarUrl(session = currentSession) {
+  const avatarDataUrl = getSessionAvatarDataUrl(session);
+  return avatarDataUrl || DEFAULT_AVATAR_URL;
+}
+
 function hydrateUserLabels() {
   if (!currentSession) return;
 
@@ -168,23 +278,26 @@ function hydrateUserLabels() {
   document.querySelectorAll("[data-auth-avatar]").forEach((element) => {
     const image = element.querySelector("[data-auth-avatar-image]");
     const fallback = element.querySelector("[data-auth-initials]");
-    const avatarDataUrl = getSessionAvatarDataUrl(currentSession);
-    const hasAvatar = Boolean(avatarDataUrl);
+    const avatarUrl = getResolvedSessionAvatarUrl(currentSession);
 
-    element.classList.toggle("has-image", hasAvatar);
+    element.classList.add("has-image");
 
     if (image) {
-      image.hidden = !hasAvatar;
+      image.hidden = false;
+      image.src = avatarUrl;
+      image.onerror = () => {
+        if (image.src.endsWith(DEFAULT_AVATAR_FALLBACK_URL)) {
+          return;
+        }
 
-      if (hasAvatar) {
-        image.src = avatarDataUrl;
-      } else {
-        image.removeAttribute("src");
-      }
+        image.src = image.src.endsWith(DEFAULT_AVATAR_URL)
+          ? DEFAULT_AVATAR_FALLBACK_URL
+          : DEFAULT_AVATAR_URL;
+      };
     }
 
     if (fallback) {
-      fallback.hidden = hasAvatar;
+      fallback.hidden = true;
     }
   });
 
@@ -413,7 +526,7 @@ function setupLoginPage() {
         ? "Criando..."
         : "Entrando..."
       : mode === "register"
-        ? "Criar conta"
+        ? "Criar conta e continuar"
         : "Entrar";
   }
 
@@ -455,12 +568,12 @@ function setupLoginPage() {
 
     if (authSubtitle) {
       authSubtitle.textContent = isRegister
-        ? "Cadastre-se para entrar no Start 5 e manter seu pr\u00f3prio hist\u00f3rico."
+        ? "Crie sua conta e passe pelas 3 etapas iniciais para montar sua base de estudos."
         : "Use seu e-mail e senha para entrar no Start 5.";
     }
 
     if (authSubmitButton) {
-      authSubmitButton.textContent = isRegister ? "Criar conta" : "Entrar";
+      authSubmitButton.textContent = isRegister ? "Criar conta e continuar" : "Entrar";
     }
 
     if (!isRegister) {
@@ -548,11 +661,13 @@ function setupLoginPage() {
 
       currentSession = response?.user || null;
       setFeedback(
-        mode === "register" ? "Conta criada. Redirecionando..." : "login feito!",
+        mode === "register"
+          ? "Conta criada. Vamos montar sua base inicial..."
+          : "Login feito. Redirecionando...",
         "success"
       );
-      setTimeout(() => {
-        redirectTo(getDefaultPage(currentSession));
+      setTimeout(async () => {
+        redirectTo(await getPostAuthPage());
       }, 180);
     } catch (error) {
       clearSensitiveInputs();
@@ -568,6 +683,7 @@ function setupLoginPage() {
 const ready = (async () => {
   try {
     await fetchCurrentUser();
+    const nextPage = currentSession ? await getPostAuthPage() : getDefaultPage();
 
     if (protectedPages.has(currentPage) && !currentSession) {
       authRedirecting = true;
@@ -575,15 +691,45 @@ const ready = (async () => {
       return null;
     }
 
-    if (adminPages.has(currentPage) && currentSession?.role !== "admin") {
+    if (adminPages.has(currentPage) && !canAccessAdmin(currentSession)) {
       authRedirecting = true;
       redirectTo("index.html");
       return currentSession;
     }
 
+    if (currentSession && currentPage === "rotina.html") {
+      authRedirecting = true;
+      redirectTo(nextPage);
+      return currentSession;
+    }
+
+    if (currentSession && onboardingPages.has(currentPage) && nextPage === getDefaultPage()) {
+      authRedirecting = true;
+      redirectTo(getDefaultPage());
+      return currentSession;
+    }
+
+    if (currentSession && onboardingPages.has(currentPage) && currentPage !== nextPage) {
+      authRedirecting = true;
+      redirectTo(nextPage);
+      return currentSession;
+    }
+
+    if (
+      currentSession &&
+      protectedPages.has(currentPage) &&
+      !isLoginPage &&
+      !onboardingPages.has(currentPage) &&
+      nextPage !== getDefaultPage()
+    ) {
+      authRedirecting = true;
+      redirectTo(nextPage);
+      return currentSession;
+    }
+
     if (isLoginPage && currentSession) {
       authRedirecting = true;
-      redirectTo(getDefaultPage(currentSession));
+      redirectTo(nextPage);
       return currentSession;
     }
 
@@ -615,4 +761,7 @@ window.Start5Auth = {
   logout,
   setHeaderMonthlyMinutes,
   updateSession,
+  canAccessAdmin,
+  canManageAdmins,
+  isPrimaryAdmin,
 };

@@ -185,10 +185,13 @@ create table if not exists public.provas (
   ano integer not null,
   fase text not null default '',
   versao text not null default '',
+  dia integer not null default 0,
   caderno text not null default '',
   titulo text not null,
   pdf_storage_path text not null,
   pdf_url_publica text,
+  gabarito_storage_path text not null default '',
+  gabarito_url_publica text,
   status public.prova_status not null default 'draft',
   observacoes_adm text,
   processado_em timestamptz,
@@ -198,9 +201,10 @@ create table if not exists public.provas (
   created_by uuid references auth.users(id) on delete set null,
   updated_by uuid references auth.users(id) on delete set null,
   constraint provas_ano_range check (ano between 1900 and 2100),
+  constraint provas_dia_range check (dia between 0 and 9),
   constraint provas_titulo_not_blank check (length(trim(titulo)) > 0),
   constraint provas_pdf_storage_not_blank check (length(trim(pdf_storage_path)) > 0),
-  constraint provas_unique_source unique (vestibular_id, ano, fase, versao, caderno)
+  constraint provas_unique_source unique (vestibular_id, ano, fase, versao, dia, caderno)
 );
 
 create unique index if not exists provas_pdf_storage_path_unique_idx
@@ -208,6 +212,9 @@ create unique index if not exists provas_pdf_storage_path_unique_idx
 
 create index if not exists provas_vestibular_ano_idx
   on public.provas (vestibular_id, ano desc);
+
+create index if not exists provas_catalogo_idx
+  on public.provas (vestibular_id, ano desc, dia asc, caderno asc);
 
 create index if not exists provas_status_idx
   on public.provas (status, publicado_em desc nulls last);

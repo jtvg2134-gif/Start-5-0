@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Start 5 | Onboarding - Prioridades</title>
+  <meta
+    name="description"
+    content="Terceira etapa do onboarding Start 5 para revisar materias prioritarias, ajustes finos e finalizar a entrada no sistema."
+  />
+  <meta name="theme-color" content="#05080d" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Instrument+Sans:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <link rel="stylesheet" href="css/onboarding.css" />
+</head>
+<body class="onboarding-page" data-onboarding-step="3">
+  <a class="skip-link" href="#mainContent">Pular para o conteudo principal</a>
+
+  <div class="onboarding-shell">
+    <main class="onboarding-stage" id="mainContent">
+      <header class="onboarding-head">
+        <a href="index.html" class="onboarding-brand">Start5</a>
+        <p class="onboarding-kicker">Onboarding inicial</p>
+        <h1 class="onboarding-title">Feche sua base inicial e entre no sistema ja alinhado.</h1>
+        <p class="onboarding-copy">
+          O Start 5 sugere o foco a partir do seu objetivo e voce ainda pode fazer ajustes finos antes de cair no hub principal.
+        </p>
+      </header>
+
+      <section class="onboarding-progress" aria-label="Progresso do onboarding">
+        <div class="onboarding-progress-top">
+          <strong class="onboarding-progress-label" id="onboardingProgressLabel">Etapa 3 de 3</strong>
+          <div class="onboarding-inline-actions">
+            <span class="onboarding-pill" id="onboardingAccountName">Conta Start 5</span>
+            <span class="onboarding-pill" id="onboardingAccountEmail"></span>
+            <button type="button" class="onboarding-button onboarding-button-secondary" data-logout>Sair</button>
+          </div>
+        </div>
+
+        <div class="onboarding-progress-track">
+          <article class="onboarding-progress-step is-done" data-onboarding-progress-step="1">
+            <span class="onboarding-progress-index">1</span>
+            <strong>Objetivo</strong>
+            <span>Curso, prova, categoria e direcao academica.</span>
+          </article>
+          <article class="onboarding-progress-step is-done" data-onboarding-progress-step="2">
+            <span class="onboarding-progress-index">2</span>
+            <strong>Semana</strong>
+            <span>Tempo real por dia para a rotina caber na vida.</span>
+          </article>
+          <article class="onboarding-progress-step is-active" data-onboarding-progress-step="3">
+            <span class="onboarding-progress-index">3</span>
+            <strong>Prioridades</strong>
+            <span>Materias sugeridas e ajustes finos antes de entrar.</span>
+          </article>
+        </div>
+      </section>
+
+      <section class="onboarding-card">
+        <header class="onboarding-card-head">
+          <h2 class="onboarding-card-title">Etapa 3. Prioridades e materias</h2>
+          <p class="onboarding-card-copy">
+            O sistema usa curso, prova e semana para sugerir foco. Aqui voce pode calibrar o peso manual e o tratamento
+            de cada materia antes de finalizar.
+          </p>
+        </header>
+
+        <div class="onboarding-summary-grid" id="onboardingSummaryGrid"></div>
+
+        <form id="onboardingStepThreeForm">
+          <div class="onboarding-priority-list" id="onboardingPriorityList"></div>
+
+          <p class="onboarding-feedback" id="onboardingFeedback" aria-live="polite"></p>
+
+          <div class="onboarding-actions">
+            <button
+              type="button"
+              class="onboarding-button onboarding-button-secondary"
+              id="onboardingBackButton"
+            >
+              Voltar para a semana
+            </button>
+            <button
+              type="submit"
+              class="onboarding-button onboarding-button-primary"
+              id="onboardingSubmitButton"
+              data-idle-label="Finalizar e entrar"
+            >
+              Finalizar e entrar
+            </button>
+          </div>
+        </form>
+      </section>
+    </main>
+  </div>
+
+  <script src="js/auth.js"></script>
+  <script src="js/onboarding.js"></script>
+</body>
+</html>

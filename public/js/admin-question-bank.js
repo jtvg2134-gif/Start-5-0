@@ -22,8 +22,11 @@
   const questionProofStatusSelect = document.getElementById("questionProofStatusSelect");
   const questionProofPhaseInput = document.getElementById("questionProofPhaseInput");
   const questionProofVersionInput = document.getElementById("questionProofVersionInput");
+  const questionProofDaySelect = document.getElementById("questionProofDaySelect");
+  const questionProofBookletSelect = document.getElementById("questionProofBookletSelect");
   const questionProofSubjectInput = document.getElementById("questionProofSubjectInput");
   const questionProofPdfInput = document.getElementById("questionProofPdfInput");
+  const questionProofAnswerKeyInput = document.getElementById("questionProofAnswerKeyInput");
   const questionProofNewExamNameInput = document.getElementById("questionProofNewExamNameInput");
   const questionProofNewExamSiglaInput = document.getElementById("questionProofNewExamSiglaInput");
   const questionProofExtractedTextInput = document.getElementById("questionProofExtractedTextInput");
@@ -37,17 +40,18 @@
   const questionProofProcessButton = document.getElementById("questionProofProcessButton");
   const questionProofPublishButton = document.getElementById("questionProofPublishButton");
   const questionProofDownloadButton = document.getElementById("questionProofDownloadButton");
+  const questionProofAnswerKeyDownloadButton = document.getElementById("questionProofAnswerKeyDownloadButton");
 
   const questionEditorForm = document.getElementById("questionEditorForm");
   const questionEditorIdInput = document.getElementById("questionEditorIdInput");
   const questionEditorProofIdInput = document.getElementById("questionEditorProofIdInput");
   const questionEditorNumberInput = document.getElementById("questionEditorNumberInput");
-  const questionEditorDifficultySelect = document.getElementById("questionEditorDifficultySelect");
   const questionEditorReviewStatusSelect = document.getElementById("questionEditorReviewStatusSelect");
   const questionEditorMatterInput = document.getElementById("questionEditorMatterInput");
   const questionEditorThemeInput = document.getElementById("questionEditorThemeInput");
   const questionEditorOriginInput = document.getElementById("questionEditorOriginInput");
   const questionEditorPromptInput = document.getElementById("questionEditorPromptInput");
+  const questionEditorResolutionInput = document.getElementById("questionEditorResolutionInput");
   const questionEditorCorrectAnswerSelect = document.getElementById("questionEditorCorrectAnswerSelect");
   const questionEditorSuggestionInput = document.getElementById("questionEditorSuggestionInput");
   const questionEditorNotesInput = document.getElementById("questionEditorNotesInput");
@@ -272,9 +276,12 @@
 
           <div class="question-bank-proof-meta">
             <span class="question-bank-pill">${escapeHtml(proof.vestibular.nome)}</span>
+            ${proof.dia ? `<span class="question-bank-pill">${escapeHtml(`Dia ${proof.dia}`)}</span>` : ""}
+            ${proof.caderno ? `<span class="question-bank-pill">${escapeHtml(proof.caderno)}</span>` : ""}
             <span class="question-bank-pill">${escapeHtml(formatShortText(proof.materiaGeral, "Materia livre"))}</span>
             <span class="question-bank-pill">${escapeHtml(String(proof.counts.totalQuestions || 0))} questoes</span>
             <span class="question-bank-pill">${escapeHtml(String(proof.counts.approvedQuestions || 0))} aprovadas</span>
+            <span class="question-bank-pill">${escapeHtml(proof.answerKey?.hasFile ? "Gabarito vinculado" : "Sem gabarito")}</span>
           </div>
 
           <div class="question-bank-proof-actions">
@@ -297,6 +304,7 @@
     questionProofProcessButton.disabled = !proof;
     questionProofPublishButton.disabled = !proof;
     questionProofDownloadButton.disabled = !proof?.pdf?.downloadUrl;
+    questionProofAnswerKeyDownloadButton.disabled = !proof?.answerKey?.downloadUrl;
     questionEditorNewButton.disabled = !proof;
 
     if (!proof) {
@@ -325,11 +333,14 @@
         </div>
 
         <div class="question-bank-proof-meta">
+          ${proof.dia ? `<span class="question-bank-pill">${escapeHtml(`Dia ${proof.dia}`)}</span>` : ""}
+          ${proof.caderno ? `<span class="question-bank-pill">${escapeHtml(proof.caderno)}</span>` : ""}
           <span class="question-bank-pill">${escapeHtml(formatShortText(proof.materiaGeral, "Materia geral livre"))}</span>
           <span class="question-bank-pill">${escapeHtml(String(proof.counts.totalQuestions || 0))} questoes</span>
           <span class="question-bank-pill">${escapeHtml(String(proof.counts.approvedQuestions || 0))} aprovadas</span>
           <span class="question-bank-pill">${escapeHtml(String(proof.counts.pendingQuestions || 0))} pendentes</span>
           <span class="question-bank-pill">${escapeHtml(formatFileSize(proof.pdf.sizeBytes))}</span>
+          <span class="question-bank-pill">${escapeHtml(proof.answerKey?.hasFile ? "Gabarito publicado" : "Sem gabarito")}</span>
         </div>
 
         <p class="question-bank-proof-copy">
@@ -386,7 +397,7 @@
           <div class="question-bank-question-meta">
             <span class="question-bank-pill">${escapeHtml(formatQuestionBankLabel(question.materia, "Sem materia"))}</span>
             <span class="question-bank-pill">${escapeHtml(formatQuestionBankLabel(question.tema, "Sem tema"))}</span>
-            <span class="question-bank-pill">${escapeHtml(formatQuestionBankLabel(question.dificuldade))}</span>
+            <span class="question-bank-pill">${escapeHtml(question.resolucao ? "Com resolucao" : "Sem resolucao")}</span>
             <span class="question-bank-pill">${escapeHtml(String(question.stats.totalAnswers || 0))} respostas</span>
           </div>
 
@@ -418,7 +429,11 @@
 
     if (questionProofIdInput) questionProofIdInput.value = "";
     if (questionProofStatusSelect) questionProofStatusSelect.value = "draft";
+    if (questionProofDaySelect) questionProofDaySelect.value = "0";
+    if (questionProofBookletSelect) questionProofBookletSelect.value = "";
     if (questionProofSubjectInput) questionProofSubjectInput.value = "";
+    if (questionProofPdfInput) questionProofPdfInput.value = "";
+    if (questionProofAnswerKeyInput) questionProofAnswerKeyInput.value = "";
     if (questionProofExtractedTextInput) questionProofExtractedTextInput.value = "";
     if (questionProofNewExamNameInput) questionProofNewExamNameInput.value = "";
     if (questionProofNewExamSiglaInput) questionProofNewExamSiglaInput.value = "";
@@ -438,7 +453,11 @@
     if (questionProofStatusSelect) questionProofStatusSelect.value = String(proof.status || "draft");
     if (questionProofPhaseInput) questionProofPhaseInput.value = proof.fase || "";
     if (questionProofVersionInput) questionProofVersionInput.value = proof.versao || "";
+    if (questionProofDaySelect) questionProofDaySelect.value = String(Number(proof.dia) || 0);
+    if (questionProofBookletSelect) questionProofBookletSelect.value = proof.caderno || "";
     if (questionProofSubjectInput) questionProofSubjectInput.value = proof.materiaGeral || "";
+    if (questionProofPdfInput) questionProofPdfInput.value = "";
+    if (questionProofAnswerKeyInput) questionProofAnswerKeyInput.value = "";
     if (questionProofExtractedTextInput) questionProofExtractedTextInput.value = proof.extractedText || "";
     if (questionProofNewExamNameInput) questionProofNewExamNameInput.value = "";
     if (questionProofNewExamSiglaInput) questionProofNewExamSiglaInput.value = "";
@@ -500,7 +519,6 @@
     if (questionEditorIdInput) questionEditorIdInput.value = String(question.id || "");
     if (questionEditorProofIdInput) questionEditorProofIdInput.value = String(question.provaId || "");
     if (questionEditorNumberInput) questionEditorNumberInput.value = String(question.numero || "");
-    if (questionEditorDifficultySelect) questionEditorDifficultySelect.value = String(question.dificuldade || "media");
     if (questionEditorReviewStatusSelect) {
       questionEditorReviewStatusSelect.value = String(question.statusRevisao || "pending");
     }
@@ -508,6 +526,7 @@
     if (questionEditorThemeInput) questionEditorThemeInput.value = question.tema || "";
     if (questionEditorOriginInput) questionEditorOriginInput.value = question.origemPdf || "";
     if (questionEditorPromptInput) questionEditorPromptInput.value = question.enunciado || "";
+    if (questionEditorResolutionInput) questionEditorResolutionInput.value = question.resolucao || "";
     if (questionEditorCorrectAnswerSelect) {
       questionEditorCorrectAnswerSelect.value = question.respostaCorreta || "";
     }
@@ -516,7 +535,6 @@
       questionEditorSuggestionInput.value = [
         question.sugestoes?.materia ? `Materia: ${question.sugestoes.materia}` : "",
         question.sugestoes?.tema ? `Tema: ${question.sugestoes.tema}` : "",
-        question.sugestoes?.dificuldade ? `Dificuldade: ${question.sugestoes.dificuldade}` : "",
       ].filter(Boolean).join(" | ");
     }
 
@@ -624,6 +642,7 @@
 
   async function readProofFormPayload() {
     const pdfFile = questionProofPdfInput?.files?.[0] || null;
+    const answerKeyFile = questionProofAnswerKeyInput?.files?.[0] || null;
     const payload = {
       vestibularId: questionProofExamSelect?.value || "",
       vestibularNome: questionProofNewExamNameInput?.value.trim() || "",
@@ -632,12 +651,18 @@
       status: questionProofStatusSelect?.value || "draft",
       fase: questionProofPhaseInput?.value.trim() || "",
       versao: questionProofVersionInput?.value.trim() || "",
+      dia: Number(questionProofDaySelect?.value || 0),
+      caderno: questionProofBookletSelect?.value || "",
       materiaGeral: questionProofSubjectInput?.value.trim() || "",
       extractedText: questionProofExtractedTextInput?.value || "",
     };
 
     if (pdfFile) {
       payload.pdfFile = await readFileAsBase64(pdfFile);
+    }
+
+    if (answerKeyFile) {
+      payload.answerKeyFile = await readFileAsBase64(answerKeyFile);
     }
 
     return payload;
@@ -653,12 +678,12 @@
     return {
       provaId: proofId,
       numero: Number(questionEditorNumberInput?.value || 0),
-      dificuldade: questionEditorDifficultySelect?.value || "media",
       statusRevisao: questionEditorReviewStatusSelect?.value || "pending",
       materia: questionEditorMatterInput?.value.trim() || "",
       tema: questionEditorThemeInput?.value.trim() || "",
       origemPdf: questionEditorOriginInput?.value.trim() || "",
       enunciado: questionEditorPromptInput?.value || "",
+      resolucao: questionEditorResolutionInput?.value || "",
       alternativas: alternatives,
       respostaCorreta: questionEditorCorrectAnswerSelect?.value || "",
       observacoesAdm: questionEditorNotesInput?.value || "",
@@ -876,6 +901,14 @@
 
     if (proof?.pdf?.downloadUrl) {
       window.open(proof.pdf.downloadUrl, "_blank", "noopener");
+    }
+  });
+
+  questionProofAnswerKeyDownloadButton?.addEventListener("click", () => {
+    const proof = getSelectedProof();
+
+    if (proof?.answerKey?.downloadUrl) {
+      window.open(proof.answerKey.downloadUrl, "_blank", "noopener");
     }
   });
 

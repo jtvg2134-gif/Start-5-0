@@ -45,8 +45,8 @@
 
 .dashboard-focus-body {
   display: grid;
-  grid-template-columns: minmax(0, 1.6fr) minmax(280px, 0.9fr);
-  gap: 18px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
   align-items: start;
 }
 
@@ -54,18 +54,20 @@
   min-width: 0;
 }
 
-.dashboard-focus-chart-frame,
-.dashboard-focus-sidebar {
+.dashboard-focus-chart-frame {
   display: grid;
-  gap: 16px;
+  gap: 18px;
   min-height: 100%;
-  padding: clamp(16px, 2vw, 20px);
-  border-radius: 26px;
+  padding: clamp(18px, 2.4vw, 24px);
+  border-radius: 30px;
   border: 1px solid rgba(255, 255, 255, 0.07);
   background:
+    radial-gradient(circle at top right, rgba(241, 182, 104, 0.08), transparent 26%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.018)),
     rgba(255, 255, 255, 0.018);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 18px 36px rgba(4, 5, 8, 0.14);
 }
 
 .dashboard-focus-chart-top {
@@ -73,7 +75,7 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 10px;
 }
 
 .dashboard-focus-kicker {
@@ -85,7 +87,10 @@
 }
 
 .dashboard-focus-sidebar {
-  align-content: start;
+  display: grid;
+  grid-template-columns: minmax(180px, 0.72fr) minmax(0, 1.9fr);
+  gap: 12px;
+  align-items: stretch;
 }
 
 .dashboard-view-switch {
@@ -133,120 +138,152 @@
 }
 
 .dashboard-focus-note {
-  color: rgba(233, 224, 211, 0.72);
-  line-height: 1.7;
-  font-size: 0.96rem;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  min-height: 100%;
+  padding: 12px 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.045);
+  background: rgba(255, 255, 255, 0.018);
+  color: rgba(233, 224, 211, 0.6);
+  line-height: 1.55;
+  font-size: 0.84rem;
 }
 
 .dashboard-focus-legend {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px 10px;
 }
 
 .dashboard-focus-legend-item {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  min-height: 34px;
-  padding: 0 12px;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.03);
-  color: rgba(255, 248, 239, 0.78);
-  font-size: 0.8rem;
-  font-weight: 700;
+  gap: 8px;
+  min-height: 24px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: rgba(255, 248, 239, 0.62);
+  font-size: 0.74rem;
+  font-weight: 600;
 }
 
 .dashboard-focus-legend-swatch,
 .dashboard-focus-tooltip-swatch {
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
   border-radius: 999px;
   background: var(--series-color, #8db4ff);
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--series-color, #8db4ff) 18%, transparent);
+  box-shadow: none;
 }
 
 .dashboard-focus-chart {
-  min-height: clamp(320px, 52vh, 520px);
-  padding: 16px;
-  border-radius: 24px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  min-height: clamp(360px, 58vh, 560px);
+  padding: 14px 14px 10px;
+  border-radius: 26px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0.01)),
-    rgba(255, 255, 255, 0.012);
+    radial-gradient(circle at 3% 52%, rgba(240, 193, 107, 0.09), transparent 24%),
+    radial-gradient(circle at 98% 46%, rgba(141, 180, 255, 0.07), transparent 28%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.014), rgba(255, 255, 255, 0.004)),
+    rgba(255, 255, 255, 0.004);
 }
 
 .dashboard-focus-metrics {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
 }
 
 .dashboard-focus-metric {
   display: grid;
-  gap: 6px;
-  min-height: 92px;
-  padding: 16px;
-  border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.018)),
-    rgba(255, 255, 255, 0.018);
+  gap: 4px;
+  min-height: 68px;
+  padding: 12px 12px 10px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.014);
 }
 
 .dashboard-focus-metric span {
-  color: rgba(233, 224, 211, 0.58);
-  font-size: 0.72rem;
+  color: rgba(233, 224, 211, 0.5);
+  font-size: 0.68rem;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .dashboard-focus-metric strong {
   color: #fff8ef;
   font-family: var(--font-display);
-  font-size: clamp(1.06rem, 1.45vw, 1.3rem);
-  letter-spacing: -0.04em;
+  font-size: clamp(0.98rem, 1.18vw, 1.12rem);
+  letter-spacing: -0.045em;
   line-height: 1.1;
 }
 
 .multi-line-chart {
   position: relative;
   display: grid;
-  gap: 14px;
+  gap: 12px;
   height: 100%;
 }
 
 .multi-line-chart-svg {
   width: 100%;
-  height: min(50vh, 420px);
+  height: min(56vh, 460px);
 }
 
 .multi-line-grid {
-  stroke: rgba(255, 255, 255, 0.08);
-  stroke-width: 1;
+  stroke: rgba(255, 255, 255, 0.045);
+  stroke-width: 0.8;
+  stroke-dasharray: 2 4;
 }
 
 .multi-line-active-guide {
-  stroke: rgba(255, 255, 255, 0.2);
-  stroke-width: 1;
-  stroke-dasharray: 4 6;
+  stroke: rgba(255, 255, 255, 0.12);
+  stroke-width: 0.7;
+  stroke-dasharray: 2 8;
   opacity: 0;
+}
+
+.multi-line-path-glow {
+  fill: none;
+  stroke: var(--series-color, #8db4ff);
+  stroke-width: 0;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0;
+  filter: none;
 }
 
 .multi-line-path {
   fill: none;
   stroke: var(--series-color, #8db4ff);
-  stroke-width: 3;
+  stroke-width: 1.28;
   stroke-linecap: round;
   stroke-linejoin: round;
+  opacity: 0.9;
 }
 
 .multi-line-point {
   fill: var(--series-color, #8db4ff);
-  stroke: rgba(7, 12, 18, 0.92);
-  stroke-width: 2;
+  stroke: rgba(9, 12, 17, 0.92);
+  stroke-width: 0.9;
+  fill-opacity: 0.92;
+  opacity: 0;
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease;
+}
+
+.multi-line-point.is-terminal {
+  opacity: 0.52;
+}
+
+.multi-line-point.is-active {
+  opacity: 1;
 }
 
 .multi-line-hitbox {
@@ -260,8 +297,8 @@
 }
 
 .multi-line-chart-labels span {
-  color: rgba(236, 227, 214, 0.62);
-  font-size: 0.78rem;
+  color: rgba(236, 227, 214, 0.44);
+  font-size: 0.72rem;
   text-align: center;
 }
 
@@ -1120,6 +1157,10 @@
     align-items: flex-start;
   }
 
+  .dashboard-focus-sidebar {
+    grid-template-columns: 1fr;
+  }
+
   .dashboard-focus-metrics {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -1202,10 +1243,14 @@
     grid-template-columns: 1fr;
   }
 
-  .dashboard-focus-chart-frame,
-  .dashboard-focus-sidebar {
+  .dashboard-focus-chart-frame {
     padding: 14px;
     border-radius: 22px;
+  }
+
+  .dashboard-focus-note {
+    padding: 14px;
+    border-radius: 18px;
   }
 
   .multi-line-chart-svg {
@@ -1247,4 +1292,154 @@
   .bar-chart-label {
     font-size: 0.74rem;
   }
+}
+
+/* 2026 dashboard polish layer */
+.dashboard-focus-card {
+  gap: 22px;
+  border-radius: 34px;
+  border-color: rgba(255, 240, 214, 0.06);
+  background:
+    radial-gradient(circle at top left, rgba(255, 205, 126, 0.06), transparent 22%),
+    radial-gradient(circle at 88% 12%, rgba(113, 144, 180, 0.05), transparent 16%),
+    linear-gradient(160deg, rgba(14, 18, 24, 0.95), rgba(9, 12, 17, 0.97));
+  box-shadow: 0 22px 42px rgba(4, 5, 8, 0.16);
+}
+
+.dashboard-focus-chart-frame {
+  gap: 16px;
+  border-radius: 28px;
+  padding: clamp(16px, 2vw, 20px);
+  border-color: rgba(255, 240, 214, 0.05);
+  background:
+    radial-gradient(circle at top right, rgba(241, 182, 104, 0.06), transparent 24%),
+    radial-gradient(circle at bottom left, rgba(122, 163, 255, 0.04), transparent 26%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.022), rgba(255, 255, 255, 0.008)),
+    rgba(255, 255, 255, 0.01);
+}
+
+.dashboard-focus-chart {
+  min-height: clamp(390px, 60vh, 580px);
+  padding: 12px 12px 8px;
+  border-radius: 24px;
+  border-color: rgba(255, 240, 214, 0.04);
+  background:
+    radial-gradient(circle at 2% 50%, rgba(240, 193, 107, 0.095), transparent 23%),
+    radial-gradient(circle at 98% 44%, rgba(141, 180, 255, 0.075), transparent 27%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.012), rgba(255, 255, 255, 0.004)),
+    rgba(255, 255, 255, 0.004);
+}
+
+.dashboard-view-switch,
+.analytics-range {
+  padding: 5px;
+  border-color: rgba(255, 240, 214, 0.07);
+  background: linear-gradient(180deg, rgba(255, 250, 242, 0.04), rgba(255, 250, 242, 0.016));
+}
+
+.dashboard-view-button,
+.analytics-range-button {
+  min-height: 38px;
+  padding: 0 15px;
+  color: rgba(238, 227, 210, 0.68);
+}
+
+.dashboard-view-button:hover,
+.analytics-range-button:hover {
+  border-color: rgba(240, 193, 107, 0.16);
+  background: rgba(240, 193, 107, 0.07);
+}
+
+.dashboard-view-button.is-active,
+.analytics-range-button.is-active {
+  border-color: rgba(255, 216, 160, 0.24);
+  background: linear-gradient(180deg, rgba(118, 79, 42, 0.92), rgba(58, 40, 28, 0.98));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 246, 228, 0.08),
+    0 10px 18px rgba(20, 12, 8, 0.22);
+}
+
+.dashboard-focus-legend-item,
+.analytics-pill {
+  min-height: 24px;
+  padding: 0;
+  border-color: transparent;
+  background: transparent;
+  color: rgba(255, 244, 230, 0.62);
+}
+
+.dashboard-focus-note {
+  padding: 12px 14px;
+  border-radius: 18px;
+  border-color: rgba(255, 240, 214, 0.045);
+  background: rgba(255, 255, 255, 0.018);
+  color: rgba(238, 227, 210, 0.6);
+  font-size: 0.84rem;
+}
+
+.dashboard-focus-metrics {
+  gap: 8px;
+}
+
+.dashboard-focus-metric {
+  min-height: 68px;
+  padding: 12px 12px 10px;
+  border-radius: 16px;
+  border-color: rgba(255, 240, 214, 0.045);
+  background: rgba(255, 255, 255, 0.014);
+}
+
+.dashboard-focus-metric span {
+  color: rgba(233, 224, 211, 0.5);
+}
+
+.dashboard-focus-metric strong {
+  font-size: clamp(0.98rem, 1.18vw, 1.12rem);
+}
+
+.multi-line-grid {
+  stroke: rgba(255, 255, 255, 0.045);
+  stroke-width: 0.8;
+  stroke-dasharray: 2 4;
+}
+
+.multi-line-path-glow {
+  stroke-width: 0;
+  opacity: 0;
+  filter: none;
+}
+
+.multi-line-path {
+  stroke-width: 1.28;
+  opacity: 0.9;
+}
+
+.multi-line-point {
+  fill-opacity: 0.92;
+  stroke-width: 0.9;
+  opacity: 0;
+}
+
+.multi-line-point.is-terminal {
+  opacity: 0.52;
+}
+
+.multi-line-point.is-active {
+  opacity: 1;
+}
+
+.dashboard-focus-tooltip {
+  border-color: rgba(255, 240, 214, 0.08);
+  background: rgba(10, 13, 18, 0.95);
+  box-shadow: 0 20px 34px rgba(0, 0, 0, 0.24);
+}
+
+.multi-line-active-guide {
+  stroke: rgba(255, 255, 255, 0.12);
+  stroke-width: 0.7;
+  stroke-dasharray: 2 8;
+}
+
+.multi-line-chart-labels span {
+  color: rgba(236, 227, 214, 0.44);
 }

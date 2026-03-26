@@ -76,7 +76,6 @@
             <a href="dashboard.html" class="menu-link">Painel</a>
             <a href="questoes.html" class="menu-link">Questoes</a>
             <a href="profile.html" class="menu-link">Perfil</a>
-            <a href="rotina.html" class="menu-link">Rotina</a>
           </div>
 
           <div class="menu-column">
@@ -102,52 +101,11 @@
       </section>
 
       <section class="question-bank-top-grid">
-        <article class="dashboard-module question-bank-summary" aria-labelledby="questionBankSummaryTitle">
-          <div class="question-bank-panel-head">
-            <div>
-              <p class="section-label">Visao rapida</p>
-              <h2 class="analysis-title" id="questionBankSummaryTitle">Resumo</h2>
-            </div>
-          </div>
-
-          <div class="question-bank-summary-grid">
-            <article class="summary-card">
-              <span class="summary-label" id="questionBankAvailableLabel">Disponiveis</span>
-              <strong class="summary-value" id="questionBankAvailableValue">0</strong>
-            </article>
-
-            <article class="summary-card">
-              <span class="summary-label" id="questionBankAnsweredLabel">Respondidas</span>
-              <strong class="summary-value" id="questionBankAnsweredValue">0</strong>
-            </article>
-
-            <article class="summary-card">
-              <span class="summary-label" id="questionBankCorrectLabel">Acertos</span>
-              <strong class="summary-value" id="questionBankCorrectValue">0</strong>
-            </article>
-
-            <article class="summary-card">
-              <span class="summary-label" id="questionBankWrongLabel">Erros</span>
-              <strong class="summary-value" id="questionBankWrongValue">0</strong>
-            </article>
-
-            <article class="summary-card">
-              <span class="summary-label" id="questionBankAccuracyLabel">Taxa de acerto</span>
-              <strong class="summary-value" id="questionBankAccuracyValue">0%</strong>
-            </article>
-
-            <article class="summary-card">
-              <span class="summary-label" id="questionBankReviewLabel">Para revisar</span>
-              <strong class="summary-value" id="questionBankReviewValue">0</strong>
-            </article>
-          </div>
-        </article>
-
         <article class="dashboard-module question-bank-filter-module" aria-labelledby="questionBankFiltersTitle">
           <div class="question-bank-panel-head">
             <div>
               <p class="section-label">Filtros</p>
-              <h2 class="analysis-title" id="questionBankFiltersTitle">Filtros da sessao</h2>
+              <h2 class="analysis-title" id="questionBankFiltersTitle">Encontrar prova</h2>
             </div>
           </div>
 
@@ -168,23 +126,6 @@
               </label>
 
               <label class="question-bank-field">
-                <span class="question-bank-label">Materia</span>
-                <select id="questionBankMatterFilter" name="materia" class="admin-modal-input">
-                  <option value="">Todas</option>
-                </select>
-              </label>
-
-              <label class="question-bank-field">
-                <span class="question-bank-label">Dificuldade</span>
-                <select id="questionBankDifficultyFilter" name="dificuldade" class="admin-modal-input">
-                  <option value="">Todas</option>
-                  <option value="facil">Facil</option>
-                  <option value="media">Media</option>
-                  <option value="dificil">Dificil</option>
-                </select>
-              </label>
-
-              <label class="question-bank-field">
                 <span class="question-bank-label">Dia</span>
                 <select id="questionBankDayFilter" name="dia" class="admin-modal-input">
                   <option value="">Todos</option>
@@ -195,17 +136,6 @@
                 <span class="question-bank-label">Caderno</span>
                 <select id="questionBankBookletFilter" name="caderno" class="admin-modal-input">
                   <option value="">Todos</option>
-                </select>
-              </label>
-
-              <label class="question-bank-field">
-                <span class="question-bank-label">Recorte</span>
-                <select id="questionBankStatusFilter" name="status" class="admin-modal-input">
-                  <option value="all">Todas</option>
-                  <option value="unanswered">Nao resolvidas</option>
-                  <option value="wrong">Erradas</option>
-                  <option value="favorites">Favoritas</option>
-                  <option value="review">Revisar depois</option>
                 </select>
               </label>
             </div>

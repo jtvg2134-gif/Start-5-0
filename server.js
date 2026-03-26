@@ -1959,6 +1959,15 @@ db.exec(`
     FOREIGN KEY (plan_id) REFERENCES routine_week_plans(id) ON DELETE CASCADE
   );
 
+  CREATE TABLE IF NOT EXISTS user_onboarding (
+    user_id INTEGER PRIMARY KEY,
+    current_step INTEGER NOT NULL DEFAULT 1 CHECK (current_step BETWEEN 1 AND 3),
+    completed_at TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  );
+
   CREATE TABLE IF NOT EXISTS vestibulares (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     nome TEXT NOT NULL,
@@ -1974,11 +1983,17 @@ db.exec(`
     ano INTEGER NOT NULL,
     fase TEXT NOT NULL DEFAULT '',
     versao TEXT NOT NULL DEFAULT '',
+    dia INTEGER NOT NULL DEFAULT 0,
+    caderno TEXT NOT NULL DEFAULT '',
     materia_geral TEXT NOT NULL DEFAULT '',
     pdf_file_path TEXT NOT NULL DEFAULT '',
     pdf_original_name TEXT NOT NULL DEFAULT '',
     pdf_mime_type TEXT NOT NULL DEFAULT '',
     pdf_size_bytes INTEGER NOT NULL DEFAULT 0,
+    gabarito_file_path TEXT NOT NULL DEFAULT '',
+    gabarito_original_name TEXT NOT NULL DEFAULT '',
+    gabarito_mime_type TEXT NOT NULL DEFAULT '',
+    gabarito_size_bytes INTEGER NOT NULL DEFAULT 0,
     extracted_text TEXT NOT NULL DEFAULT '',
     process_status TEXT NOT NULL DEFAULT 'pending' CHECK (process_status IN (${SQL_QUESTION_BANK_PROCESS_STATUS_LIST})),
     status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN (${SQL_QUESTION_BANK_PROOF_STATUS_LIST})),
@@ -1998,6 +2013,7 @@ db.exec(`
     resposta_correta TEXT NOT NULL DEFAULT '' CHECK (resposta_correta IN ('', ${SQL_QUESTION_BANK_ALTERNATIVE_LETTER_LIST})),
     status_revisao TEXT NOT NULL DEFAULT 'pending' CHECK (status_revisao IN (${SQL_QUESTION_BANK_REVIEW_STATUS_LIST})),
     origem_pdf TEXT NOT NULL DEFAULT '',
+    resolucao TEXT NOT NULL DEFAULT '',
     observacoes_adm TEXT NOT NULL DEFAULT '',
     sugestao_materia TEXT NOT NULL DEFAULT '',
     sugestao_tema TEXT NOT NULL DEFAULT '',
@@ -2190,6 +2206,22 @@ function ensureUserColumns() {
       name: "focus_subject_name",
       sql: "ALTER TABLE users ADD COLUMN focus_subject_name TEXT NOT NULL DEFAULT ''",
     },
+    {
+      name: "is_primary_admin",
+      sql: "ALTER TABLE users ADD COLUMN is_primary_admin INTEGER NOT NULL DEFAULT 0",
+    },
+    {
+      name: "admin_can_manage_admins",
+      sql: "ALTER TABLE users ADD COLUMN admin_can_manage_admins INTEGER NOT NULL DEFAULT 0",
+    },
+    {
+      name: "admin_granted_by_user_id",
+      sql: "ALTER TABLE users ADD COLUMN admin_granted_by_user_id INTEGER",
+    },
+    {
+      name: "admin_granted_at",
+      sql: "ALTER TABLE users ADD COLUMN admin_granted_at TEXT NOT NULL DEFAULT ''",
+    },
   ];
 
   migrations.forEach((migration) => {
@@ -2317,10 +2349,84 @@ function ensureRoutinePreferenceColumns() {
   });
 }
 
+function ensureQuestionBankColumns() {
+  const proofColumns = db
+    .prepare("PRAGMA table_info(provas)")
+    .all()
+    .map((column) => column.name);
+
+  if (proofColumns.length) {
+    const proofMigrations = [
+      {
+        name: "dia",
+        sql: "ALTER TABLE provas ADD COLUMN dia INTEGER NOT NULL DEFAULT 0",
+      },
+      {
+        name: "caderno",
+        sql: "ALTER TABLE provas ADD COLUMN caderno TEXT NOT NULL DEFAULT ''",
+      },
+      {
+        name: "gabarito_file_path",
+        sql: "ALTER TABLE provas ADD COLUMN gabarito_file_path TEXT NOT NULL DEFAULT ''",
+      },
+      {
+        name: "gabarito_original_name",
+        sql: "ALTER TABLE provas ADD COLUMN gabarito_original_name TEXT NOT NULL DEFAULT ''",
+      },
+      {
+        name: "gabarito_mime_type",
+        sql: "ALTER TABLE provas ADD COLUMN gabarito_mime_type TEXT NOT NULL DEFAULT ''",
+      },
+      {
+        name: "gabarito_size_bytes",
+        sql: "ALTER TABLE provas ADD COLUMN gabarito_size_bytes INTEGER NOT NULL DEFAULT 0",
+      },
+    ];
+
+    proofMigrations.forEach((migration) => {
+      if (!proofColumns.includes(migration.name)) {
+        db.exec(migration.sql);
+      }
+    });
+  }
+
+  const questionColumns = db
+    .prepare("PRAGMA table_info(questoes)")
+    .all()
+    .map((column) => column.name);
+
+  if (questionColumns.length && !questionColumns.includes("resolucao")) {
+    db.exec("ALTER TABLE questoes ADD COLUMN resolucao TEXT NOT NULL DEFAULT ''");
+  }
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_provas_catalogo
+    ON provas (vestibular_id, ano DESC, dia ASC, caderno ASC)
+  `);
+
+  const duplicateQuestionNumber = db.prepare(`
+    SELECT prova_id AS provaId, numero, COUNT(*) AS total
+    FROM questoes
+    WHERE numero > 0
+    GROUP BY prova_id, numero
+    HAVING COUNT(*) > 1
+    LIMIT 1
+  `).get();
+
+  if (!duplicateQuestionNumber) {
+    db.exec(`
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_questoes_prova_numero_unique
+      ON questoes (prova_id, numero)
+      WHERE numero > 0
+    `);
+  }
+}
+
 ensureUserColumns();
 ensureStartSessionColumns();
 ensureEssaySubmissionColumns();
 ensureRoutinePreferenceColumns();
+ensureQuestionBankColumns();
 
 const insertUserStatement = db.prepare(`
   INSERT INTO users (name, first_name, last_name, email, password_hash, role, created_at)
@@ -2339,6 +2445,10 @@ const findUserByEmailStatement = db.prepare(`
     email,
     password_hash,
     role,
+    is_primary_admin AS isPrimaryAdmin,
+    admin_can_manage_admins AS adminCanManageAdmins,
+    admin_granted_by_user_id AS adminGrantedByUserId,
+    admin_granted_at AS adminGrantedAt,
     created_at AS createdAt
   FROM users
   WHERE email = ?
@@ -2355,6 +2465,10 @@ const findUserByIdStatement = db.prepare(`
     focus_subject_name AS focusSubjectName,
     email,
     role,
+    is_primary_admin AS isPrimaryAdmin,
+    admin_can_manage_admins AS adminCanManageAdmins,
+    admin_granted_by_user_id AS adminGrantedByUserId,
+    admin_granted_at AS adminGrantedAt,
     created_at AS createdAt
   FROM users
   WHERE id = ?
@@ -2376,6 +2490,10 @@ const findUserByTokenStatement = db.prepare(`
     users.focus_subject_name AS focusSubjectName,
     users.email,
     users.role,
+    users.is_primary_admin AS isPrimaryAdmin,
+    users.admin_can_manage_admins AS adminCanManageAdmins,
+    users.admin_granted_by_user_id AS adminGrantedByUserId,
+    users.admin_granted_at AS adminGrantedAt,
     users.created_at AS createdAt,
     auth_sessions.id AS authSessionId
   FROM auth_sessions
@@ -2572,6 +2690,10 @@ const adminUsersStatement = db.prepare(`
     users.focus_subject_name AS focusSubjectName,
     users.email,
     users.role,
+    users.is_primary_admin AS isPrimaryAdmin,
+    users.admin_can_manage_admins AS adminCanManageAdmins,
+    users.admin_granted_by_user_id AS adminGrantedByUserId,
+    users.admin_granted_at AS adminGrantedAt,
     users.created_at AS createdAt,
     COUNT(start_sessions.id) AS totalSessions,
     COALESCE(ROUND(SUM(start_sessions.minutes), 1), 0) AS totalMinutes,
@@ -2593,6 +2715,10 @@ const adminUserByIdStatement = db.prepare(`
     users.focus_subject_name AS focusSubjectName,
     users.email,
     users.role,
+    users.is_primary_admin AS isPrimaryAdmin,
+    users.admin_can_manage_admins AS adminCanManageAdmins,
+    users.admin_granted_by_user_id AS adminGrantedByUserId,
+    users.admin_granted_at AS adminGrantedAt,
     users.created_at AS createdAt,
     COUNT(start_sessions.id) AS totalSessions,
     COALESCE(ROUND(SUM(start_sessions.minutes), 1), 0) AS totalMinutes,
@@ -2606,6 +2732,17 @@ const adminUserByIdStatement = db.prepare(`
 const updateUserRoleStatement = db.prepare(`
   UPDATE users
   SET role = ?
+  WHERE id = ?
+`);
+
+const updateUserAdminAccessStatement = db.prepare(`
+  UPDATE users
+  SET
+    role = ?,
+    is_primary_admin = ?,
+    admin_can_manage_admins = ?,
+    admin_granted_by_user_id = ?,
+    admin_granted_at = ?
   WHERE id = ?
 `);
 
@@ -2779,6 +2916,12 @@ const countAdminsStatement = db.prepare(`
   WHERE role = 'admin'
 `);
 
+const countAdminManagersStatement = db.prepare(`
+  SELECT COUNT(*) AS total
+  FROM users
+  WHERE role = 'admin' AND admin_can_manage_admins = 1
+`);
+
 const getRoutinePreferencesStatement = db.prepare(`
   SELECT
     user_id AS userId,
@@ -2821,6 +2964,32 @@ const upsertRoutinePreferencesStatement = db.prepare(`
     study_days_json = excluded.study_days_json,
     weekday_minutes_json = excluded.weekday_minutes_json,
     weekly_goal_minutes = excluded.weekly_goal_minutes,
+    updated_at = excluded.updated_at
+`);
+
+const getUserOnboardingStatement = db.prepare(`
+  SELECT
+    user_id AS userId,
+    current_step AS currentStep,
+    completed_at AS completedAt,
+    created_at AS createdAt,
+    updated_at AS updatedAt
+  FROM user_onboarding
+  WHERE user_id = ?
+`);
+
+const upsertUserOnboardingStatement = db.prepare(`
+  INSERT INTO user_onboarding (
+    user_id,
+    current_step,
+    completed_at,
+    created_at,
+    updated_at
+  )
+  VALUES (?, ?, ?, ?, ?)
+  ON CONFLICT(user_id) DO UPDATE SET
+    current_step = excluded.current_step,
+    completed_at = excluded.completed_at,
     updated_at = excluded.updated_at
 `);
 
@@ -3000,11 +3169,17 @@ const listQuestionProofsStatement = db.prepare(`
     provas.ano,
     provas.fase,
     provas.versao,
+    provas.dia,
+    provas.caderno,
     provas.materia_geral AS materiaGeral,
     provas.pdf_file_path AS pdfFilePath,
     provas.pdf_original_name AS pdfOriginalName,
     provas.pdf_mime_type AS pdfMimeType,
     provas.pdf_size_bytes AS pdfSizeBytes,
+    provas.gabarito_file_path AS answerKeyFilePath,
+    provas.gabarito_original_name AS answerKeyOriginalName,
+    provas.gabarito_mime_type AS answerKeyMimeType,
+    provas.gabarito_size_bytes AS answerKeySizeBytes,
     provas.extracted_text AS extractedText,
     provas.process_status AS processStatus,
     provas.status,
@@ -3030,11 +3205,17 @@ const getQuestionProofByIdStatement = db.prepare(`
     provas.ano,
     provas.fase,
     provas.versao,
+    provas.dia,
+    provas.caderno,
     provas.materia_geral AS materiaGeral,
     provas.pdf_file_path AS pdfFilePath,
     provas.pdf_original_name AS pdfOriginalName,
     provas.pdf_mime_type AS pdfMimeType,
     provas.pdf_size_bytes AS pdfSizeBytes,
+    provas.gabarito_file_path AS answerKeyFilePath,
+    provas.gabarito_original_name AS answerKeyOriginalName,
+    provas.gabarito_mime_type AS answerKeyMimeType,
+    provas.gabarito_size_bytes AS answerKeySizeBytes,
     provas.extracted_text AS extractedText,
     provas.process_status AS processStatus,
     provas.status,
@@ -3057,18 +3238,24 @@ const insertQuestionProofStatement = db.prepare(`
     ano,
     fase,
     versao,
+    dia,
+    caderno,
     materia_geral,
     pdf_file_path,
     pdf_original_name,
     pdf_mime_type,
     pdf_size_bytes,
+    gabarito_file_path,
+    gabarito_original_name,
+    gabarito_mime_type,
+    gabarito_size_bytes,
     extracted_text,
     process_status,
     status,
     created_at,
     updated_at
   )
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `);
 
 const updateQuestionProofStatement = db.prepare(`
@@ -3078,11 +3265,17 @@ const updateQuestionProofStatement = db.prepare(`
     ano = ?,
     fase = ?,
     versao = ?,
+    dia = ?,
+    caderno = ?,
     materia_geral = ?,
     pdf_file_path = ?,
     pdf_original_name = ?,
     pdf_mime_type = ?,
     pdf_size_bytes = ?,
+    gabarito_file_path = ?,
+    gabarito_original_name = ?,
+    gabarito_mime_type = ?,
+    gabarito_size_bytes = ?,
     extracted_text = ?,
     process_status = ?,
     status = ?,
@@ -3127,6 +3320,7 @@ const listQuestionsByProofStatement = db.prepare(`
     questoes.resposta_correta AS respostaCorreta,
     questoes.status_revisao AS statusRevisao,
     questoes.origem_pdf AS origemPdf,
+    questoes.resolucao,
     questoes.observacoes_adm AS observacoesAdm,
     questoes.sugestao_materia AS sugestaoMateria,
     questoes.sugestao_tema AS sugestaoTema,
@@ -3157,6 +3351,7 @@ const getQuestionByIdStatement = db.prepare(`
     questoes.resposta_correta AS respostaCorreta,
     questoes.status_revisao AS statusRevisao,
     questoes.origem_pdf AS origemPdf,
+    questoes.resolucao,
     questoes.observacoes_adm AS observacoesAdm,
     questoes.sugestao_materia AS sugestaoMateria,
     questoes.sugestao_tema AS sugestaoTema,
@@ -3168,6 +3363,10 @@ const getQuestionByIdStatement = db.prepare(`
     provas.ano,
     provas.fase,
     provas.versao,
+    provas.dia,
+    provas.caderno,
+    provas.gabarito_file_path AS answerKeyFilePath,
+    provas.gabarito_original_name AS answerKeyOriginalName,
     provas.status AS proofStatus,
     vestibulares.id AS vestibularId,
     vestibulares.nome AS vestibularNome,
@@ -3195,6 +3394,7 @@ const insertQuestionStatement = db.prepare(`
     resposta_correta,
     status_revisao,
     origem_pdf,
+    resolucao,
     observacoes_adm,
     sugestao_materia,
     sugestao_tema,
@@ -3203,7 +3403,7 @@ const insertQuestionStatement = db.prepare(`
     updated_at,
     published_at
   )
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `);
 
 const updateQuestionStatement = db.prepare(`
@@ -3217,6 +3417,7 @@ const updateQuestionStatement = db.prepare(`
     resposta_correta = ?,
     status_revisao = ?,
     origem_pdf = ?,
+    resolucao = ?,
     observacoes_adm = ?,
     sugestao_materia = ?,
     sugestao_tema = ?,
@@ -3258,6 +3459,16 @@ const listQuestionAlternativesForQuestionStatement = db.prepare(`
   FROM alternativas
   WHERE questao_id = ?
   ORDER BY letra ASC, id ASC
+`);
+
+const findQuestionByProofAndNumberStatement = db.prepare(`
+  SELECT
+    id,
+    prova_id AS provaId,
+    numero
+  FROM questoes
+  WHERE prova_id = ? AND numero = ?
+  LIMIT 1
 `);
 
 const aggregateQuestionStatsStatement = db.prepare(`
@@ -3692,7 +3903,19 @@ function getRoutinePreferenceKey(subjectKey, customSubjectName = "") {
 
 function getRoutineCourseLabel(courseKey, courseName = "") {
   const normalizedCourseKey = sanitizeRoutineCourseKey(courseKey, true);
-  const customCourseName = sanitizeShortText(courseName, 80);
+  const normalizedCourseName = sanitizeShortText(courseName, 220);
+  let customCourseName = normalizedCourseName;
+
+  if (normalizedCourseName.includes(":")) {
+    const courseChunk = normalizedCourseName
+      .split("|")
+      .map((chunk) => chunk.trim())
+      .find((chunk) => chunk.toLowerCase().startsWith("curso:"));
+
+    if (courseChunk) {
+      customCourseName = sanitizeShortText(courseChunk.slice(courseChunk.indexOf(":") + 1).trim(), 220);
+    }
+  }
 
   if (normalizedCourseKey === "outro" && customCourseName) {
     return customCourseName;
@@ -4080,6 +4303,13 @@ function sanitizeUser(row) {
     focusSubjectLabel: getSubjectLabel(focusSubjectKey, focusSubjectName),
     email: row.email,
     role: row.role,
+    isPrimaryAdmin: Boolean(row.isPrimaryAdmin),
+    adminCanManageAdmins: Boolean(row.adminCanManageAdmins),
+    permissions: {
+      canAccessAdmin: row.role === "admin",
+      canManageAdmins: row.role === "admin" && Boolean(row.adminCanManageAdmins),
+      isPrimaryAdmin: row.role === "admin" && Boolean(row.isPrimaryAdmin),
+    },
     createdAt: row.createdAt,
   };
 }
@@ -4526,6 +4756,8 @@ function serializeQuestionProofRow(row, { includeExtractedText = false } = {}) {
     ano: Number(row.ano) || 0,
     fase: String(row.fase || ""),
     versao: String(row.versao || ""),
+    dia: Number(row.dia) || 0,
+    caderno: sanitizeQuestionBankBooklet(row.caderno || ""),
     materiaGeral: String(row.materiaGeral || ""),
     pdf: {
       hasFile: Boolean(String(row.pdfFilePath || "")),
@@ -4534,6 +4766,14 @@ function serializeQuestionProofRow(row, { includeExtractedText = false } = {}) {
       mimeType: String(row.pdfMimeType || ""),
       sizeBytes: Number(row.pdfSizeBytes) || 0,
       downloadUrl: row.pdfFilePath ? `/api/admin/question-bank/provas/${Number(row.id) || 0}/file` : "",
+    },
+    answerKey: {
+      hasFile: Boolean(String(row.answerKeyFilePath || "")),
+      filePath: String(row.answerKeyFilePath || ""),
+      originalName: String(row.answerKeyOriginalName || ""),
+      mimeType: String(row.answerKeyMimeType || ""),
+      sizeBytes: Number(row.answerKeySizeBytes) || 0,
+      downloadUrl: row.answerKeyFilePath ? `/api/admin/question-bank/provas/${Number(row.id) || 0}/gabarito` : "",
     },
     extractedText: includeExtractedText ? String(row.extractedText || "") : "",
     extractedTextLength: String(row.extractedText || "").length,
@@ -4566,6 +4806,7 @@ function serializeAdminQuestionRow(row, alternatives = []) {
     respostaCorreta: sanitizeQuestionAlternativeLetter(row.respostaCorreta, true),
     statusRevisao: sanitizeQuestionReviewStatus(row.statusRevisao),
     origemPdf: String(row.origemPdf || ""),
+    resolucao: String(row.resolucao || ""),
     observacoesAdm: String(row.observacoesAdm || ""),
     sugestoes: {
       materia: String(row.sugestaoMateria || ""),
@@ -4582,6 +4823,10 @@ function serializeAdminQuestionRow(row, alternatives = []) {
       ano: Number(row.ano) || 0,
       fase: String(row.fase || ""),
       versao: String(row.versao || ""),
+      dia: Number(row.dia) || 0,
+      caderno: sanitizeQuestionBankBooklet(row.caderno || ""),
+      answerKeyOriginalName: String(row.answerKeyOriginalName || ""),
+      answerKeyViewerUrl: row.answerKeyFilePath ? `/api/admin/question-bank/provas/${Number(row.proofId || row.provaId) || 0}/gabarito` : "",
       status: String(row.proofStatus || ""),
     },
     vestibular: {
@@ -4628,14 +4873,19 @@ function serializeStudentQuestionRow(row, alternatives = [], options = {}) {
       ano: Number(row.ano) || 0,
       fase: String(row.fase || ""),
       versao: String(row.versao || ""),
+      dia: Number(row.dia) || 0,
+      caderno: sanitizeQuestionBankBooklet(row.caderno || ""),
       pdfOriginalName: String(row.pdfOriginalName || ""),
       pdfViewerUrl: row.pdfFilePath ? `/api/question-bank/provas/${Number(row.proofId || row.provaId) || 0}/file` : "",
+      answerKeyOriginalName: String(row.answerKeyOriginalName || ""),
+      answerKeyViewerUrl: row.answerKeyFilePath ? `/api/question-bank/provas/${Number(row.proofId || row.provaId) || 0}/gabarito` : "",
     },
     materia: String(row.materia || ""),
     tema: String(row.tema || ""),
     assunto: String(row.tema || row.materia || ""),
     dificuldade: sanitizeQuestionDifficulty(row.dificuldade),
     enunciado: options.includeFullText ? prompt : "",
+    resolucao: options.includeFullText ? String(row.resolucao || "") : "",
     excerpt,
     alternatives: buildQuestionAlternativeSlots(alternatives, { filledOnly: true }),
     stats: serializeQuestionStatsRow(row),
@@ -4756,10 +5006,11 @@ function sanitizeQuestionPayload(payload, options = {}) {
   const enunciado = sanitizeQuestionBankMultilineText(payload?.enunciado, 20_000);
   const materia = normalizeQuestionBankTerm(payload?.materia, 80);
   const tema = normalizeQuestionBankTerm(payload?.tema, 120);
-  const dificuldade = sanitizeQuestionDifficulty(payload?.dificuldade);
+  const dificuldade = sanitizeQuestionDifficulty(payload?.dificuldade ?? options.dificuldade ?? "media");
   const respostaCorreta = sanitizeQuestionAlternativeLetter(payload?.respostaCorreta, true);
   const statusRevisao = sanitizeQuestionReviewStatus(payload?.statusRevisao, options.defaultStatusRevisao || "pending");
   const origemPdf = sanitizeQuestionBankMultilineText(payload?.origemPdf, 220).replace(/\n+/g, " ").trim();
+  const resolucao = sanitizeQuestionBankMultilineText(payload?.resolucao, 12_000);
   const observacoesAdm = sanitizeQuestionBankMultilineText(payload?.observacoesAdm, 2_200);
   const sugestaoMateria = normalizeQuestionBankTerm(payload?.sugestaoMateria || payload?.sugestoes?.materia || materia, 80);
   const sugestaoTema = normalizeQuestionBankTerm(payload?.sugestaoTema || payload?.sugestoes?.tema || tema, 120);
@@ -4777,10 +5028,6 @@ function sanitizeQuestionPayload(payload, options = {}) {
     throw createError(400, "Preencha o enunciado da questao.");
   }
 
-  if (!materia) {
-    throw createError(400, "Defina a materia da questao.");
-  }
-
   if (statusRevisao === "approved" && numero <= 0) {
     throw createError(400, "Defina o numero da questao antes de aprovar.");
   }
@@ -4795,6 +5042,7 @@ function sanitizeQuestionPayload(payload, options = {}) {
     respostaCorreta,
     statusRevisao,
     origemPdf,
+    resolucao,
     observacoesAdm,
     sugestaoMateria,
     sugestaoTema,
@@ -4807,6 +5055,8 @@ function sanitizeQuestionProofPayload(payload, currentProof = null) {
   const ano = sanitizeQuestionBankYear(payload?.ano ?? currentProof?.ano);
   const fase = sanitizeShortText(payload?.fase ?? currentProof?.fase ?? "", 80);
   const versao = sanitizeShortText(payload?.versao ?? currentProof?.versao ?? "", 80);
+  const dia = clampInteger(payload?.dia ?? currentProof?.dia ?? 0, 0, 9);
+  const caderno = sanitizeQuestionBankBooklet(payload?.caderno ?? currentProof?.caderno ?? "");
   const materiaGeral = normalizeQuestionBankTerm(payload?.materiaGeral ?? currentProof?.materiaGeral ?? "", 80);
   const extractedText = payload?.extractedText === undefined
     ? sanitizeQuestionBankMultilineText(currentProof?.extractedText || "", 220_000)
@@ -4820,6 +5070,8 @@ function sanitizeQuestionProofPayload(payload, currentProof = null) {
     ano,
     fase,
     versao,
+    dia,
+    caderno,
     materiaGeral,
     extractedText,
     processStatus,
@@ -4920,53 +5172,47 @@ function buildQuestionBankReferenceData({ publishedOnly = false } = {}) {
         FROM provas
         ORDER BY ano DESC
       `).all();
-  const matterRows = publishedOnly
+  const dayRows = publishedOnly
     ? db.prepare(`
-        SELECT DISTINCT questoes.materia AS value
-        FROM questoes
-        INNER JOIN provas ON provas.id = questoes.prova_id
+        SELECT DISTINCT provas.dia AS value
+        FROM provas
+        INNER JOIN questoes ON questoes.prova_id = provas.id
         WHERE provas.status = 'published'
           AND questoes.status_revisao = 'approved'
-          AND questoes.materia <> ''
-        ORDER BY questoes.materia ASC
+          AND provas.dia > 0
+        ORDER BY provas.dia ASC
       `).all()
     : db.prepare(`
-        SELECT DISTINCT materia AS value
-        FROM questoes
-        WHERE materia <> ''
-        ORDER BY materia ASC
+        SELECT DISTINCT dia AS value
+        FROM provas
+        WHERE dia > 0
+        ORDER BY dia ASC
       `).all();
-  const themeRows = publishedOnly
+  const bookletRows = publishedOnly
     ? db.prepare(`
-        SELECT DISTINCT questoes.tema AS value
-        FROM questoes
-        INNER JOIN provas ON provas.id = questoes.prova_id
+        SELECT DISTINCT provas.caderno AS value
+        FROM provas
+        INNER JOIN questoes ON questoes.prova_id = provas.id
         WHERE provas.status = 'published'
           AND questoes.status_revisao = 'approved'
-          AND questoes.tema <> ''
-        ORDER BY questoes.tema ASC
+          AND provas.caderno <> ''
+        ORDER BY provas.caderno ASC
       `).all()
     : db.prepare(`
-        SELECT DISTINCT tema AS value
-        FROM questoes
-        WHERE tema <> ''
-        ORDER BY tema ASC
+        SELECT DISTINCT caderno AS value
+        FROM provas
+        WHERE caderno <> ''
+        ORDER BY caderno ASC
       `).all();
-  const materias = Array.from(new Set([
-    ...QUESTION_BANK_SUBJECT_VALUES,
-    ...matterRows.map((row) => String(row.value || "")).filter(Boolean),
-  ]));
 
   return {
     vestibulares,
     anos: yearRows.map((row) => Number(row.value)).filter((value) => Number.isInteger(value) && value > 0),
-    materias,
-    temas: themeRows.map((row) => String(row.value || "")).filter(Boolean),
-    dificuldades: QUESTION_DIFFICULTY_VALUES.slice(),
+    dias: dayRows.map((row) => Number(row.value)).filter((value) => Number.isInteger(value) && value > 0),
+    cadernos: bookletRows.map((row) => sanitizeQuestionBankBooklet(row.value || "")).filter(Boolean),
     proofStatuses: QUESTION_PROOF_STATUS_VALUES.slice(),
     reviewStatuses: QUESTION_REVIEW_STATUS_VALUES.slice(),
     processStatuses: QUESTION_PROCESS_STATUS_VALUES.slice(),
-    statusFilters: Array.from(QUESTION_BANK_FLAG_FILTERS),
   };
 }
 
@@ -5218,9 +5464,8 @@ function listPublishedQuestionBankQuestions(userId, filters = {}) {
   const proofId = Number(filters.proofId || filters.provaId || 0);
   const vestibularId = Number(filters.vestibularId || 0);
   const ano = Number(filters.ano || 0);
-  const materia = normalizeQuestionBankTerm(filters.materia || "", 80);
-  const dificuldade = sanitizeQuestionDifficulty(filters.dificuldade || "", "");
-  const statusFilter = sanitizeQuestionFlagFilter(filters.status || "all");
+  const dia = clampInteger(filters.dia || 0, 0, 2);
+  const caderno = sanitizeQuestionBankBooklet(filters.caderno || "");
   const limit = clampInteger(filters.limit || 60, 1, 120);
 
   if (Number.isInteger(proofId) && proofId > 0) {
@@ -5238,24 +5483,14 @@ function listPublishedQuestionBankQuestions(userId, filters = {}) {
     params.push(ano);
   }
 
-  if (materia) {
-    conditions.push("questoes.materia = ?");
-    params.push(materia);
+  if (Number.isInteger(dia) && dia > 0) {
+    conditions.push("provas.dia = ?");
+    params.push(dia);
   }
 
-  if (dificuldade) {
-    conditions.push("questoes.dificuldade = ?");
-    params.push(dificuldade);
-  }
-
-  if (statusFilter === "unanswered") {
-    conditions.push("latest_attempt.id IS NULL");
-  } else if (statusFilter === "wrong") {
-    conditions.push("latest_attempt.acertou = 0");
-  } else if (statusFilter === "favorites") {
-    conditions.push("COALESCE(user_state.is_favorite, 0) = 1");
-  } else if (statusFilter === "review") {
-    conditions.push("COALESCE(user_state.review_later, 0) = 1");
+  if (caderno) {
+    conditions.push("provas.caderno = ?");
+    params.push(caderno);
   }
 
   const sql = `
@@ -5274,8 +5509,12 @@ function listPublishedQuestionBankQuestions(userId, filters = {}) {
       provas.ano,
       provas.fase,
       provas.versao,
+      provas.dia,
+      provas.caderno,
       provas.pdf_file_path AS pdfFilePath,
       provas.pdf_original_name AS pdfOriginalName,
+      provas.gabarito_file_path AS answerKeyFilePath,
+      provas.gabarito_original_name AS answerKeyOriginalName,
       vestibulares.id AS vestibularId,
       vestibulares.nome AS vestibularNome,
       vestibulares.sigla AS vestibularSigla,
@@ -5334,12 +5573,17 @@ function getPublishedQuestionForUser(userId, questionId, options = {}) {
       questoes.resposta_correta AS respostaCorreta,
       questoes.created_at AS createdAt,
       questoes.updated_at AS updatedAt,
+      questoes.resolucao,
       provas.id AS proofId,
       provas.ano,
       provas.fase,
       provas.versao,
+      provas.dia,
+      provas.caderno,
       provas.pdf_file_path AS pdfFilePath,
       provas.pdf_original_name AS pdfOriginalName,
+      provas.gabarito_file_path AS answerKeyFilePath,
+      provas.gabarito_original_name AS answerKeyOriginalName,
       vestibulares.id AS vestibularId,
       vestibulares.nome AS vestibularNome,
       vestibulares.sigla AS vestibularSigla,
@@ -5502,6 +5746,14 @@ function getDefaultRoutinePreferences() {
   };
 }
 
+const ONBOARDING_STEP_PAGE_BY_ID = {
+  1: "onboarding-curso.html",
+  2: "onboarding-semana.html",
+  3: "onboarding-prioridades.html",
+};
+
+const ONBOARDING_PAGE_SET = new Set(Object.values(ONBOARDING_STEP_PAGE_BY_ID));
+
 function sanitizeRoutineSubjectPreferenceEntry(entry) {
   const subjectKey = sanitizeSubjectKey(entry?.subjectKey, DEFAULT_SUBJECT_KEY);
   const customSubjectName = subjectKey === "outras"
@@ -5511,7 +5763,7 @@ function sanitizeRoutineSubjectPreferenceEntry(entry) {
   const difficultyLevel = sanitizeRoutineDifficultyLevel(entry?.difficultyLevel);
 
   if (subjectKey === "outras" && !customSubjectName) {
-    throw createError(400, "Informe o nome da matéria personalizada da rotina.");
+    return null;
   }
 
   return {
@@ -5530,6 +5782,11 @@ function normalizeRoutineSubjectPreferences(entries) {
 
   rawEntries.forEach((entry) => {
     const normalizedEntry = sanitizeRoutineSubjectPreferenceEntry(entry);
+
+    if (!normalizedEntry) {
+      return;
+    }
+
     const preferenceKey = getRoutinePreferenceKey(
       normalizedEntry.subjectKey,
       normalizedEntry.customSubjectName
@@ -5586,7 +5843,7 @@ function sanitizeRoutinePreferencesPayload(payload, currentPreferences = getDefa
   );
   const courseName = sanitizeShortText(
     payload?.courseName === undefined ? currentPreferences.courseName : payload.courseName,
-    80
+    220
   );
   const studyDays = normalizeRoutineStudyDays(rawStudyDays);
   const weekdayMinutes = normalizeRoutineWeekdayMinutes(
@@ -5638,7 +5895,7 @@ function sanitizeRoutinePreferencesRow(row, subjectPreferenceRows = []) {
     courseKey: sanitizeRoutineCourseKey(row.courseKey, true),
     admissionCategoryKey: sanitizeRoutineAdmissionCategoryKey(row.admissionCategoryKey),
     courseTrackKey: sanitizeRoutineTrackKey(row.courseTrackKey),
-    courseName: sanitizeShortText(row.courseName, 80),
+    courseName: sanitizeShortText(row.courseName, 220),
     studyDays,
     weekdayMinutes,
     weeklyGoalMinutes: getRoutineWeeklyGoalMinutes(weekdayMinutes, row.weeklyGoalMinutes),
@@ -5647,17 +5904,190 @@ function sanitizeRoutinePreferencesRow(row, subjectPreferenceRows = []) {
   };
 }
 
+function parseRoutineCourseContext(value) {
+  const context = {
+    customCourse: "",
+    city: "",
+    university: "",
+    campus: "",
+    shift: "",
+    note: "",
+  };
+  const cleanValue = String(value || "").trim();
+
+  if (!cleanValue) {
+    return context;
+  }
+
+  cleanValue.split("|").map((chunk) => chunk.trim()).forEach((chunk) => {
+    const [rawLabel, ...rest] = chunk.split(":");
+    const label = String(rawLabel || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .trim();
+    const nextValue = rest.join(":").trim();
+
+    if (!nextValue) {
+      return;
+    }
+
+    if (label === "cidade") {
+      context.city = nextValue;
+      return;
+    }
+
+    if (label === "curso") {
+      context.customCourse = nextValue;
+      return;
+    }
+
+    if (label === "universidade") {
+      context.university = nextValue;
+      return;
+    }
+
+    if (label === "campus") {
+      context.campus = nextValue;
+      return;
+    }
+
+    if (label === "turno") {
+      context.shift = nextValue;
+      return;
+    }
+
+    if (label === "obs") {
+      context.note = nextValue;
+    }
+  });
+
+  if (
+    !context.customCourse &&
+    !context.city &&
+    !context.university &&
+    !context.campus &&
+    !context.note
+  ) {
+    context.customCourse = cleanValue;
+    context.note = cleanValue;
+  }
+
+  return context;
+}
+
+function isRoutineOnboardingStepOneComplete(preferences = getDefaultRoutinePreferences()) {
+  const context = parseRoutineCourseContext(preferences.courseName);
+
+  return Boolean(
+    String(preferences.courseKey || "").trim() &&
+    String(preferences.admissionCategoryKey || "").trim() &&
+    String(preferences.primaryExamKey || "").trim() &&
+    String(context.city || "").trim() &&
+    Number(preferences.weeklyGoalMinutes || 0) >= 60
+  );
+}
+
+function isRoutineOnboardingStepTwoComplete(preferences = getDefaultRoutinePreferences()) {
+  const studyDays = Array.isArray(preferences.studyDays) ? preferences.studyDays : [];
+
+  if (!studyDays.length) {
+    return false;
+  }
+
+  return studyDays.every((day) => Number(preferences.weekdayMinutes?.[String(day)] || 0) >= 30);
+}
+
+function normalizeOnboardingStep(value) {
+  const nextStep = Number(value || 1);
+
+  if (!Number.isInteger(nextStep)) {
+    return 1;
+  }
+
+  return Math.max(1, Math.min(3, nextStep));
+}
+
+function getOnboardingPageForStep(stepNumber) {
+  return ONBOARDING_STEP_PAGE_BY_ID[normalizeOnboardingStep(stepNumber)] || ONBOARDING_STEP_PAGE_BY_ID[1];
+}
+
+function getUserOnboardingStatus(userId) {
+  const row = getUserOnboardingStatement.get(userId);
+
+  if (!row) {
+    return {
+      started: false,
+      required: false,
+      completed: true,
+      currentStep: 3,
+      page: "index.html",
+      completedAt: "",
+    };
+  }
+
+  const completedAt = String(row.completedAt || "").trim();
+  const completed = Boolean(completedAt);
+  const currentStep = completed ? 3 : normalizeOnboardingStep(row.currentStep);
+
+  return {
+    started: true,
+    required: !completed,
+    completed,
+    currentStep,
+    page: completed ? "index.html" : getOnboardingPageForStep(currentStep),
+    completedAt,
+  };
+}
+
+function persistUserOnboardingState(userId, options = {}) {
+  const currentState = getUserOnboardingStatement.get(userId);
+  const createdAt = currentState?.createdAt || nowIso();
+  const currentStep = normalizeOnboardingStep(options.currentStep ?? currentState?.currentStep ?? 1);
+  const completedAt = options.completedAt === undefined
+    ? String(currentState?.completedAt || "")
+    : String(options.completedAt || "");
+  const updatedAt = nowIso();
+
+  upsertUserOnboardingStatement.run(
+    userId,
+    currentStep,
+    completedAt,
+    createdAt,
+    updatedAt
+  );
+
+  return getUserOnboardingStatus(userId);
+}
+
+function startUserOnboarding(userId) {
+  return persistUserOnboardingState(userId, {
+    currentStep: 1,
+    completedAt: "",
+  });
+}
+
+function advanceUserOnboarding(userId, currentStep) {
+  return persistUserOnboardingState(userId, {
+    currentStep,
+    completedAt: "",
+  });
+}
+
+function completeUserOnboarding(userId) {
+  return persistUserOnboardingState(userId, {
+    currentStep: 3,
+    completedAt: nowIso(),
+  });
+}
+
 function getRoutinePreferences(userId) {
   const row = getRoutinePreferencesStatement.get(userId);
   const subjectPreferenceRows = listRoutineSubjectPreferencesStatement.all(userId);
   return sanitizeRoutinePreferencesRow(row, subjectPreferenceRows);
 }
 
-function saveRoutinePreferences(userId, payload) {
-  const currentPreferences = getRoutinePreferences(userId);
-  const nextPreferences = sanitizeRoutinePreferencesPayload(payload, currentPreferences);
-  const updatedAt = nowIso();
-
+function persistRoutinePreferences(userId, nextPreferences, updatedAt = nowIso()) {
   withTransaction(() => {
     upsertRoutinePreferencesStatement.run(
       userId,
@@ -5686,6 +6116,12 @@ function saveRoutinePreferences(userId, payload) {
       );
     });
   });
+}
+
+function saveRoutinePreferences(userId, payload) {
+  const currentPreferences = getRoutinePreferences(userId);
+  const nextPreferences = sanitizeRoutinePreferencesPayload(payload, currentPreferences);
+  persistRoutinePreferences(userId, nextPreferences);
 
   return getRoutinePreferences(userId);
 }
@@ -8841,9 +9277,7 @@ function ensureAdminUser() {
   const existingUser = findUserByEmailStatement.get(DEFAULT_ADMIN.email);
 
   if (existingUser) {
-    if (existingUser.role !== "admin") {
-      db.prepare("UPDATE users SET role = 'admin' WHERE id = ?").run(existingUser.id);
-    }
+    updateUserAdminAccessStatement.run("admin", 1, 1, existingUser.id, existingUser.adminGrantedAt || nowIso(), existingUser.id);
     return;
   }
 
@@ -8858,6 +9292,12 @@ function ensureAdminUser() {
     "admin",
     nowIso()
   );
+
+  const createdAdmin = findUserByEmailStatement.get(DEFAULT_ADMIN.email);
+
+  if (createdAdmin) {
+    updateUserAdminAccessStatement.run("admin", 1, 1, createdAdmin.id, nowIso(), createdAdmin.id);
+  }
 
   console.log("[start5] Conta admin criada.");
   console.log(`[start5] Admin e-mail: ${DEFAULT_ADMIN.email}`);
@@ -8907,6 +9347,10 @@ function sanitizeAdminUser(row) {
     focusSubjectName,
     focusSubjectLabel: getSubjectLabel(focusSubjectKey, focusSubjectName),
     role: row.role,
+    isPrimaryAdmin: Boolean(row.isPrimaryAdmin),
+    adminCanManageAdmins: Boolean(row.adminCanManageAdmins),
+    adminGrantedByUserId: row.adminGrantedByUserId ?? null,
+    adminGrantedAt: row.adminGrantedAt || "",
     createdAt: row.createdAt,
     totalSessions: Number(row.totalSessions) || 0,
     totalMinutes: Number(row.totalMinutes) || 0,
@@ -8933,6 +9377,10 @@ function sanitizeAdminUserDetails(row) {
     focusSubjectLabel: getSubjectLabel(focusSubjectKey, focusSubjectName),
     email: row.email,
     role: row.role,
+    isPrimaryAdmin: Boolean(row.isPrimaryAdmin),
+    adminCanManageAdmins: Boolean(row.adminCanManageAdmins),
+    adminGrantedByUserId: row.adminGrantedByUserId ?? null,
+    adminGrantedAt: row.adminGrantedAt || "",
     createdAt: row.createdAt,
   };
 }
@@ -8943,6 +9391,20 @@ function isValidDateString(value) {
 
 function isValidRole(value) {
   return value === "user" || value === "admin";
+}
+
+function ensureAdmin(user) {
+  if (!user || user.role !== "admin") {
+    throw createError(403, "Acesso restrito ao admin.");
+  }
+}
+
+function ensureAdminManager(user) {
+  ensureAdmin(user);
+
+  if (!user.adminCanManageAdmins) {
+    throw createError(403, "Somente admins autorizados podem gerenciar outros admins.");
+  }
 }
 
 function normalizeSessionPayload(payload) {
@@ -9421,12 +9883,6 @@ function migrateLegacySessionsToStructured() {
   });
 }
 
-function ensureAdmin(user) {
-  if (!user || user.role !== "admin") {
-    throw createError(403, "Acesso restrito ao admin.");
-  }
-}
-
 function getContentType(filePath) {
   const extension = extname(filePath).toLowerCase();
   const contentTypes = {
@@ -9442,6 +9898,67 @@ function getContentType(filePath) {
   };
 
   return contentTypes[extension] || "application/octet-stream";
+}
+
+function maybeHandleProtectedStaticRoute(request, response, pathname) {
+  const user = getAuthenticatedUser(request);
+  const pathnameWithoutSlash = String(pathname || "").replace(/^\/+/, "");
+
+  if (pathname === "/admin.html") {
+    if (!user) {
+      response.writeHead(302, { Location: "/login.html" });
+      response.end();
+      return true;
+    }
+
+    if (!user.permissions?.canAccessAdmin) {
+      response.writeHead(302, { Location: "/index.html" });
+      response.end();
+      return true;
+    }
+
+    return false;
+  }
+
+  if (pathname === "/rotina.html") {
+    const onboarding = user ? getUserOnboardingStatus(user.id) : null;
+    const location = !user
+      ? "/login.html"
+      : onboarding?.required
+        ? `/${onboarding.page}`
+        : "/index.html";
+    response.writeHead(302, { Location: location });
+    response.end();
+    return true;
+  }
+
+  if (!ONBOARDING_PAGE_SET.has(pathnameWithoutSlash)) {
+    return false;
+  }
+
+  if (!user) {
+    response.writeHead(302, { Location: "/login.html" });
+    response.end();
+    return true;
+  }
+
+  const onboarding = getUserOnboardingStatus(user.id);
+
+  if (!onboarding.required) {
+    response.writeHead(302, { Location: "/index.html" });
+    response.end();
+    return true;
+  }
+
+  const expectedPath = `/${onboarding.page}`;
+
+  if (pathname !== expectedPath) {
+    response.writeHead(302, { Location: expectedPath });
+    response.end();
+    return true;
+  }
+
+  return false;
 }
 
 async function serveStaticFile(response, pathname) {
@@ -9490,15 +10007,21 @@ async function handleRegister(request, response) {
     throw createError(409, "Esse e-mail já está cadastrado.");
   }
 
-  const result = insertUserStatement.run(
-    name,
-    firstName,
-    lastName,
-    email,
-    hashPassword(password),
-    "user",
-    nowIso()
-  );
+  const createdAt = nowIso();
+  const result = withTransaction(() => {
+    const insertedUser = insertUserStatement.run(
+      name,
+      firstName,
+      lastName,
+      email,
+      hashPassword(password),
+      "user",
+      createdAt
+    );
+
+    startUserOnboarding(Number(insertedUser.lastInsertRowid));
+    return insertedUser;
+  });
 
   const user = findUserByIdStatement.get(result.lastInsertRowid);
   const session = createAuthSession(user.id);
@@ -9636,6 +10159,109 @@ function handleRoutineTemplates(request, response) {
   }
 
   sendJson(response, 200, { templates: getRoutineTemplates() });
+}
+
+function handleOnboardingStatus(request, response) {
+  const user = getAuthenticatedUser(request);
+
+  if (!user) {
+    throw createError(401, "Sess\u00e3o n\u00e3o encontrada.");
+  }
+
+  sendJson(response, 200, {
+    onboarding: getUserOnboardingStatus(user.id),
+  });
+}
+
+function buildOnboardingStepPreferences(userId, payload) {
+  const currentPreferences = getRoutinePreferences(userId);
+  return sanitizeRoutinePreferencesPayload(payload, currentPreferences);
+}
+
+async function handleSaveOnboardingStepOne(request, response) {
+  const user = getAuthenticatedUser(request);
+
+  if (!user) {
+    throw createError(401, "Sess\u00e3o n\u00e3o encontrada.");
+  }
+
+  const payload = await readRequestBody(request);
+  const nextPreferences = buildOnboardingStepPreferences(user.id, payload);
+
+  if (!isRoutineOnboardingStepOneComplete(nextPreferences)) {
+    throw createError(
+      400,
+      "Preencha curso, categoria, meta semanal, vestibular e cidade para continuar."
+    );
+  }
+
+  persistRoutinePreferences(user.id, nextPreferences);
+  const onboarding = advanceUserOnboarding(user.id, 2);
+
+  sendJson(response, 200, {
+    preferences: getRoutinePreferences(user.id),
+    onboarding,
+  });
+}
+
+async function handleSaveOnboardingStepTwo(request, response) {
+  const user = getAuthenticatedUser(request);
+
+  if (!user) {
+    throw createError(401, "Sess\u00e3o n\u00e3o encontrada.");
+  }
+
+  const payload = await readRequestBody(request);
+  const nextPreferences = buildOnboardingStepPreferences(user.id, payload);
+
+  if (!isRoutineOnboardingStepOneComplete(nextPreferences)) {
+    throw createError(400, "Conclua a etapa de objetivo antes de continuar.");
+  }
+
+  if (!isRoutineOnboardingStepTwoComplete(nextPreferences)) {
+    throw createError(
+      400,
+      "Marque ao menos um dia e defina os minutos de cada dia ativo para continuar."
+    );
+  }
+
+  persistRoutinePreferences(user.id, nextPreferences);
+  const onboarding = advanceUserOnboarding(user.id, 3);
+
+  sendJson(response, 200, {
+    preferences: getRoutinePreferences(user.id),
+    onboarding,
+  });
+}
+
+async function handleCompleteOnboarding(request, response) {
+  const user = getAuthenticatedUser(request);
+
+  if (!user) {
+    throw createError(401, "Sess\u00e3o n\u00e3o encontrada.");
+  }
+
+  const payload = await readRequestBody(request);
+  const nextPreferences = buildOnboardingStepPreferences(user.id, payload);
+
+  if (!isRoutineOnboardingStepOneComplete(nextPreferences)) {
+    throw createError(400, "Conclua a etapa de objetivo antes de finalizar.");
+  }
+
+  if (!isRoutineOnboardingStepTwoComplete(nextPreferences)) {
+    throw createError(400, "Conclua a etapa de disponibilidade antes de finalizar.");
+  }
+
+  persistRoutinePreferences(user.id, nextPreferences);
+  const plan = generateRoutinePlan(user.id);
+  const onboarding = completeUserOnboarding(user.id);
+
+  sendJson(response, 200, {
+    preferences: getRoutinePreferences(user.id),
+    onboarding,
+    plan,
+    redirectTo: "index.html",
+  });
 }
 
 function handleRoutinePreferences(request, response) {
@@ -9972,6 +10598,7 @@ async function handleCreateQuestionProof(request, response) {
   }
 
   const savedPdf = await saveQuestionBankPdfFile(payload.pdfFile);
+  const savedAnswerKey = payload?.answerKeyFile ? await saveQuestionBankPdfFile(payload.answerKeyFile) : null;
 
   if (!savedPdf) {
     throw createError(400, "Nao foi possivel salvar o PDF da prova.");
@@ -9984,11 +10611,17 @@ async function handleCreateQuestionProof(request, response) {
       normalizedProof.ano,
       normalizedProof.fase,
       normalizedProof.versao,
+      normalizedProof.dia,
+      normalizedProof.caderno,
       normalizedProof.materiaGeral,
       savedPdf.storedFileName,
       savedPdf.originalName,
       savedPdf.mimeType,
       savedPdf.sizeBytes,
+      savedAnswerKey?.storedFileName || "",
+      savedAnswerKey?.originalName || "",
+      savedAnswerKey?.mimeType || "",
+      savedAnswerKey?.sizeBytes || 0,
       normalizedProof.extractedText,
       normalizedProof.processStatus,
       normalizedProof.status,
@@ -10007,6 +10640,14 @@ async function handleCreateQuestionProof(request, response) {
       await unlink(getQuestionBankUploadFilePath(savedPdf.storedFileName));
     } catch {
       // Mantem o foco no erro principal do fluxo.
+    }
+
+    if (savedAnswerKey?.storedFileName) {
+      try {
+        await unlink(getQuestionBankUploadFilePath(savedAnswerKey.storedFileName));
+      } catch {
+        // Mantem o foco no erro principal do fluxo.
+      }
     }
 
     throw error;
@@ -10064,12 +10705,18 @@ async function handleUpdateQuestionProof(request, response, rawProofId) {
       : currentProof.vestibular.id;
   const normalizedProof = sanitizeQuestionProofPayload(payload, currentProof);
   let savedPdf = null;
+  let savedAnswerKey = null;
 
   if (payload?.pdfFile) {
     savedPdf = await saveQuestionBankPdfFile(payload.pdfFile);
   }
 
+  if (payload?.answerKeyFile) {
+    savedAnswerKey = await saveQuestionBankPdfFile(payload.answerKeyFile);
+  }
+
   const previousPdfFilePath = currentProof.pdf.filePath;
+  const previousAnswerKeyFilePath = currentProof.answerKey.filePath;
 
   try {
     updateQuestionProofStatement.run(
@@ -10077,11 +10724,17 @@ async function handleUpdateQuestionProof(request, response, rawProofId) {
       normalizedProof.ano,
       normalizedProof.fase,
       normalizedProof.versao,
+      normalizedProof.dia,
+      normalizedProof.caderno,
       normalizedProof.materiaGeral,
       savedPdf?.storedFileName || previousPdfFilePath,
       savedPdf?.originalName || currentProof.pdf.originalName,
       savedPdf?.mimeType || currentProof.pdf.mimeType || "application/pdf",
       savedPdf?.sizeBytes || currentProof.pdf.sizeBytes || 0,
+      savedAnswerKey?.storedFileName || previousAnswerKeyFilePath,
+      savedAnswerKey?.originalName || currentProof.answerKey.originalName,
+      savedAnswerKey?.mimeType || currentProof.answerKey.mimeType || "application/pdf",
+      savedAnswerKey?.sizeBytes || currentProof.answerKey.sizeBytes || 0,
       normalizedProof.extractedText,
       normalizedProof.processStatus,
       normalizedProof.status,
@@ -10092,6 +10745,14 @@ async function handleUpdateQuestionProof(request, response, rawProofId) {
     if (savedPdf && previousPdfFilePath && previousPdfFilePath !== savedPdf.storedFileName) {
       try {
         await unlink(getQuestionBankUploadFilePath(previousPdfFilePath));
+      } catch {
+        // O arquivo antigo nao deve impedir o fluxo principal.
+      }
+    }
+
+    if (savedAnswerKey && previousAnswerKeyFilePath && previousAnswerKeyFilePath !== savedAnswerKey.storedFileName) {
+      try {
+        await unlink(getQuestionBankUploadFilePath(previousAnswerKeyFilePath));
       } catch {
         // O arquivo antigo nao deve impedir o fluxo principal.
       }
@@ -10108,6 +10769,14 @@ async function handleUpdateQuestionProof(request, response, rawProofId) {
     if (savedPdf?.storedFileName) {
       try {
         await unlink(getQuestionBankUploadFilePath(savedPdf.storedFileName));
+      } catch {
+        // Mantem o foco no erro principal do fluxo.
+      }
+    }
+
+    if (savedAnswerKey?.storedFileName) {
+      try {
+        await unlink(getQuestionBankUploadFilePath(savedAnswerKey.storedFileName));
       } catch {
         // Mantem o foco no erro principal do fluxo.
       }
@@ -10174,14 +10843,15 @@ async function handleProcessQuestionProof(request, response, rawProofId) {
         sanitizeQuestionBankMultilineText(questionDraft.enunciado || "", 20_000),
         normalizeQuestionBankTerm(questionDraft.materia || proof.materiaGeral || "", 80),
         normalizeQuestionBankTerm(questionDraft.tema || "", 120),
-        sanitizeQuestionDifficulty(questionDraft.dificuldade, "media"),
+        "media",
         sanitizeQuestionAlternativeLetter(questionDraft.respostaCorreta, true),
         sanitizeQuestionReviewStatus(questionDraft.statusRevisao || "pending"),
         sanitizeQuestionBankMultilineText(questionDraft.origemPdf || "", 220).replace(/\n+/g, " ").trim(),
         "",
+        "",
         normalizeQuestionBankTerm(questionDraft.sugestaoMateria || questionDraft.materia || "", 80),
         normalizeQuestionBankTerm(questionDraft.sugestaoTema || questionDraft.tema || "", 120),
-        sanitizeQuestionDifficulty(questionDraft.sugestaoDificuldade || questionDraft.dificuldade || "media"),
+        "",
         createdAt,
         createdAt,
         ""
@@ -10267,6 +10937,15 @@ async function handleCreateAdminQuestion(request, response) {
     throw createError(404, "Prova nao encontrada.");
   }
 
+  const existingQuestion = findQuestionByProofAndNumberStatement.get(
+    normalizedQuestion.proofId,
+    normalizedQuestion.numero
+  );
+
+  if (existingQuestion) {
+    throw createError(409, "Ja existe uma questao com esse numero nessa prova.");
+  }
+
   const publishedAt = resolveQuestionPublishedAt(proofRow, normalizedQuestion.statusRevisao);
   let questionId = 0;
 
@@ -10282,6 +10961,7 @@ async function handleCreateAdminQuestion(request, response) {
       normalizedQuestion.respostaCorreta,
       normalizedQuestion.statusRevisao,
       normalizedQuestion.origemPdf,
+      normalizedQuestion.resolucao,
       normalizedQuestion.observacoesAdm,
       normalizedQuestion.sugestaoMateria,
       normalizedQuestion.sugestaoTema,
@@ -10324,11 +11004,22 @@ async function handleUpdateAdminQuestion(request, response, rawQuestionId) {
     },
     {
       proofId: currentQuestion.proofId,
+      dificuldade: currentQuestion.dificuldade,
       allowEmptyNumber: false,
       defaultStatusRevisao: currentQuestion.statusRevisao,
     }
   );
   const proofRow = getQuestionProofByIdStatement.get(currentQuestion.proofId);
+
+  const existingQuestion = findQuestionByProofAndNumberStatement.get(
+    currentQuestion.proofId,
+    normalizedQuestion.numero
+  );
+
+  if (existingQuestion && Number(existingQuestion.id) !== questionId) {
+    throw createError(409, "Ja existe uma questao com esse numero nessa prova.");
+  }
+
   const publishedAt = resolveQuestionPublishedAt(
     proofRow,
     normalizedQuestion.statusRevisao,
@@ -10345,6 +11036,7 @@ async function handleUpdateAdminQuestion(request, response, rawQuestionId) {
       normalizedQuestion.respostaCorreta,
       normalizedQuestion.statusRevisao,
       normalizedQuestion.origemPdf,
+      normalizedQuestion.resolucao,
       normalizedQuestion.observacoesAdm,
       normalizedQuestion.sugestaoMateria,
       normalizedQuestion.sugestaoTema,
@@ -10362,7 +11054,7 @@ async function handleUpdateAdminQuestion(request, response, rawQuestionId) {
   });
 }
 
-async function handleDownloadQuestionProofFile(request, response, rawProofId) {
+async function handleDownloadQuestionProofFile(request, response, rawProofId, kind = "prova") {
   const user = getAuthenticatedUser(request);
   ensureAdmin(user);
 
@@ -10374,21 +11066,32 @@ async function handleDownloadQuestionProofFile(request, response, rawProofId) {
 
   const proofRow = getQuestionProofByIdStatement.get(proofId);
 
-  if (!proofRow || !proofRow.pdfFilePath) {
-    throw createError(404, "Arquivo da prova nao encontrado.");
+  const safeKind = kind === "gabarito" ? "gabarito" : "prova";
+  const storedFilePath = safeKind === "gabarito"
+    ? String(proofRow?.answerKeyFilePath || "")
+    : String(proofRow?.pdfFilePath || "");
+  const originalName = safeKind === "gabarito"
+    ? String(proofRow?.answerKeyOriginalName || "")
+    : String(proofRow?.pdfOriginalName || "");
+
+  if (!proofRow || !storedFilePath) {
+    throw createError(404, `Arquivo de ${safeKind === "gabarito" ? "gabarito" : "prova"} nao encontrado.`);
   }
 
-  const filePath = getQuestionBankUploadFilePath(proofRow.pdfFilePath);
+  const filePath = getQuestionBankUploadFilePath(storedFilePath);
 
   if (!filePath || !existsSync(filePath)) {
-    throw createError(404, "Arquivo da prova nao encontrado.");
+    throw createError(404, `Arquivo de ${safeKind === "gabarito" ? "gabarito" : "prova"} nao encontrado.`);
   }
 
-  const downloadName = sanitizeShortText(proofRow.pdfOriginalName || `prova-${proofId}.pdf`, 180) || `prova-${proofId}.pdf`;
+  const downloadName = sanitizeShortText(
+    originalName || `${safeKind}-${proofId}.pdf`,
+    180
+  ) || `${safeKind}-${proofId}.pdf`;
   await sendInlinePdfFile(response, filePath, downloadName);
 }
 
-async function handleDownloadPublishedQuestionProofFile(request, response, rawProofId) {
+async function handleDownloadPublishedQuestionProofFile(request, response, rawProofId, kind = "prova") {
   const user = getAuthenticatedUser(request);
 
   if (!user) {
@@ -10403,17 +11106,28 @@ async function handleDownloadPublishedQuestionProofFile(request, response, rawPr
 
   const proofRow = getQuestionProofByIdStatement.get(proofId);
 
-  if (!proofRow || String(proofRow.status || "") !== "published" || !proofRow.pdfFilePath) {
-    throw createError(404, "Arquivo da prova nao encontrado.");
+  const safeKind = kind === "gabarito" ? "gabarito" : "prova";
+  const storedFilePath = safeKind === "gabarito"
+    ? String(proofRow?.answerKeyFilePath || "")
+    : String(proofRow?.pdfFilePath || "");
+  const originalName = safeKind === "gabarito"
+    ? String(proofRow?.answerKeyOriginalName || "")
+    : String(proofRow?.pdfOriginalName || "");
+
+  if (!proofRow || String(proofRow.status || "") !== "published" || !storedFilePath) {
+    throw createError(404, `Arquivo de ${safeKind === "gabarito" ? "gabarito" : "prova"} nao encontrado.`);
   }
 
-  const filePath = getQuestionBankUploadFilePath(proofRow.pdfFilePath);
+  const filePath = getQuestionBankUploadFilePath(storedFilePath);
 
   if (!filePath || !existsSync(filePath)) {
-    throw createError(404, "Arquivo da prova nao encontrado.");
+    throw createError(404, `Arquivo de ${safeKind === "gabarito" ? "gabarito" : "prova"} nao encontrado.`);
   }
 
-  const downloadName = sanitizeShortText(proofRow.pdfOriginalName || `prova-${proofId}.pdf`, 180) || `prova-${proofId}.pdf`;
+  const downloadName = sanitizeShortText(
+    originalName || `${safeKind}-${proofId}.pdf`,
+    180
+  ) || `${safeKind}-${proofId}.pdf`;
   await sendInlinePdfFile(response, filePath, downloadName);
 }
 
@@ -10495,9 +11209,8 @@ async function handleListQuestionBankQuestions(request, response) {
     proofId: requestUrl.searchParams.get("prova"),
     vestibularId: requestUrl.searchParams.get("vestibular"),
     ano: requestUrl.searchParams.get("ano"),
-    materia: requestUrl.searchParams.get("materia"),
-    dificuldade: requestUrl.searchParams.get("dificuldade"),
-    status: requestUrl.searchParams.get("status"),
+    dia: requestUrl.searchParams.get("dia"),
+    caderno: requestUrl.searchParams.get("caderno"),
     limit: requestUrl.searchParams.get("limit"),
   });
   const overview = buildQuestionBankStudentOverview(user.id);
@@ -10514,7 +11227,7 @@ async function handleListQuestionBankQuestions(request, response) {
     questions,
     catalog: {
       ...catalog,
-      active: overview.totalAvailable === 0 && catalog.available,
+      active: questions.length === 0 && Array.isArray(catalog.sessions) && catalog.sessions.length > 0,
     },
   });
 }
@@ -10675,7 +11388,7 @@ function handleAdminUsers(request, response) {
 
 function handleGrantAdmin(request, response, rawUserId) {
   const user = getAuthenticatedUser(request);
-  ensureAdmin(user);
+  ensureAdminManager(user);
 
   const userId = Number(rawUserId);
 
@@ -10689,8 +11402,12 @@ function handleGrantAdmin(request, response, rawUserId) {
     throw createError(404, "Usuário não encontrado.");
   }
 
-  if (targetUser.role !== "admin") {
-    updateUserRoleStatement.run("admin", userId);
+  if (targetUser.isPrimaryAdmin) {
+    throw createError(400, "O admin principal nao pode ser alterado por essa rota.");
+  }
+
+  if (targetUser.role !== "admin" || targetUser.adminCanManageAdmins) {
+    updateUserAdminAccessStatement.run("admin", 0, 0, user.id, nowIso(), userId);
   }
 
   sendJson(response, 200, {
@@ -10700,7 +11417,7 @@ function handleGrantAdmin(request, response, rawUserId) {
 
 function handleAdminUserDetails(request, response, rawUserId) {
   const user = getAuthenticatedUser(request);
-  ensureAdmin(user);
+  ensureAdminManager(user);
 
   const userId = Number(rawUserId);
 
@@ -10719,7 +11436,7 @@ function handleAdminUserDetails(request, response, rawUserId) {
 
 async function handleUpdateAdminUser(request, response, rawUserId) {
   const user = getAuthenticatedUser(request);
-  ensureAdmin(user);
+  ensureAdminManager(user);
 
   const userId = Number(rawUserId);
 
@@ -10731,6 +11448,14 @@ async function handleUpdateAdminUser(request, response, rawUserId) {
 
   if (!targetUser) {
     throw createError(404, "Usu\u00e1rio n\u00e3o encontrado.");
+  }
+
+  if (targetUser.isPrimaryAdmin && user.id !== targetUser.id) {
+    throw createError(403, "Somente o admin principal pode editar essa conta.");
+  }
+
+  if (targetUser.adminCanManageAdmins && !user.isPrimaryAdmin && user.id !== targetUser.id) {
+    throw createError(403, "Somente o admin principal pode editar outro gestor administrativo.");
   }
 
   const payload = await readRequestBody(request);
@@ -10774,7 +11499,7 @@ async function handleUpdateAdminUser(request, response, rawUserId) {
 
 async function handleUpdateAdminRole(request, response, rawUserId) {
   const user = getAuthenticatedUser(request);
-  ensureAdmin(user);
+  ensureAdminManager(user);
 
   const userId = Number(rawUserId);
 
@@ -10788,12 +11513,28 @@ async function handleUpdateAdminRole(request, response, rawUserId) {
     throw createError(404, "Usu\u00e1rio n\u00e3o encontrado.");
   }
 
+  if (targetUser.isPrimaryAdmin) {
+    throw createError(400, "O admin principal nao pode perder o acesso administrativo.");
+  }
+
+  if (targetUser.adminCanManageAdmins && !user.isPrimaryAdmin) {
+    throw createError(403, "Somente o admin principal pode alterar outro gestor administrativo.");
+  }
+
   const payload = await readRequestBody(request);
   const nextRole = String(payload.role || "").trim().toLowerCase();
+  const requestedManagerPermission =
+    payload.adminCanManageAdmins === undefined ? Boolean(targetUser.adminCanManageAdmins) : Boolean(payload.adminCanManageAdmins);
 
   if (!isValidRole(nextRole)) {
     throw createError(400, "Permiss\u00e3o inv\u00e1lida.");
   }
+
+  if (requestedManagerPermission && !user.isPrimaryAdmin) {
+    throw createError(403, "Somente o admin principal pode liberar outro gestor administrativo.");
+  }
+
+  const nextAdminCanManageAdmins = nextRole === "admin" ? requestedManagerPermission : false;
 
   if (
     targetUser.role === "admin" &&
@@ -10803,8 +11544,30 @@ async function handleUpdateAdminRole(request, response, rawUserId) {
     throw createError(400, "N\u00e3o \u00e9 poss\u00edvel remover o \u00faltimo admin.");
   }
 
-  if (targetUser.role !== nextRole) {
-    updateUserRoleStatement.run(nextRole, userId);
+  if (
+    targetUser.role === "admin" &&
+    Boolean(targetUser.adminCanManageAdmins) &&
+    !nextAdminCanManageAdmins &&
+    Number(countAdminManagersStatement.get().total) <= 1
+  ) {
+    throw createError(400, "Nao e possivel remover a permissao do ultimo gestor administrativo.");
+  }
+
+  if (
+    targetUser.role !== nextRole ||
+    Boolean(targetUser.adminCanManageAdmins) !== nextAdminCanManageAdmins
+  ) {
+    const nextGrantedByUserId = nextRole === "admin" ? targetUser.adminGrantedByUserId ?? user.id : null;
+    const nextGrantedAt = nextRole === "admin" ? targetUser.adminGrantedAt || nowIso() : "";
+
+    updateUserAdminAccessStatement.run(
+      nextRole,
+      0,
+      nextAdminCanManageAdmins ? 1 : 0,
+      nextGrantedByUserId,
+      nextGrantedAt,
+      userId
+    );
   }
 
   sendJson(response, 200, {
@@ -10857,6 +11620,26 @@ async function handleApiRequest(request, response, pathname) {
 
   if (request.method === "PATCH" && pathname === "/api/profile") {
     await handleUpdateProfile(request, response);
+    return;
+  }
+
+  if (request.method === "GET" && pathname === "/api/onboarding/status") {
+    handleOnboardingStatus(request, response);
+    return;
+  }
+
+  if (request.method === "PATCH" && pathname === "/api/onboarding/step-1") {
+    await handleSaveOnboardingStepOne(request, response);
+    return;
+  }
+
+  if (request.method === "PATCH" && pathname === "/api/onboarding/step-2") {
+    await handleSaveOnboardingStepTwo(request, response);
+    return;
+  }
+
+  if (request.method === "POST" && pathname === "/api/onboarding/complete") {
+    await handleCompleteOnboarding(request, response);
     return;
   }
 
@@ -10975,6 +11758,14 @@ async function handleApiRequest(request, response, pathname) {
     return;
   }
 
+  const adminQuestionAnswerKeyFileMatch =
+    request.method === "GET" && pathname.match(/^\/api\/admin\/question-bank\/provas\/(\d+)\/gabarito$/);
+
+  if (adminQuestionAnswerKeyFileMatch) {
+    await handleDownloadQuestionProofFile(request, response, adminQuestionAnswerKeyFileMatch[1], "gabarito");
+    return;
+  }
+
   const adminQuestionProofProcessMatch =
     request.method === "POST" && pathname.match(/^\/api\/admin\/question-bank\/provas\/(\d+)\/process$/);
 
@@ -11027,6 +11818,14 @@ async function handleApiRequest(request, response, pathname) {
 
   if (questionBankProofFileMatch) {
     await handleDownloadPublishedQuestionProofFile(request, response, questionBankProofFileMatch[1]);
+    return;
+  }
+
+  const questionBankAnswerKeyFileMatch =
+    request.method === "GET" && pathname.match(/^\/api\/question-bank\/provas\/(\d+)\/gabarito$/);
+
+  if (questionBankAnswerKeyFileMatch) {
+    await handleDownloadPublishedQuestionProofFile(request, response, questionBankAnswerKeyFileMatch[1], "gabarito");
     return;
   }
 
@@ -11131,6 +11930,10 @@ const server = createServer(async (request, response) => {
 
     if (requestUrl.pathname.startsWith("/api/")) {
       await handleApiRequest(request, response, requestUrl.pathname);
+      return;
+    }
+
+    if (maybeHandleProtectedStaticRoute(request, response, requestUrl.pathname)) {
       return;
     }
 

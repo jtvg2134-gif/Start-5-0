@@ -16,7 +16,10 @@ const routineUniversityInput = document.getElementById("routineUniversityInput")
 const routineCampusInput = document.getElementById("routineCampusInput");
 const routineContextNoteInput = document.getElementById("routineContextNoteInput");
 const routineCourseNameInput = document.getElementById("routineCourseNameInput");
+const routineCustomCourseShell = document.getElementById("routineCustomCourseShell");
+const routineCustomCourseInput = document.getElementById("routineCustomCourseInput");
 const routineWeeklyGoalInput = document.getElementById("routineWeeklyGoalInput");
+const routineCityInput = document.getElementById("routineCityInput");
 const routineDaysGrid = document.getElementById("routineDaysGrid");
 const routineSubjectList = document.getElementById("routineSubjectList");
 const routineCustomSubjectInput = document.getElementById("routineCustomSubjectInput");
@@ -45,6 +48,12 @@ const routineAdvancedToggle = document.getElementById("routineAdvancedToggle");
 const routineAdvancedPanel = document.getElementById("routineAdvancedPanel");
 const routineAdvancedSummary = document.getElementById("routineAdvancedSummary");
 const routineAdvancedIcon = document.getElementById("routineAdvancedIcon");
+const routineWizardStepState = document.getElementById("routineWizardStepState");
+const routineWizardStepCopy = document.getElementById("routineWizardStepCopy");
+const routineStepBackButton = document.getElementById("routineStepBackButton");
+const routineStepNextButton = document.getElementById("routineStepNextButton");
+const routineStepTriggers = [...document.querySelectorAll("[data-routine-step-trigger]")];
+const routineStepPanels = [...document.querySelectorAll("[data-routine-step]")];
 
 const pickerRegistry = {
   primaryExam: {
@@ -121,7 +130,27 @@ const state = {
   isGenerating: false,
   isAdvancedOpen: false,
   advancedInitialized: false,
+  wizardStep: 1,
 };
+
+const ROUTINE_SETUP_QUERY = new URLSearchParams(window.location.search).has("setup");
+const ROUTINE_WIZARD_STEPS = [
+  {
+    id: 1,
+    title: "Meta academica",
+    copy: "Defina curso, categoria, meta semanal, vestibular e cidade para dar direcao a rotina.",
+  },
+  {
+    id: 2,
+    title: "Dias da semana",
+    copy: "Distribua o tempo real de cada dia para a rotina caber na sua vida e nao so no papel.",
+  },
+  {
+    id: 3,
+    title: "Prioridades",
+    copy: "Ajuste as materias sugeridas pelo Start 5 e finalize a base da sua rotina.",
+  },
+];
 
 const MANUAL_DELTA_OPTIONS = [
   { value: -2, label: "-2", copy: "Cai bastante na semana" },
@@ -195,7 +224,10 @@ function escapeHtml(value) {
 }
 
 function composeCourseContext() {
+  const isCustomCourse = ensurePreferences().courseKey === "outro";
   const parts = [
+    ["Curso", isCustomCourse ? routineCustomCourseInput?.value : ""],
+    ["Cidade", routineCityInput?.value],
     ["Universidade", routineUniversityInput?.value],
     ["Campus", routineCampusInput?.value],
     ["Turno", pickerRegistry.shift?.value?.textContent && pickerRegistry.shift.value.textContent !== "Escolha o turno"
@@ -218,6 +250,8 @@ function composeCourseContext() {
 
 function parseCourseContext(value) {
   const context = {
+    customCourse: "",
+    city: "",
     university: "",
     campus: "",
     shift: "",
@@ -235,6 +269,16 @@ function parseCourseContext(value) {
     const nextValue = rest.join(":").trim();
 
     if (!nextValue) {
+      return;
+    }
+
+    if (label === "cidade") {
+      context.city = nextValue;
+      return;
+    }
+
+    if (label === "curso") {
+      context.customCourse = nextValue;
       return;
     }
 
@@ -258,7 +302,8 @@ function parseCourseContext(value) {
     }
   });
 
-  if (!context.university && !context.campus && !context.note) {
+  if (!context.customCourse && !context.city && !context.university && !context.campus && !context.note) {
+    context.customCourse = cleanValue;
     context.note = cleanValue;
   }
 
@@ -531,7 +576,7 @@ function getCourseDisplayLabel() {
   const preferences = ensurePreferences();
   const selectedCourse = getCurrentCourse();
   const context = parseCourseContext(preferences.courseName);
-  const customCourseName = String(context.note || "").trim();
+  const customCourseName = String(context.customCourse || context.note || "").trim();
 
   if (selectedCourse?.key === "outro" && customCourseName) {
     return customCourseName;
@@ -954,6 +999,18 @@ function renderDayInputs() {
 
   const context = parseCourseContext(preferences.courseName);
 
+  if (routineCustomCourseInput) {
+    routineCustomCourseInput.value = context.customCourse || (preferences.courseKey === "outro" ? context.note : "");
+  }
+
+  if (routineCustomCourseShell) {
+    routineCustomCourseShell.hidden = preferences.courseKey !== "outro";
+  }
+
+  if (routineCityInput) {
+    routineCityInput.value = context.city;
+  }
+
   if (routineUniversityInput) {
     routineUniversityInput.value = context.university;
   }
@@ -1372,6 +1429,132 @@ function renderAdvancedSettingsShell() {
   routineAdvancedSummary.textContent = `${pieces.join(" - ")}. Ajuste fino para deixar a semana mais proxima da prova que voce quer atacar.`;
 }
 
+function isStepOneComplete() {
+  const preferences = ensurePreferences();
+  const context = parseCourseContext(preferences.courseName);
+  const hasCustomCourseName = preferences.courseKey !== "outro"
+    || Boolean(String(context.customCourse || context.note || "").trim());
+
+  return Boolean(
+    String(preferences.courseKey || "").trim() &&
+    String(preferences.admissionCategoryKey || "").trim() &&
+    String(preferences.primaryExamKey || "").trim() &&
+    hasCustomCourseName &&
+    String(context.city || "").trim() &&
+    Number(preferences.weeklyGoalMinutes || 0) >= 60
+  );
+}
+
+function isStepTwoComplete() {
+  const preferences = ensurePreferences();
+  const studyDays = Array.isArray(preferences.studyDays) ? preferences.studyDays : [];
+
+  if (!studyDays.length) {
+    return false;
+  }
+
+  return studyDays.every((day) => Number(preferences.weekdayMinutes?.[String(day)] || 0) >= 30);
+}
+
+function getUnlockedWizardStep() {
+  if (!isStepOneComplete()) {
+    return 1;
+  }
+
+  if (!isStepTwoComplete()) {
+    return 2;
+  }
+
+  return 3;
+}
+
+function getWizardStepMeta(stepNumber = state.wizardStep) {
+  return ROUTINE_WIZARD_STEPS.find((item) => item.id === stepNumber) || ROUTINE_WIZARD_STEPS[0];
+}
+
+function renderWizardState() {
+  const unlockedStep = getUnlockedWizardStep();
+
+  routineStepTriggers.forEach((button, index) => {
+    const stepNumber = index + 1;
+    const isActive = state.wizardStep === stepNumber;
+    const isUnlocked = stepNumber <= unlockedStep;
+    const isComplete =
+      (stepNumber === 1 && isStepOneComplete()) ||
+      (stepNumber === 2 && isStepTwoComplete()) ||
+      (stepNumber === 3 && isStepOneComplete() && isStepTwoComplete());
+
+    button.classList.toggle("is-active", isActive);
+    button.classList.toggle("is-complete", isComplete);
+    button.disabled = !isUnlocked;
+    button.setAttribute("aria-selected", String(isActive));
+    button.setAttribute("aria-disabled", String(!isUnlocked));
+  });
+
+  routineStepPanels.forEach((panel) => {
+    panel.hidden = Number(panel.dataset.routineStep || 0) !== state.wizardStep;
+  });
+
+  if (routineStepBackButton) {
+    routineStepBackButton.hidden = state.wizardStep === 1;
+    routineStepBackButton.disabled = state.wizardStep === 1 || state.isSaving || state.isGenerating;
+  }
+
+  if (routineStepNextButton) {
+    routineStepNextButton.hidden = state.wizardStep === ROUTINE_WIZARD_STEPS.length;
+    routineStepNextButton.disabled = state.isSaving || state.isGenerating;
+  }
+
+  if (routineGenerateButton) {
+    routineGenerateButton.hidden = state.wizardStep !== ROUTINE_WIZARD_STEPS.length;
+  }
+
+  const stepMeta = getWizardStepMeta();
+
+  if (routineWizardStepState) {
+    routineWizardStepState.textContent = `Etapa ${stepMeta.id} de ${ROUTINE_WIZARD_STEPS.length}`;
+  }
+
+  if (routineWizardStepCopy) {
+    routineWizardStepCopy.textContent = stepMeta.copy;
+  }
+}
+
+function setWizardStep(nextStep, options = {}) {
+  const safeStep = Math.max(1, Math.min(ROUTINE_WIZARD_STEPS.length, Number(nextStep) || 1));
+  const unlockedStep = getUnlockedWizardStep();
+  state.wizardStep = options.force === true ? safeStep : Math.min(safeStep, unlockedStep);
+  renderWizardState();
+}
+
+function validateWizardStep(stepNumber = state.wizardStep) {
+  syncLocalPreferencesFromInputs();
+
+  if (stepNumber === 1 && !isStepOneComplete()) {
+    setFeedback("Preencha curso, categoria, meta semanal, vestibular e cidade para continuar. Se escolher outro curso, informe o nome dele.", "error");
+    return false;
+  }
+
+  if (stepNumber === 2 && !isStepTwoComplete()) {
+    setFeedback("Marque ao menos um dia e defina os minutos dos dias ativos para continuar.", "error");
+    return false;
+  }
+
+  return true;
+}
+
+function goToNextWizardStep() {
+  if (!validateWizardStep(state.wizardStep)) {
+    return;
+  }
+
+  setWizardStep(state.wizardStep + 1, { force: true });
+}
+
+function goToPreviousWizardStep() {
+  setWizardStep(state.wizardStep - 1, { force: true });
+}
+
 function renderAll() {
   if (!state.templates) {
     return;
@@ -1385,6 +1568,7 @@ function renderAll() {
   renderCustomSubjectSuggestions();
   renderSubjectList();
   renderPlan();
+  renderWizardState();
 }
 
 function collectPreferencesPayload() {
@@ -1455,13 +1639,15 @@ async function loadCurrentPlan() {
 function setActionLoadingState() {
   if (routineSaveButton) {
     routineSaveButton.disabled = state.isSaving || state.isGenerating;
-    routineSaveButton.textContent = state.isSaving ? "Salvando..." : "Salvar ajustes";
+    routineSaveButton.textContent = state.isSaving ? "Salvando..." : "Salvar base";
   }
 
   if (routineGenerateButton) {
     routineGenerateButton.disabled = state.isSaving || state.isGenerating;
     routineGenerateButton.textContent = state.isGenerating ? "Gerando..." : "Gerar semana";
   }
+
+  renderWizardState();
 }
 
 async function saveRoutinePreferences() {
@@ -1489,6 +1675,16 @@ async function saveRoutinePreferences() {
 }
 
 async function generateRoutinePlan() {
+  if (!validateWizardStep(1)) {
+    setWizardStep(1, { force: true });
+    return;
+  }
+
+  if (!validateWizardStep(2)) {
+    setWizardStep(2, { force: true });
+    return;
+  }
+
   syncLocalPreferencesFromInputs();
   state.isGenerating = true;
   setActionLoadingState();
@@ -1534,6 +1730,10 @@ function handlePickerOptionSelect(pickerKey, value) {
   if (pickerKey === "course") {
     preferences.courseKey = value || "";
 
+    if (preferences.courseKey !== "outro" && routineCustomCourseInput) {
+      routineCustomCourseInput.value = "";
+    }
+
     if (preferences.courseKey !== "outro" && !String(routineCourseNameInput?.value || "").trim()) {
       const selectedCourse = (state.templates?.courses || []).find((course) => course.key === preferences.courseKey);
 
@@ -1541,6 +1741,8 @@ function handlePickerOptionSelect(pickerKey, value) {
         preferences.courseTrackKey = selectedCourse.recommendedTrackKey;
       }
     }
+
+    preferences.courseName = composeCourseContext();
   }
 
   if (pickerKey === "admissionCategory") {
@@ -1743,11 +1945,22 @@ function bindEvents() {
     }
   });
 
-  [routineUniversityInput, routineCampusInput, routineContextNoteInput, routineWeeklyGoalInput].forEach((input) => {
+  [
+    routineCustomCourseInput,
+    routineUniversityInput,
+    routineCampusInput,
+    routineContextNoteInput,
+    routineWeeklyGoalInput,
+  ].forEach((input) => {
     input?.addEventListener("input", () => {
       ensurePreferences().courseName = composeCourseContext();
       renderAll();
     });
+  });
+
+  routineCityInput?.addEventListener("input", () => {
+    ensurePreferences().courseName = composeCourseContext();
+    renderAll();
   });
 
   routineAdvancedDetails?.addEventListener("toggle", () => {
@@ -1761,6 +1974,15 @@ function bindEvents() {
 
   routineSaveButton?.addEventListener("click", saveRoutinePreferences);
   routineGenerateButton?.addEventListener("click", generateRoutinePlan);
+  routineStepBackButton?.addEventListener("click", goToPreviousWizardStep);
+  routineStepNextButton?.addEventListener("click", goToNextWizardStep);
+
+  routineStepTriggers.forEach((button) => {
+    button.addEventListener("click", () => {
+      const requestedStep = Number(button.dataset.routineStepTrigger || 1);
+      setWizardStep(requestedStep);
+    });
+  });
 
   document.addEventListener("click", (event) => {
     const clickedInsidePicker = event.target.closest(".routine-picker");
@@ -1797,6 +2019,7 @@ async function initializeRoutinePage() {
       state.isAdvancedOpen = shouldStartAdvancedOpen();
       state.advancedInitialized = true;
     }
+    state.wizardStep = ROUTINE_SETUP_QUERY ? 1 : getUnlockedWizardStep();
     renderAll();
     setFeedback(FEEDBACK_COPY.idle);
   } catch (error) {

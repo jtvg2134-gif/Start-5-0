@@ -23,12 +23,6 @@
       kicker: "Banco Start 5",
       subtitle: "filtros / pratica / revisao",
     },
-    "rotina.html": {
-      documentTitle: "Start 5 | Rotina",
-      title: "Rotina",
-      kicker: "Disciplina semanal",
-      subtitle: "constancia / blocos / execucao",
-    },
     "redacao.html": {
       documentTitle: "Start 5 | Reda\u00e7\u00e3o",
       title: "Redacao",
@@ -66,12 +60,6 @@
       page: "questoes.html",
       label: "Questoes",
       sublabel: "banco / filtros / pratica",
-      className: "sidebar-link-primary",
-    },
-    {
-      page: "rotina.html",
-      label: "Rotina",
-      sublabel: "disciplina / blocos / constancia",
       className: "sidebar-link-primary",
     },
     {
@@ -310,7 +298,6 @@
       "index.html": "/images/home.jpg",
       "dashboard.html": "/images/painel.jpg",
       "questoes.html": "/images/painel.jpg",
-      "rotina.html": "/images/rotina.jpg",
       "redacao.html": "/images/redacao.jpg",
     };
 

@@ -51,6 +51,8 @@ const ACCEPTED_AVATAR_TYPES = new Set([
 ]);
 const MAX_RAW_FILE_SIZE = 6 * 1024 * 1024;
 const MAX_AVATAR_DATA_URL_LENGTH = 1_500_000;
+const DEFAULT_AVATAR_URL = "/images/foto-inicial-de-perfil.jpg";
+const DEFAULT_AVATAR_FALLBACK_URL = "/images/default-avatar.svg";
 
 let currentProfile = null;
 let currentAvatarDataUrl = "";
@@ -200,24 +202,28 @@ function getMonthlyLevel(minutes) {
 }
 
 function renderProfileAvatar(avatarDataUrl, firstName, lastName, fallbackName) {
-  const hasAvatar = Boolean(String(avatarDataUrl || "").trim());
+  const resolvedAvatarUrl = String(avatarDataUrl || "").trim() || DEFAULT_AVATAR_URL;
 
   if (profileAvatarShell) {
-    profileAvatarShell.classList.toggle("has-image", hasAvatar);
+    profileAvatarShell.classList.add("has-image");
   }
 
   if (profileAvatarImage) {
-    profileAvatarImage.hidden = !hasAvatar;
+    profileAvatarImage.hidden = false;
+    profileAvatarImage.src = resolvedAvatarUrl;
+    profileAvatarImage.onerror = () => {
+      if (profileAvatarImage.src.endsWith(DEFAULT_AVATAR_FALLBACK_URL)) {
+        return;
+      }
 
-    if (hasAvatar) {
-      profileAvatarImage.src = avatarDataUrl;
-    } else {
-      profileAvatarImage.removeAttribute("src");
-    }
+      profileAvatarImage.src = profileAvatarImage.src.endsWith(DEFAULT_AVATAR_URL)
+        ? DEFAULT_AVATAR_FALLBACK_URL
+        : DEFAULT_AVATAR_URL;
+    };
   }
 
   if (profileAvatarFallback) {
-    profileAvatarFallback.hidden = hasAvatar;
+    profileAvatarFallback.hidden = true;
     profileAvatarFallback.textContent = getInitials(firstName, lastName, fallbackName);
   }
 }

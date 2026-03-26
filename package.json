@@ -6,9 +6,11 @@
   "scripts": {
     "start": "node --env-file-if-exists=.env server.js",
     "dev": "node --env-file-if-exists=.env --input-type=module -e \"process.env.PORT ??= '3001'; await import('./server.js');\"",
-    "prod": "node --env-file-if-exists=.env --input-type=module -e \"process.env.NODE_ENV='production'; await import('./server.js');\""
+    "prod": "node --env-file-if-exists=.env --input-type=module -e \"process.env.NODE_ENV='production'; await import('./server.js');\"",
+    "start:goal-api": "node --env-file-if-exists=.env backend/start5_goal/app.js"
   },
   "dependencies": {
-    "openai": "^6.29.0"
+    "openai": "^6.29.0",
+    "pg": "^8.20.0"
   }
 }
