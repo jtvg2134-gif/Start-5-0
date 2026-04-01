@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Start 5 | Admin Email</title>
+  <meta
+    name="description"
+    content="Area administrativa do Start 5 para gerenciamento de emails, perfis e acessos."
+  />
+  <meta name="theme-color" content="#05080d" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Fraunces:wght@500;600;700&family=Instrument+Sans:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <link rel="stylesheet" href="css/admin.css" />
+</head>
+<body class="dashboard-page protected-page admin-page" data-admin-view="email">
+  <a class="skip-link" href="#mainContent">Pular para o conteudo principal</a>
+
+  <div class="page-shell">
+    <header class="header">
+      <div class="header-inner">
+        <section class="header-account" aria-label="Conta conectada">
+          <div class="header-account-avatar" data-auth-avatar>
+            <img
+              class="header-account-avatar-image"
+              data-auth-avatar-image
+              alt="Foto do perfil"
+              width="42"
+              height="42"
+              decoding="async"
+              hidden
+            />
+            <span class="header-account-avatar-fallback" data-auth-initials>U</span>
+          </div>
+          <div class="header-account-copy">
+            <strong class="header-account-name" data-auth-name>Usuario</strong>
+            <span class="header-account-email" data-auth-email>email@start5.app</span>
+            <span class="header-account-month" data-auth-month-minutes>0 min no mes</span>
+          </div>
+        </section>
+
+        <button
+          class="menu-toggle"
+          id="menuToggle"
+          type="button"
+          aria-label="Abrir menu"
+          aria-expanded="false"
+          aria-controls="menuPanel"
+        >
+          <span class="menu-icon" aria-hidden="true">
+            <span></span>
+            <span></span>
+          </span>
+        </button>
+      </div>
+    </header>
+
+    <aside class="menu-panel" id="menuPanel" aria-label="Menu principal">
+      <div class="menu-panel-inner">
+        <nav class="menu-nav" aria-label="Navegacao principal">
+          <div class="menu-user">
+            <span class="menu-user-label">Conectado como</span>
+            <strong class="menu-user-name" data-auth-name>Usuario</strong>
+            <span class="menu-user-email" data-auth-email>email@start5.app</span>
+          </div>
+
+          <div class="menu-column">
+            <a href="index.html" class="menu-link">Inicio</a>
+            <a href="dashboard.html" class="menu-link">Painel</a>
+            <a href="questoes.html" class="menu-link">Questoes</a>
+            <a href="profile.html" class="menu-link">Perfil</a>
+          </div>
+
+          <div class="menu-column">
+            <a href="redacao.html" class="menu-link">Reda&ccedil;&atilde;o</a>
+            <a href="admin.html" class="menu-link" data-admin-only hidden>Admin</a>
+            <button type="button" class="menu-link menu-link-button" data-logout>Sair</button>
+          </div>
+        </nav>
+      </div>
+    </aside>
+
+    <main id="mainContent" class="admin-main-stack">
+      <section class="dashboard-intro admin-page-hero">
+        <div class="dashboard-intro-inner admin-hero-inner admin-page-hero-inner">
+          <div class="admin-page-heading">
+            <a href="admin.html" class="admin-back-link">Voltar ao admin principal</a>
+            <p class="section-label">Contas</p>
+            <h1 class="progress-title">Emails e perfis</h1>
+            <p class="dashboard-copy admin-page-copy">
+              Esta area concentra a base de contas do Start 5. Daqui voce acompanha emails cadastrados, seleciona
+              perfis e aplica acoes administrativas com mais clareza e menos atrito.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="admin-section admin-page-stack">
+        <article class="admin-panel admin-page-panel" id="adminEmailsSection">
+          <div class="admin-section-head">
+            <div>
+              <p class="section-label">Emails</p>
+              <h2 class="analysis-title">Contas vinculadas</h2>
+              <p class="module-copy">
+                Visualize a base de emails conectados ao sistema e gerencie perfis sem perder o contexto da operacao.
+              </p>
+            </div>
+          </div>
+
+          <section class="admin-selection-shell" data-admin-manager-only hidden aria-label="Gerenciamento de perfis">
+            <div class="admin-selection-head">
+              <div>
+                <h3>Selecionar perfis</h3>
+                <p class="day-history-date">Escolha um ou mais perfis para excluir do banco ou alterar a permissao administrativa.</p>
+              </div>
+
+              <button type="button" class="admin-selection-clear" id="adminClearSelectionButton">
+                Limpar selecao
+              </button>
+            </div>
+
+            <div class="admin-selection-bar" id="adminProfileSelectionList">
+              <div class="admin-empty">Carregando perfis para gerenciamento...</div>
+            </div>
+
+            <div class="admin-selection-actions">
+              <div class="admin-selection-summary">
+                <strong id="adminSelectionCountValue">0 perfis selecionados</strong>
+                <span id="adminSelectionHintValue">Perfis protegidos continuam visiveis, mas ficam fora das acoes em lote.</span>
+              </div>
+
+              <div class="admin-selection-buttons">
+                <button type="button" class="admin-selection-action" id="adminGrantSelectedButton" disabled>
+                  Dar permissao admin
+                </button>
+                <button type="button" class="admin-selection-action" id="adminRevokeSelectedButton" disabled>
+                  Remover permissao admin
+                </button>
+                <button type="button" class="admin-selection-action admin-selection-action-danger" id="adminDeleteSelectedButton" disabled>
+                  Excluir selecionados
+                </button>
+              </div>
+            </div>
+
+            <p class="admin-selection-feedback" id="adminBulkFeedback" aria-live="polite"></p>
+          </section>
+
+          <div class="admin-grid admin-email-grid">
+            <article class="summary-card">
+              <span class="summary-label">Contas</span>
+              <strong class="summary-value" id="adminEmailAccountsValue">0</strong>
+            </article>
+
+            <article class="summary-card">
+              <span class="summary-label">Admins</span>
+              <strong class="summary-value" id="adminEmailAdminsValue">0</strong>
+            </article>
+
+            <article class="summary-card">
+              <span class="summary-label">Ativas</span>
+              <strong class="summary-value" id="adminEmailActiveValue">0</strong>
+            </article>
+
+            <article class="summary-card">
+              <span class="summary-label">Ultimo acesso</span>
+              <strong class="summary-value admin-summary-small" id="adminEmailRecentValue">Sem registro</strong>
+            </article>
+          </div>
+
+          <div class="admin-email-list-shell">
+            <div class="admin-metric-list admin-email-list" id="adminEmailList">
+              <div class="admin-metric-row">
+                <span class="admin-metric-key">Nenhuma conta carregada ainda.</span>
+                <strong class="admin-metric-value">0</strong>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article class="admin-panel admin-page-panel" id="adminPermissionsSection" data-admin-manager-only hidden>
+          <div class="admin-section-head">
+            <div>
+              <p class="section-label">Perfis</p>
+              <h2 class="analysis-title">Gerenciamento detalhado</h2>
+              <p class="module-copy">
+                Revise o historico de atividade, abra acoes individuais e ajuste o papel administrativo quando precisar
+                de mais controle do que o lote.
+              </p>
+            </div>
+          </div>
+
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <caption class="visually-hidden">Tabela agregada com usuarios do site e seus indicadores</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Nome</th>
+                  <th scope="col">Conta</th>
+                  <th scope="col">Perfil</th>
+                  <th scope="col">Sessoes</th>
+                  <th scope="col">Minutos</th>
+                  <th scope="col">Ultima sessao</th>
+                  <th scope="col" data-admin-manager-only hidden>Acoes</th>
+                </tr>
+              </thead>
+              <tbody id="adminUsersTableBody">
+                <tr>
+                  <td colspan="7" class="admin-empty">Carregando dados do admin...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+
+      <footer class="support-copy" aria-hidden="true"></footer>
+    </main>
+  </div>
+
+  <dialog class="admin-modal-backdrop" id="adminModalBackdrop" aria-labelledby="adminModalTitle">
+    <section class="admin-modal">
+      <button
+        class="modal-close"
+        type="button"
+        data-close-admin-modal
+        aria-label="Fechar modal"
+      >
+        &times;
+      </button>
+
+      <header>
+        <h2 class="session-modal-title" id="adminModalTitle">Editar acesso</h2>
+        <p class="admin-modal-subtitle" id="adminModalSubtitle"></p>
+      </header>
+
+      <form class="admin-modal-form" id="adminModalForm">
+        <div class="admin-modal-fields" id="adminEditFields">
+          <label class="admin-modal-label" for="adminEditEmailInput">E-mail</label>
+          <input
+            type="email"
+            id="adminEditEmailInput"
+            name="email"
+            class="admin-modal-input"
+            inputmode="email"
+            autocomplete="username"
+            placeholder="voce@exemplo.com"
+            required
+          />
+
+          <label class="admin-modal-label" for="adminEditPasswordInput">Nova senha</label>
+          <input
+            type="password"
+            id="adminEditPasswordInput"
+            name="password"
+            class="admin-modal-input"
+            autocomplete="new-password"
+            minlength="6"
+            placeholder="Deixe vazio para manter a atual"
+          />
+
+          <p class="admin-modal-hint">
+            Se a senha ficar vazia, o login continua com a senha atual.
+          </p>
+        </div>
+
+        <fieldset class="admin-modal-fields is-hidden" id="adminPermissionsFields">
+          <legend class="admin-modal-label">Permissoes</legend>
+
+          <div class="admin-role-options">
+            <button type="button" class="admin-role-option" data-role-option="user">
+              Usuario
+            </button>
+            <button type="button" class="admin-role-option" data-role-option="admin">
+              Admin
+            </button>
+          </div>
+
+          <p class="admin-modal-hint">
+            Somente admins podem alterar o perfil de acesso.
+          </p>
+
+          <label class="admin-modal-switch" data-admin-primary-only hidden>
+            <input type="checkbox" id="adminCanManageAdminsInput" />
+            <span>Pode liberar outros admins</span>
+          </label>
+        </fieldset>
+
+        <p class="admin-modal-feedback" id="adminModalFeedback" aria-live="polite"></p>
+
+        <div class="admin-modal-actions">
+          <button
+            type="button"
+            class="modal-button modal-button-secondary"
+            data-close-admin-modal
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            class="modal-button modal-button-primary"
+            id="adminModalSubmitButton"
+          >
+            Salvar
+          </button>
+        </div>
+      </form>
+    </section>
+  </dialog>
+
+  <dialog class="admin-modal-backdrop" id="adminDeleteConfirmBackdrop" aria-labelledby="adminDeleteConfirmTitle">
+    <section class="admin-modal admin-modal-compact">
+      <button
+        class="modal-close"
+        type="button"
+        data-close-admin-delete-modal
+        aria-label="Fechar confirmacao"
+      >
+        &times;
+      </button>
+
+      <header>
+        <h2 class="session-modal-title" id="adminDeleteConfirmTitle">Excluir perfis</h2>
+        <p class="admin-modal-subtitle" id="adminDeleteConfirmSubtitle">
+          Revise os perfis selecionados antes de apagar definitivamente do banco.
+        </p>
+      </header>
+
+      <div class="admin-delete-confirm-shell">
+        <div class="analytics-callout analytics-callout-danger">
+          <strong class="analytics-callout-title" id="adminDeleteConfirmSummary">Nenhum perfil selecionado.</strong>
+          <p class="analytics-callout-copy">
+            Essa acao remove a conta e os registros vinculados ao usuario. Use apenas quando tiver certeza.
+          </p>
+        </div>
+
+        <div class="admin-delete-confirm-list" id="adminDeleteConfirmList">
+          <div class="admin-empty">Selecione perfis para revisar a exclusao.</div>
+        </div>
+
+        <p class="admin-modal-feedback" id="adminDeleteConfirmFeedback" aria-live="polite"></p>
+
+        <div class="admin-modal-actions">
+          <button
+            type="button"
+            class="modal-button modal-button-secondary"
+            data-close-admin-delete-modal
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            class="modal-button modal-button-danger"
+            id="adminConfirmDeleteSelectedButton"
+          >
+            Excluir perfis
+          </button>
+        </div>
+      </div>
+    </section>
+  </dialog>
+
+  <script src="js/main.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Start 5 | Central de Provas</title>
+  <meta
+    name="description"
+    content="Central operacional do Start 5 para gabaritos mestres, importacao de PDF, revisao de questoes e correcao."
+  />
+  <meta name="theme-color" content="#05080d" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Fraunces:wght@500;600;700&family=Instrument+Sans:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="css/admin.css" />
+  <link rel="stylesheet" href="css/admin-proof-center.css" />
+</head>
+<body class="dashboard-page protected-page admin-page" data-admin-view="proofs-hub" data-proof-center-view="hub-operations">
+  <a class="skip-link" href="#mainContent">Pular para o conteudo principal</a>
+  <div class="page-shell">
+    <header class="header">
+      <div class="header-inner">
+        <section class="header-account" aria-label="Conta conectada">
+          <div class="header-account-avatar" data-auth-avatar>
+            <img class="header-account-avatar-image" data-auth-avatar-image alt="Foto do perfil" width="42" height="42" decoding="async" hidden />
+            <span class="header-account-avatar-fallback" data-auth-initials>U</span>
+          </div>
+          <div class="header-account-copy">
+            <strong class="header-account-name" data-auth-name>Usuario</strong>
+            <span class="header-account-email" data-auth-email>email@start5.app</span>
+            <span class="header-account-month" data-auth-month-minutes>0 min no mes</span>
+          </div>
+        </section>
+        <button class="menu-toggle" id="menuToggle" type="button" aria-label="Abrir menu" aria-expanded="false" aria-controls="menuPanel">
+          <span class="menu-icon" aria-hidden="true"><span></span><span></span></span>
+        </button>
+      </div>
+    </header>
+    <aside class="menu-panel" id="menuPanel" aria-label="Menu principal">
+      <div class="menu-panel-inner">
+        <nav class="menu-nav" aria-label="Navegacao principal">
+          <div class="menu-user">
+            <span class="menu-user-label">Conectado como</span>
+            <strong class="menu-user-name" data-auth-name>Usuario</strong>
+            <span class="menu-user-email" data-auth-email>email@start5.app</span>
+          </div>
+          <div class="menu-column">
+            <a href="index.html" class="menu-link">Inicio</a>
+            <a href="dashboard.html" class="menu-link">Painel</a>
+            <a href="questoes.html" class="menu-link">Questoes</a>
+            <a href="profile.html" class="menu-link">Perfil</a>
+          </div>
+          <div class="menu-column">
+            <a href="redacao.html" class="menu-link">Redacao</a>
+            <a href="admin.html" class="menu-link" data-admin-only hidden>Admin</a>
+            <button type="button" class="menu-link menu-link-button" data-logout>Sair</button>
+          </div>
+        </nav>
+      </div>
+    </aside>
+
+    <main id="mainContent" class="admin-main-stack">
+      <section class="dashboard-intro admin-page-hero proof-center-hub-hero">
+        <div class="dashboard-intro-inner admin-hero-inner admin-page-hero-inner proof-center-hub-surface">
+          <div class="proof-center-hub-heading">
+            <div class="admin-page-heading">
+              <a href="admin.html" class="admin-back-link">Voltar ao admin principal</a>
+              <p class="section-label">Provas</p>
+              <h1 class="progress-title proof-center-hub-title">Central de provas</h1>
+              <p class="dashboard-copy admin-page-copy proof-center-hub-copy">
+                O gabarito virou a identidade mestre da prova. A partir dele, o sistema reconhece PDF, sugere vinculo, importa questoes e prepara a correcao com mais precisao.
+              </p>
+            </div>
+            <div class="proof-center-action-bar" aria-label="Acoes principais da central">
+              <a class="proof-center-button" href="admin-gabaritos.html">Novo gabarito</a>
+              <a class="proof-center-button proof-center-button-secondary" href="admin-provas-criar.html">Nova prova</a>
+              <a class="proof-center-button proof-center-button-secondary" href="admin-importacao.html">Enviar PDF</a>
+              <a class="proof-center-button proof-center-button-secondary" href="admin-importacao.html">Analisar PDF</a>
+              <a class="proof-center-button proof-center-button-secondary" href="admin-banco-questoes.html">Revisar questoes</a>
+              <a class="proof-center-button proof-center-button-secondary" href="admin-correcao.html">Corrigir</a>
+            </div>
+          </div>
+
+          <section class="proof-center-summary-grid proof-center-summary-grid-hub" aria-label="Resumo operacional da central">
+            <article class="proof-center-summary-card"><span class="proof-center-summary-label">Provas</span><strong class="proof-center-summary-value" id="proofCenterSummaryProofs">0</strong></article>
+            <article class="proof-center-summary-card"><span class="proof-center-summary-label">Gabaritos</span><strong class="proof-center-summary-value" id="proofCenterSummaryKeys">0</strong></article>
+            <article class="proof-center-summary-card"><span class="proof-center-summary-label">Importacoes</span><strong class="proof-center-summary-value" id="proofCenterSummaryImports">0</strong></article>
+            <article class="proof-center-summary-card"><span class="proof-center-summary-label">Pendencias</span><strong class="proof-center-summary-value" id="proofCenterSummaryPending">0</strong></article>
+          </section>
+        </div>
+      </section>
+
+      <nav class="proof-center-subnav" aria-label="Areas do modulo de provas">
+        <a class="proof-center-subnav-link is-active" href="admin-provas.html">Central</a>
+        <a class="proof-center-subnav-link" href="admin-provas-lista.html">Provas</a>
+        <a class="proof-center-subnav-link" href="admin-provas-criar.html">Cadastro</a>
+        <a class="proof-center-subnav-link" href="admin-provas-montagem.html">Montagem</a>
+        <a class="proof-center-subnav-link" href="admin-banco-questoes.html">Banco</a>
+        <a class="proof-center-subnav-link" href="admin-gabaritos.html">Gabaritos</a>
+        <a class="proof-center-subnav-link" href="admin-importacao.html">Importacao</a>
+        <a class="proof-center-subnav-link" href="admin-correcao.html">Correcao</a>
+      </nav>
+
+      <section class="proof-center-workboard">
+        <article class="admin-panel admin-page-panel">
+          <div class="admin-section-head">
+            <div>
+              <p class="section-label">Operacao</p>
+              <h2 class="analysis-title">Mapa das provas</h2>
+              <p class="module-copy">Veja em uma linha o estado do gabarito, da identificacao do PDF, da revisao e da correcao por prova.</p>
+            </div>
+          </div>
+          <div class="proof-center-workhead" aria-hidden="true">
+            <span>Prova</span>
+            <span>Gabarito</span>
+            <span>Processamento</span>
+            <span>Correspondencia</span>
+            <span>Revisao</span>
+            <span>Acoes</span>
+          </div>
+          <div id="proofCenterOperationsList" class="proof-center-worklist">
+            <div class="proof-center-empty">Carregando provas...</div>
+          </div>
+        </article>
+
+        <article class="admin-panel admin-page-panel">
+          <div class="admin-section-head">
+            <div>
+              <p class="section-label">Fila</p>
+              <h2 class="analysis-title">Processamento recente</h2>
+              <p class="module-copy">Uploads, reconhecimento da prova e parsing das questoes aparecem aqui com foco em status e proxima acao.</p>
+            </div>
+          </div>
+          <div id="proofCenterProcessingList" class="proof-center-processing-list">
+            <div class="proof-center-empty">Carregando fila de processamento...</div>
+          </div>
+        </article>
+      </section>
+
+      <footer class="support-copy" aria-hidden="true"></footer>
+    </main>
+  </div>
+
+  <script src="js/main.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/admin.js"></script>
+  <script src="js/admin-proof-center-api.js"></script>
+  <script src="js/admin-proof-center.js"></script>
+  <script src="js/admin-proof-center-operations.js"></script>
+</body>
+</html>

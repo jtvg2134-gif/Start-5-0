@@ -25,7 +25,6 @@ const MONTHLY_MEDAL_LEVELS = [
   { key: "bronze", minMinutes: 150 },
 ];
 const DEFAULT_AVATAR_URL = "/images/foto-inicial-de-perfil.jpg";
-const DEFAULT_AVATAR_FALLBACK_URL = "/images/default-avatar.svg";
 
 let currentSession = null;
 let authRedirecting = false;
@@ -280,24 +279,34 @@ function hydrateUserLabels() {
     const fallback = element.querySelector("[data-auth-initials]");
     const avatarUrl = getResolvedSessionAvatarUrl(currentSession);
 
-    element.classList.add("has-image");
-
     if (image) {
-      image.hidden = false;
-      image.src = avatarUrl;
+      image.hidden = true;
+      delete image.dataset.defaultAvatarRetried;
+      image.onload = () => {
+        element.classList.add("has-image");
+        image.hidden = false;
+        if (fallback) {
+          fallback.hidden = true;
+        }
+      };
       image.onerror = () => {
-        if (image.src.endsWith(DEFAULT_AVATAR_FALLBACK_URL)) {
+        if (image.dataset.defaultAvatarRetried === "true") {
+          image.hidden = true;
+          element.classList.remove("has-image");
+          if (fallback) {
+            fallback.hidden = false;
+          }
           return;
         }
 
-        image.src = image.src.endsWith(DEFAULT_AVATAR_URL)
-          ? DEFAULT_AVATAR_FALLBACK_URL
-          : DEFAULT_AVATAR_URL;
+        image.dataset.defaultAvatarRetried = "true";
+        image.src = DEFAULT_AVATAR_URL;
       };
+      image.src = avatarUrl;
     }
 
     if (fallback) {
-      fallback.hidden = true;
+      fallback.hidden = Boolean(image);
     }
   });
 

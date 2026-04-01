@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Start 5 | Central Administrativa</title>
+  <title>Start 5 | Admin Perfil</title>
   <meta
     name="description"
-    content="Hub administrativo do Start 5 com acesso rapido para provas, emails e perfil."
+    content="Area administrativa do Start 5 para consulta do perfil e atalhos do administrador."
   />
   <meta name="theme-color" content="#05080d" />
 
@@ -19,7 +19,7 @@
 
   <link rel="stylesheet" href="css/admin.css" />
 </head>
-<body class="dashboard-page protected-page admin-page" data-admin-view="hub">
+<body class="dashboard-page protected-page admin-page" data-admin-view="profile">
   <a class="skip-link" href="#mainContent">Pular para o conteudo principal</a>
 
   <div class="page-shell">
@@ -87,62 +87,84 @@
     </aside>
 
     <main id="mainContent" class="admin-main-stack">
-      <section class="dashboard-intro admin-page-hero admin-page-hero-compact">
+      <section class="dashboard-intro admin-page-hero">
         <div class="dashboard-intro-inner admin-hero-inner admin-page-hero-inner">
           <div class="admin-page-heading">
-            <p class="section-label">Navegacao</p>
-            <h1 class="progress-title">Central administrativa</h1>
+            <a href="admin.html" class="admin-back-link">Voltar ao admin principal</a>
+            <p class="section-label">Conta</p>
+            <h1 class="progress-title">Perfil administrativo</h1>
             <p class="dashboard-copy admin-page-copy">
-              Escolha a area que voce quer operar. Cada entrada abre uma pagina propria para manter o admin mais limpo,
-              organizado e pronto para crescer sem virar um dashboard carregado.
+              Consulte seus dados atuais, visualize o papel administrativo em uso e deixe esta area pronta para
+              futuras configuracoes de operacao pessoal.
             </p>
           </div>
         </div>
       </section>
 
-      <nav class="admin-shortcut-grid admin-hub-grid" aria-label="Atalhos administrativos">
-        <a class="admin-shortcut-card admin-hub-card" href="admin-provas.html">
-          <span class="admin-shortcut-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none">
-              <path d="M7 3.75h7.3L19 8.45V19a1.75 1.75 0 0 1-1.75 1.75h-10.5A1.75 1.75 0 0 1 5 19V5.5A1.75 1.75 0 0 1 6.75 3.75Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
-              <path d="M14 3.75V8.5H18.75" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
-              <path d="M8 12h8M8 15.5h8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-            </svg>
-          </span>
-          <span class="admin-shortcut-label">Provas</span>
-          <strong class="admin-shortcut-title">Central de provas</strong>
-          <span class="admin-shortcut-copy">Entre no modulo centrado em banco de questoes, montagem, gabaritos, importacao assistida, correcao e resultados.</span>
-          <span class="admin-shortcut-arrow">Abrir area</span>
-        </a>
+      <section class="admin-section admin-page-columns">
+        <article class="admin-panel admin-page-panel" id="adminProfileSection">
+          <div class="admin-section-head">
+            <div>
+              <p class="section-label">Perfil</p>
+              <h2 class="analysis-title">Sua conta no admin</h2>
+              <p class="module-copy">Dados principais do acesso atual com o mesmo padrao visual do restante do painel.</p>
+            </div>
+          </div>
 
-        <a class="admin-shortcut-card admin-hub-card" href="admin-email.html">
-          <span class="admin-shortcut-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none">
-              <rect x="3.5" y="5.5" width="17" height="13" rx="2.5" stroke="currentColor" stroke-width="1.6"/>
-              <path d="m5 7 7 5 7-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M7.5 17.5h9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-            </svg>
-          </span>
-          <span class="admin-shortcut-label">Contas</span>
-          <strong class="admin-shortcut-title">Email</strong>
-          <span class="admin-shortcut-copy">Gerencie emails, perfis cadastrados, permissao administrativa e exclusoes.</span>
-          <span class="admin-shortcut-arrow">Abrir area</span>
-        </a>
+          <div class="admin-profile-card">
+            <div class="admin-profile-avatar" id="adminProfileAvatar">A</div>
 
-        <a class="admin-shortcut-card admin-hub-card" href="admin-perfil.html">
-          <span class="admin-shortcut-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="8" r="3.25" stroke="currentColor" stroke-width="1.6"/>
-              <path d="M5.5 19a6.5 6.5 0 0 1 13 0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-              <path d="M18.5 6.5v3m1.5-1.5h-3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-            </svg>
-          </span>
-          <span class="admin-shortcut-label">Conta</span>
-          <strong class="admin-shortcut-title">Perfil</strong>
-          <span class="admin-shortcut-copy">Consulte seus dados administrativos, foco atual e atalhos pessoais do painel.</span>
-          <span class="admin-shortcut-arrow">Abrir area</span>
-        </a>
-      </nav>
+            <div class="admin-profile-copy">
+              <strong class="admin-profile-name" id="adminProfileNameValue">Administrador</strong>
+              <span class="admin-profile-email" id="adminProfileEmailValue">Sem email</span>
+            </div>
+          </div>
+
+          <div class="admin-grid admin-profile-grid">
+            <article class="summary-card">
+              <span class="summary-label">Perfil</span>
+              <strong class="summary-value" id="adminProfileRoleValue">Admin</strong>
+            </article>
+
+            <article class="summary-card">
+              <span class="summary-label">Foco</span>
+              <strong class="summary-value" id="adminProfileFocusValue">Sem foco</strong>
+            </article>
+          </div>
+
+          <div class="admin-quick-actions">
+            <a href="profile.html" class="admin-quick-action">Abrir perfil publico</a>
+            <a href="dashboard.html" class="admin-quick-action">Ir para o painel</a>
+            <a href="admin-email.html" class="admin-quick-action">Abrir area de email</a>
+            <a href="admin-provas.html" class="admin-quick-action">Abrir area de provas</a>
+          </div>
+        </article>
+
+        <article class="admin-panel admin-placeholder-panel">
+          <div class="admin-section-head">
+            <div>
+              <p class="section-label">Expansao</p>
+              <h2 class="analysis-title">Espaco pronto para crescer</h2>
+              <p class="module-copy">
+                Esta pagina fica preparada para futuras configuracoes do administrador sem misturar perfil com contas ou
+                operacao de provas.
+              </p>
+            </div>
+          </div>
+
+          <div class="admin-placeholder-grid">
+            <article class="admin-placeholder-card">
+              <strong>Preferencias do administrador</strong>
+              <span>Espaco reservado para personalizacao da experiencia, alertas e preferencias internas.</span>
+            </article>
+
+            <article class="admin-placeholder-card">
+              <strong>Historico pessoal</strong>
+              <span>Base pronta para futuras acoes como auditoria leve, acessos recentes e notas operacionais.</span>
+            </article>
+          </div>
+        </article>
+      </section>
 
       <footer class="support-copy" aria-hidden="true"></footer>
     </main>

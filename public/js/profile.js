@@ -52,7 +52,6 @@ const ACCEPTED_AVATAR_TYPES = new Set([
 const MAX_RAW_FILE_SIZE = 6 * 1024 * 1024;
 const MAX_AVATAR_DATA_URL_LENGTH = 1_500_000;
 const DEFAULT_AVATAR_URL = "/images/foto-inicial-de-perfil.jpg";
-const DEFAULT_AVATAR_FALLBACK_URL = "/images/default-avatar.svg";
 
 let currentProfile = null;
 let currentAvatarDataUrl = "";
@@ -204,26 +203,34 @@ function getMonthlyLevel(minutes) {
 function renderProfileAvatar(avatarDataUrl, firstName, lastName, fallbackName) {
   const resolvedAvatarUrl = String(avatarDataUrl || "").trim() || DEFAULT_AVATAR_URL;
 
-  if (profileAvatarShell) {
-    profileAvatarShell.classList.add("has-image");
-  }
-
   if (profileAvatarImage) {
-    profileAvatarImage.hidden = false;
-    profileAvatarImage.src = resolvedAvatarUrl;
+    profileAvatarImage.hidden = true;
+    delete profileAvatarImage.dataset.defaultAvatarRetried;
+    profileAvatarImage.onload = () => {
+      profileAvatarShell?.classList.add("has-image");
+      profileAvatarImage.hidden = false;
+      if (profileAvatarFallback) {
+        profileAvatarFallback.hidden = true;
+      }
+    };
     profileAvatarImage.onerror = () => {
-      if (profileAvatarImage.src.endsWith(DEFAULT_AVATAR_FALLBACK_URL)) {
+      if (profileAvatarImage.dataset.defaultAvatarRetried === "true") {
+        profileAvatarImage.hidden = true;
+        profileAvatarShell?.classList.remove("has-image");
+        if (profileAvatarFallback) {
+          profileAvatarFallback.hidden = false;
+        }
         return;
       }
 
-      profileAvatarImage.src = profileAvatarImage.src.endsWith(DEFAULT_AVATAR_URL)
-        ? DEFAULT_AVATAR_FALLBACK_URL
-        : DEFAULT_AVATAR_URL;
+      profileAvatarImage.dataset.defaultAvatarRetried = "true";
+      profileAvatarImage.src = DEFAULT_AVATAR_URL;
     };
+    profileAvatarImage.src = resolvedAvatarUrl;
   }
 
   if (profileAvatarFallback) {
-    profileAvatarFallback.hidden = true;
+    profileAvatarFallback.hidden = Boolean(profileAvatarImage);
     profileAvatarFallback.textContent = getInitials(firstName, lastName, fallbackName);
   }
 }

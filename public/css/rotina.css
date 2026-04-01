@@ -779,9 +779,13 @@
   padding: 12px 14px;
   border-radius: 16px;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.04);
+  background:
+    linear-gradient(180deg, rgba(18, 22, 28, 0.96), rgba(10, 13, 18, 0.94));
   color: #fff;
   color-scheme: dark;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
 }
 
 .routine-remove-button {
@@ -1016,9 +1020,12 @@
   overflow: hidden;
   min-height: 232px;
   padding: 34px;
-  background:
+  background-image:
     linear-gradient(90deg, rgba(17, 15, 13, 0.82) 0%, rgba(17, 15, 13, 0.58) 46%, rgba(17, 15, 13, 0.22) 100%),
-    url("../images/routine-street.svg") center/cover no-repeat !important;
+    var(--page-background-image, none) !important;
+  background-position: center center, center center;
+  background-repeat: no-repeat, no-repeat;
+  background-size: cover, cover;
 }
 
 .routine-page .dashboard-intro::before {
@@ -1081,9 +1088,12 @@
   padding: 36px;
   border-radius: 34px;
   border-color: rgba(241, 182, 104, 0.14) !important;
-  background:
+  background-image:
     linear-gradient(96deg, rgba(21, 15, 12, 0.82) 0%, rgba(21, 15, 12, 0.54) 40%, rgba(21, 15, 12, 0.12) 76%),
-    url("../images/routine-street.svg") center/cover no-repeat !important;
+    var(--page-background-image, none) !important;
+  background-position: center center, center center;
+  background-repeat: no-repeat, no-repeat;
+  background-size: cover, cover;
 }
 
 .routine-page .dashboard-intro::before {
@@ -1119,7 +1129,7 @@
 .routine-page .routine-day-card input[type="number"],
 .routine-page .routine-picker-search-shell input,
 .routine-page .routine-custom-subject input {
-  background: linear-gradient(180deg, rgba(255, 249, 239, 0.06), rgba(255, 249, 239, 0.026));
+  background: linear-gradient(180deg, rgba(18, 22, 28, 0.96), rgba(10, 13, 18, 0.94));
 }
 
 .routine-page .routine-picker-trigger-icon,
@@ -1142,6 +1152,11 @@
 }
 
 .routine-page .dashboard-intro {
-  background: linear-gradient(104deg, rgba(21, 15, 12, 0.52) 0%, rgba(21, 15, 12, 0.26) 40%, rgba(21, 15, 12, 0.09) 78%, rgba(21, 15, 12, 0.04) 100%) !important;
+  background-image:
+    linear-gradient(104deg, rgba(21, 15, 12, 0.52) 0%, rgba(21, 15, 12, 0.26) 40%, rgba(21, 15, 12, 0.09) 78%, rgba(21, 15, 12, 0.04) 100%),
+    var(--page-background-image, none) !important;
+  background-position: center center, center center;
+  background-repeat: no-repeat, no-repeat;
+  background-size: cover, cover;
   backdrop-filter: blur(10px);
 }

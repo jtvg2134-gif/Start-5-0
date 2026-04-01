@@ -218,10 +218,15 @@ body.onboarding-page {
   padding: 15px 16px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.03);
+  background:
+    linear-gradient(180deg, rgba(18, 22, 28, 0.96), rgba(10, 13, 18, 0.94));
   color: #f6f0e7;
   font: inherit;
   outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  color-scheme: dark;
   transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
 }
 
@@ -234,7 +239,8 @@ body.onboarding-page {
 .onboarding-select:focus,
 .onboarding-textarea:focus {
   border-color: rgba(229, 179, 90, 0.62);
-  background: rgba(255, 255, 255, 0.045);
+  background:
+    linear-gradient(180deg, rgba(22, 27, 34, 0.98), rgba(12, 16, 22, 0.96));
 }
 
 .onboarding-field-hint {
@@ -253,27 +259,23 @@ body.onboarding-page {
 }
 
 .onboarding-combobox::after {
-  content: "";
-  position: absolute;
-  top: 26px;
-  right: 20px;
-  width: 10px;
-  height: 10px;
-  border-right: 2px solid rgba(236, 230, 221, 0.64);
-  border-bottom: 2px solid rgba(236, 230, 221, 0.64);
-  transform: translateY(-50%) rotate(45deg);
-  pointer-events: none;
-  transition: transform 160ms ease, border-color 160ms ease;
+  content: none;
+  display: none;
 }
 
 .onboarding-combobox.is-open::after,
 .onboarding-combobox:focus-within::after {
-  border-color: rgba(229, 179, 90, 0.82);
-  transform: translateY(-30%) rotate(225deg);
+  content: none;
 }
 
 .onboarding-combobox-input {
-  padding-right: 52px;
+  padding-right: 16px;
+}
+
+.onboarding-select option,
+.onboarding-select optgroup {
+  background: #0b0f14;
+  color: #f6f0e7;
 }
 
 .onboarding-options-panel {

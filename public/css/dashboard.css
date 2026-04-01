@@ -554,9 +554,12 @@
   padding: clamp(28px, 4vw, 40px);
   border-radius: 34px;
   border: 1px solid rgba(244, 199, 129, 0.16);
-  background:
+  background-image:
     linear-gradient(104deg, rgba(21, 14, 11, 0.82) 0%, rgba(21, 14, 11, 0.58) 38%, rgba(21, 14, 11, 0.2) 72%, rgba(21, 14, 11, 0.08) 100%),
-    url("../images/panel-dumbo.svg") center/cover no-repeat;
+    var(--page-background-image, none);
+  background-position: center center, center center;
+  background-repeat: no-repeat, no-repeat;
+  background-size: cover, cover;
   box-shadow: 0 28px 60px rgba(5, 4, 6, 0.34);
 }
 

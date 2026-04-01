@@ -82,6 +82,40 @@ const QUESTION_BANK_SUBJECT_LABELS = {
   ingles: "Ingles",
 };
 const QUESTION_BANK_ALTERNATIVE_LETTERS = ["A", "B", "C", "D", "E"];
+const QUESTION_BANK_TYPE_VALUES = ["objetiva", "numerica", "expressao_simples", "discursiva_calculo"];
+const QUESTION_BANK_CORRECTION_METHOD_VALUES = [
+  "automatica",
+  "automatica_com_tolerancia",
+  "semiassistida",
+  "manual",
+];
+const QUESTION_BANK_TYPE_SET = new Set(QUESTION_BANK_TYPE_VALUES);
+const QUESTION_BANK_CORRECTION_METHOD_SET = new Set(QUESTION_BANK_CORRECTION_METHOD_VALUES);
+const QUESTION_BANK_PROOF_TYPE_VALUES = [
+  "simulado",
+  "lista",
+  "prova_antiga",
+  "diagnostico",
+  "revisao",
+  "outro",
+];
+const MASTER_QUESTION_STATUS_VALUES = ["draft", "review", "active", "archived"];
+const MASTER_QUESTION_ORIGIN_VALUES = ["manual", "colar_texto", "pdf_assistido"];
+const MASTER_GABARITO_TYPE_VALUES = ["alternativa", "texto", "numero", "expressao"];
+const STRUCTURED_PROOF_ORIGIN_VALUES = ["manual", "banco_questoes", "pdf_assistido"];
+const STRUCTURED_PROOF_LEVEL_VALUES = ["fundamentos", "intermediario", "avancado", "misto"];
+const STRUCTURED_PROOF_AREA_VALUES = ["exatas", "linguagens", "humanas", "natureza", "mista"];
+const PROOF_FILE_TYPE_VALUES = ["pdf_original", "pdf_gabarito", "imagem_apoio", "anexo"];
+const ATTEMPT_STATUS_VALUES = ["em_andamento", "enviada", "em_correcao", "finalizada"];
+const ANSWER_CORRECTION_STATUS_VALUES = [
+  "pendente",
+  "corrigida_automatica",
+  "baixa_confianca",
+  "revisao_manual",
+  "concluida",
+];
+const IMPORT_STATUS_VALUES = ["pendente", "processando", "concluida", "falhou"];
+const REVIEW_DECISION_VALUES = ["ajustada", "confirmada", "invalidada", "comentada"];
 const ESSAY_STATUS_VALUES = new Set(["pending", "evaluated", "failed"]);
 const ESSAY_THEME_MODE_VALUES = new Set(["preset", "custom"]);
 const ESSAY_EVALUATION_MODE_VALUES = new Set(["local", "hybrid", "openai"]);
@@ -1787,6 +1821,19 @@ const SQL_QUESTION_BANK_REVIEW_STATUS_LIST = QUESTION_REVIEW_STATUS_VALUES.map((
 const SQL_QUESTION_BANK_PROOF_STATUS_LIST = QUESTION_PROOF_STATUS_VALUES.map((value) => `'${value}'`).join(", ");
 const SQL_QUESTION_BANK_PROCESS_STATUS_LIST = QUESTION_PROCESS_STATUS_VALUES.map((value) => `'${value}'`).join(", ");
 const SQL_QUESTION_BANK_ALTERNATIVE_LETTER_LIST = QUESTION_BANK_ALTERNATIVE_LETTERS.map((value) => `'${value}'`).join(", ");
+const SQL_QUESTION_BANK_TYPE_LIST = QUESTION_BANK_TYPE_VALUES.map((value) => `'${value}'`).join(", ");
+const SQL_QUESTION_BANK_CORRECTION_METHOD_LIST = QUESTION_BANK_CORRECTION_METHOD_VALUES.map((value) => `'${value}'`).join(", ");
+const SQL_MASTER_QUESTION_STATUS_LIST = MASTER_QUESTION_STATUS_VALUES.map((value) => `'${value}'`).join(", ");
+const SQL_MASTER_QUESTION_ORIGIN_LIST = MASTER_QUESTION_ORIGIN_VALUES.map((value) => `'${value}'`).join(", ");
+const SQL_MASTER_GABARITO_TYPE_LIST = MASTER_GABARITO_TYPE_VALUES.map((value) => `'${value}'`).join(", ");
+const SQL_STRUCTURED_PROOF_ORIGIN_LIST = STRUCTURED_PROOF_ORIGIN_VALUES.map((value) => `'${value}'`).join(", ");
+const SQL_STRUCTURED_PROOF_LEVEL_LIST = STRUCTURED_PROOF_LEVEL_VALUES.map((value) => `'${value}'`).join(", ");
+const SQL_STRUCTURED_PROOF_AREA_LIST = STRUCTURED_PROOF_AREA_VALUES.map((value) => `'${value}'`).join(", ");
+const SQL_PROOF_FILE_TYPE_LIST = PROOF_FILE_TYPE_VALUES.map((value) => `'${value}'`).join(", ");
+const SQL_ATTEMPT_STATUS_LIST = ATTEMPT_STATUS_VALUES.map((value) => `'${value}'`).join(", ");
+const SQL_ANSWER_CORRECTION_STATUS_LIST = ANSWER_CORRECTION_STATUS_VALUES.map((value) => `'${value}'`).join(", ");
+const SQL_IMPORT_STATUS_LIST = IMPORT_STATUS_VALUES.map((value) => `'${value}'`).join(", ");
+const SQL_REVIEW_DECISION_LIST = REVIEW_DECISION_VALUES.map((value) => `'${value}'`).join(", ");
 const STRUCTURED_SESSION_MIGRATION_KEY = "start5_structured_sessions_v2_subjects";
 const DEFAULT_ADMIN = {
   name: process.env.START5_ADMIN_NAME || "Start 5 Owner",
@@ -1980,7 +2027,16 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS provas (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     vestibular_id INTEGER NOT NULL,
+    titulo TEXT NOT NULL DEFAULT '',
+    descricao TEXT NOT NULL DEFAULT '',
+    disciplina TEXT NOT NULL DEFAULT '',
+    area TEXT NOT NULL DEFAULT 'exatas' CHECK (area IN (${SQL_STRUCTURED_PROOF_AREA_LIST})),
+    nivel TEXT NOT NULL DEFAULT 'misto' CHECK (nivel IN (${SQL_STRUCTURED_PROOF_LEVEL_LIST})),
     ano INTEGER NOT NULL,
+    tipo_prova TEXT NOT NULL DEFAULT '',
+    origem TEXT NOT NULL DEFAULT 'manual' CHECK (origem IN (${SQL_STRUCTURED_PROOF_ORIGIN_LIST})),
+    tempo_limite_min INTEGER NOT NULL DEFAULT 0,
+    created_by INTEGER NOT NULL DEFAULT 0,
     fase TEXT NOT NULL DEFAULT '',
     versao TEXT NOT NULL DEFAULT '',
     dia INTEGER NOT NULL DEFAULT 0,
@@ -1994,27 +2050,42 @@ db.exec(`
     gabarito_original_name TEXT NOT NULL DEFAULT '',
     gabarito_mime_type TEXT NOT NULL DEFAULT '',
     gabarito_size_bytes INTEGER NOT NULL DEFAULT 0,
+    observacoes TEXT NOT NULL DEFAULT '',
     extracted_text TEXT NOT NULL DEFAULT '',
     process_status TEXT NOT NULL DEFAULT 'pending' CHECK (process_status IN (${SQL_QUESTION_BANK_PROCESS_STATUS_LIST})),
     status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN (${SQL_QUESTION_BANK_PROOF_STATUS_LIST})),
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
-    FOREIGN KEY (vestibular_id) REFERENCES vestibulares(id) ON DELETE RESTRICT
+    FOREIGN KEY (vestibular_id) REFERENCES vestibulares(id) ON DELETE RESTRICT,
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET DEFAULT
   );
 
   CREATE TABLE IF NOT EXISTS questoes (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     prova_id INTEGER NOT NULL,
     numero INTEGER NOT NULL DEFAULT 0,
+    ordem INTEGER NOT NULL DEFAULT 0,
     enunciado TEXT NOT NULL,
+    tipo_questao TEXT NOT NULL DEFAULT 'objetiva' CHECK (tipo_questao IN (${SQL_QUESTION_BANK_TYPE_LIST})),
     materia TEXT NOT NULL DEFAULT '',
     tema TEXT NOT NULL DEFAULT '',
+    assunto TEXT NOT NULL DEFAULT '',
+    subassunto TEXT NOT NULL DEFAULT '',
+    formula_principal TEXT NOT NULL DEFAULT '',
     dificuldade TEXT NOT NULL DEFAULT 'media' CHECK (dificuldade IN (${SQL_QUESTION_BANK_DIFFICULTY_LIST})),
+    metodo_correcao TEXT NOT NULL DEFAULT 'automatica' CHECK (metodo_correcao IN (${SQL_QUESTION_BANK_CORRECTION_METHOD_LIST})),
+    valor REAL NOT NULL DEFAULT 1,
     resposta_correta TEXT NOT NULL DEFAULT '' CHECK (resposta_correta IN ('', ${SQL_QUESTION_BANK_ALTERNATIVE_LETTER_LIST})),
+    resposta_correta_texto TEXT NOT NULL DEFAULT '',
+    resposta_correta_json TEXT NOT NULL DEFAULT '',
+    unidade TEXT NOT NULL DEFAULT '',
+    tolerancia REAL NOT NULL DEFAULT 0,
     status_revisao TEXT NOT NULL DEFAULT 'pending' CHECK (status_revisao IN (${SQL_QUESTION_BANK_REVIEW_STATUS_LIST})),
     origem_pdf TEXT NOT NULL DEFAULT '',
     resolucao TEXT NOT NULL DEFAULT '',
     observacoes_adm TEXT NOT NULL DEFAULT '',
+    observacao_corretor TEXT NOT NULL DEFAULT '',
+    criterio_correcao TEXT NOT NULL DEFAULT '',
     sugestao_materia TEXT NOT NULL DEFAULT '',
     sugestao_tema TEXT NOT NULL DEFAULT '',
     sugestao_dificuldade TEXT NOT NULL DEFAULT '',
@@ -2066,6 +2137,170 @@ db.exec(`
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (questao_id) REFERENCES questoes(id) ON DELETE CASCADE,
     UNIQUE(user_id, questao_id)
+  );
+
+  CREATE TABLE IF NOT EXISTS questoes_master (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    titulo_interno TEXT NOT NULL DEFAULT '',
+    enunciado TEXT NOT NULL DEFAULT '',
+    tipo_questao TEXT NOT NULL DEFAULT 'objetiva' CHECK (tipo_questao IN (${SQL_QUESTION_BANK_TYPE_LIST})),
+    area TEXT NOT NULL DEFAULT 'exatas' CHECK (area IN (${SQL_STRUCTURED_PROOF_AREA_LIST})),
+    assunto TEXT NOT NULL DEFAULT '',
+    subassunto TEXT NOT NULL DEFAULT '',
+    formula_principal TEXT NOT NULL DEFAULT '',
+    unidade_resposta TEXT NOT NULL DEFAULT '',
+    casas_decimais_esperadas INTEGER NOT NULL DEFAULT 0,
+    aceita_notacao_cientifica INTEGER NOT NULL DEFAULT 0 CHECK (aceita_notacao_cientifica IN (0, 1)),
+    metodo_correcao TEXT NOT NULL DEFAULT 'automatica' CHECK (metodo_correcao IN (${SQL_QUESTION_BANK_CORRECTION_METHOD_LIST})),
+    tolerancia_absoluta REAL NOT NULL DEFAULT 0,
+    tolerancia_percentual REAL NOT NULL DEFAULT 0,
+    peso_padrao REAL NOT NULL DEFAULT 1,
+    dificuldade_interna TEXT NOT NULL DEFAULT 'media' CHECK (dificuldade_interna IN (${SQL_QUESTION_BANK_DIFFICULTY_LIST})),
+    possui_imagem INTEGER NOT NULL DEFAULT 0 CHECK (possui_imagem IN (0, 1)),
+    imagem_url TEXT NOT NULL DEFAULT '',
+    observacoes_admin TEXT NOT NULL DEFAULT '',
+    origem_cadastro TEXT NOT NULL DEFAULT 'manual' CHECK (origem_cadastro IN (${SQL_MASTER_QUESTION_ORIGIN_LIST})),
+    status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN (${SQL_MASTER_QUESTION_STATUS_LIST})),
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+
+  CREATE TABLE IF NOT EXISTS questao_alternativas (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    questao_id INTEGER NOT NULL,
+    letra TEXT NOT NULL CHECK (letra IN (${SQL_QUESTION_BANK_ALTERNATIVE_LETTER_LIST})),
+    texto TEXT NOT NULL DEFAULT '',
+    ordem INTEGER NOT NULL DEFAULT 0,
+    is_correta INTEGER NOT NULL DEFAULT 0 CHECK (is_correta IN (0, 1)),
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (questao_id) REFERENCES questoes_master(id) ON DELETE CASCADE,
+    UNIQUE(questao_id, letra)
+  );
+
+  CREATE TABLE IF NOT EXISTS questao_gabaritos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    questao_id INTEGER NOT NULL,
+    tipo_gabarito TEXT NOT NULL DEFAULT 'texto' CHECK (tipo_gabarito IN (${SQL_MASTER_GABARITO_TYPE_LIST})),
+    resposta_bruta TEXT NOT NULL DEFAULT '',
+    resposta_normalizada TEXT NOT NULL DEFAULT '',
+    valor_numerico REAL NOT NULL DEFAULT 0,
+    expressao_canonica TEXT NOT NULL DEFAULT '',
+    tolerancia_absoluta REAL NOT NULL DEFAULT 0,
+    tolerancia_percentual REAL NOT NULL DEFAULT 0,
+    unidade TEXT NOT NULL DEFAULT '',
+    principal INTEGER NOT NULL DEFAULT 0 CHECK (principal IN (0, 1)),
+    observacao TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (questao_id) REFERENCES questoes_master(id) ON DELETE CASCADE
+  );
+
+  CREATE TABLE IF NOT EXISTS prova_questoes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    prova_id INTEGER NOT NULL,
+    questao_id INTEGER NOT NULL,
+    numero_na_prova INTEGER NOT NULL DEFAULT 0,
+    ordem INTEGER NOT NULL DEFAULT 0,
+    peso REAL NOT NULL DEFAULT 1,
+    obrigatoria INTEGER NOT NULL DEFAULT 1 CHECK (obrigatoria IN (0, 1)),
+    versao_enunciado TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (prova_id) REFERENCES provas(id) ON DELETE CASCADE,
+    FOREIGN KEY (questao_id) REFERENCES questoes_master(id) ON DELETE CASCADE
+  );
+
+  CREATE TABLE IF NOT EXISTS prova_arquivos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    prova_id INTEGER NOT NULL,
+    tipo_arquivo TEXT NOT NULL DEFAULT 'anexo' CHECK (tipo_arquivo IN (${SQL_PROOF_FILE_TYPE_LIST})),
+    nome_original TEXT NOT NULL DEFAULT '',
+    storage_path TEXT NOT NULL DEFAULT '',
+    url TEXT NOT NULL DEFAULT '',
+    mime_type TEXT NOT NULL DEFAULT '',
+    tamanho_bytes INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (prova_id) REFERENCES provas(id) ON DELETE CASCADE
+  );
+
+  CREATE TABLE IF NOT EXISTS tentativas_prova (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    prova_id INTEGER NOT NULL,
+    aluno_id INTEGER NOT NULL,
+    status TEXT NOT NULL DEFAULT 'em_andamento' CHECK (status IN (${SQL_ATTEMPT_STATUS_LIST})),
+    nota_parcial REAL NOT NULL DEFAULT 0,
+    nota_final REAL NOT NULL DEFAULT 0,
+    iniciada_em TEXT NOT NULL DEFAULT '',
+    enviada_em TEXT NOT NULL DEFAULT '',
+    finalizada_em TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL DEFAULT '',
+    FOREIGN KEY (prova_id) REFERENCES provas(id) ON DELETE CASCADE,
+    FOREIGN KEY (aluno_id) REFERENCES users(id) ON DELETE CASCADE
+  );
+
+  CREATE TABLE IF NOT EXISTS respostas_aluno (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tentativa_id INTEGER NOT NULL,
+    prova_questao_id INTEGER NOT NULL,
+    questao_id INTEGER NOT NULL,
+    resposta_bruta TEXT NOT NULL DEFAULT '',
+    alternativa_marcada TEXT NOT NULL DEFAULT '',
+    valor_numerico REAL NOT NULL DEFAULT 0,
+    expressao_bruta TEXT NOT NULL DEFAULT '',
+    resposta_normalizada TEXT NOT NULL DEFAULT '',
+    status_correcao TEXT NOT NULL DEFAULT 'pendente' CHECK (status_correcao IN (${SQL_ANSWER_CORRECTION_STATUS_LIST})),
+    confianca_correcao REAL NOT NULL DEFAULT 0,
+    nota_atribuida REAL NOT NULL DEFAULT 0,
+    correta INTEGER NOT NULL DEFAULT 0 CHECK (correta IN (0, 1)),
+    motivo_pendencia TEXT NOT NULL DEFAULT '',
+    feedback TEXT NOT NULL DEFAULT '',
+    corrigido_por INTEGER NOT NULL DEFAULT 0,
+    corrigido_em TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    FOREIGN KEY (tentativa_id) REFERENCES tentativas_prova(id) ON DELETE CASCADE,
+    FOREIGN KEY (prova_questao_id) REFERENCES prova_questoes(id) ON DELETE CASCADE,
+    FOREIGN KEY (questao_id) REFERENCES questoes_master(id) ON DELETE CASCADE,
+    FOREIGN KEY (corrigido_por) REFERENCES users(id) ON DELETE SET DEFAULT
+  );
+
+  CREATE TABLE IF NOT EXISTS revisoes_correcao (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    resposta_aluno_id INTEGER NOT NULL,
+    admin_id INTEGER NOT NULL,
+    decisao TEXT NOT NULL DEFAULT 'comentada' CHECK (decisao IN (${SQL_REVIEW_DECISION_LIST})),
+    nota_atribuida REAL NOT NULL DEFAULT 0,
+    comentario TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (resposta_aluno_id) REFERENCES respostas_aluno(id) ON DELETE CASCADE,
+    FOREIGN KEY (admin_id) REFERENCES users(id) ON DELETE CASCADE
+  );
+
+  CREATE TABLE IF NOT EXISTS correcoes_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    resposta_aluno_id INTEGER NOT NULL,
+    acao TEXT NOT NULL DEFAULT '',
+    valor_anterior_json TEXT NOT NULL DEFAULT '',
+    valor_novo_json TEXT NOT NULL DEFAULT '',
+    observacao TEXT NOT NULL DEFAULT '',
+    admin_id INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (resposta_aluno_id) REFERENCES respostas_aluno(id) ON DELETE CASCADE,
+    FOREIGN KEY (admin_id) REFERENCES users(id) ON DELETE SET DEFAULT
+  );
+
+  CREATE TABLE IF NOT EXISTS importacoes_assistidas (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    arquivo_id INTEGER NOT NULL DEFAULT 0,
+    prova_id INTEGER NOT NULL DEFAULT 0,
+    status TEXT NOT NULL DEFAULT 'pendente' CHECK (status IN (${SQL_IMPORT_STATUS_LIST})),
+    texto_extraido TEXT NOT NULL DEFAULT '',
+    confianca_media REAL NOT NULL DEFAULT 0,
+    total_questoes_detectadas INTEGER NOT NULL DEFAULT 0,
+    log_parser TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL,
+    finished_at TEXT NOT NULL DEFAULT '',
+    FOREIGN KEY (arquivo_id) REFERENCES prova_arquivos(id) ON DELETE SET DEFAULT,
+    FOREIGN KEY (prova_id) REFERENCES provas(id) ON DELETE SET DEFAULT
   );
 
   CREATE INDEX IF NOT EXISTS idx_start_sessions_user_date
@@ -2358,6 +2593,42 @@ function ensureQuestionBankColumns() {
   if (proofColumns.length) {
     const proofMigrations = [
       {
+        name: "titulo",
+        sql: "ALTER TABLE provas ADD COLUMN titulo TEXT NOT NULL DEFAULT ''",
+      },
+      {
+        name: "descricao",
+        sql: "ALTER TABLE provas ADD COLUMN descricao TEXT NOT NULL DEFAULT ''",
+      },
+      {
+        name: "disciplina",
+        sql: "ALTER TABLE provas ADD COLUMN disciplina TEXT NOT NULL DEFAULT ''",
+      },
+      {
+        name: "area",
+        sql: "ALTER TABLE provas ADD COLUMN area TEXT NOT NULL DEFAULT 'exatas'",
+      },
+      {
+        name: "nivel",
+        sql: "ALTER TABLE provas ADD COLUMN nivel TEXT NOT NULL DEFAULT 'misto'",
+      },
+      {
+        name: "tipo_prova",
+        sql: "ALTER TABLE provas ADD COLUMN tipo_prova TEXT NOT NULL DEFAULT ''",
+      },
+      {
+        name: "origem",
+        sql: "ALTER TABLE provas ADD COLUMN origem TEXT NOT NULL DEFAULT 'manual'",
+      },
+      {
+        name: "tempo_limite_min",
+        sql: "ALTER TABLE provas ADD COLUMN tempo_limite_min INTEGER NOT NULL DEFAULT 0",
+      },
+      {
+        name: "created_by",
+        sql: "ALTER TABLE provas ADD COLUMN created_by INTEGER NOT NULL DEFAULT 0",
+      },
+      {
         name: "dia",
         sql: "ALTER TABLE provas ADD COLUMN dia INTEGER NOT NULL DEFAULT 0",
       },
@@ -2381,6 +2652,10 @@ function ensureQuestionBankColumns() {
         name: "gabarito_size_bytes",
         sql: "ALTER TABLE provas ADD COLUMN gabarito_size_bytes INTEGER NOT NULL DEFAULT 0",
       },
+      {
+        name: "observacoes",
+        sql: "ALTER TABLE provas ADD COLUMN observacoes TEXT NOT NULL DEFAULT ''",
+      },
     ];
 
     proofMigrations.forEach((migration) => {
@@ -2395,8 +2670,71 @@ function ensureQuestionBankColumns() {
     .all()
     .map((column) => column.name);
 
-  if (questionColumns.length && !questionColumns.includes("resolucao")) {
-    db.exec("ALTER TABLE questoes ADD COLUMN resolucao TEXT NOT NULL DEFAULT ''");
+  if (questionColumns.length) {
+    const questionMigrations = [
+      {
+        name: "ordem",
+        sql: "ALTER TABLE questoes ADD COLUMN ordem INTEGER NOT NULL DEFAULT 0",
+      },
+      {
+        name: "tipo_questao",
+        sql: "ALTER TABLE questoes ADD COLUMN tipo_questao TEXT NOT NULL DEFAULT 'objetiva'",
+      },
+      {
+        name: "assunto",
+        sql: "ALTER TABLE questoes ADD COLUMN assunto TEXT NOT NULL DEFAULT ''",
+      },
+      {
+        name: "subassunto",
+        sql: "ALTER TABLE questoes ADD COLUMN subassunto TEXT NOT NULL DEFAULT ''",
+      },
+      {
+        name: "formula_principal",
+        sql: "ALTER TABLE questoes ADD COLUMN formula_principal TEXT NOT NULL DEFAULT ''",
+      },
+      {
+        name: "metodo_correcao",
+        sql: "ALTER TABLE questoes ADD COLUMN metodo_correcao TEXT NOT NULL DEFAULT 'automatica'",
+      },
+      {
+        name: "valor",
+        sql: "ALTER TABLE questoes ADD COLUMN valor REAL NOT NULL DEFAULT 1",
+      },
+      {
+        name: "resposta_correta_texto",
+        sql: "ALTER TABLE questoes ADD COLUMN resposta_correta_texto TEXT NOT NULL DEFAULT ''",
+      },
+      {
+        name: "resposta_correta_json",
+        sql: "ALTER TABLE questoes ADD COLUMN resposta_correta_json TEXT NOT NULL DEFAULT ''",
+      },
+      {
+        name: "unidade",
+        sql: "ALTER TABLE questoes ADD COLUMN unidade TEXT NOT NULL DEFAULT ''",
+      },
+      {
+        name: "tolerancia",
+        sql: "ALTER TABLE questoes ADD COLUMN tolerancia REAL NOT NULL DEFAULT 0",
+      },
+      {
+        name: "resolucao",
+        sql: "ALTER TABLE questoes ADD COLUMN resolucao TEXT NOT NULL DEFAULT ''",
+      },
+      {
+        name: "observacao_corretor",
+        sql: "ALTER TABLE questoes ADD COLUMN observacao_corretor TEXT NOT NULL DEFAULT ''",
+      },
+      {
+        name: "criterio_correcao",
+        sql: "ALTER TABLE questoes ADD COLUMN criterio_correcao TEXT NOT NULL DEFAULT ''",
+      },
+    ];
+
+    questionMigrations.forEach((migration) => {
+      if (!questionColumns.includes(migration.name)) {
+        db.exec(migration.sql);
+      }
+    });
   }
 
   db.exec(`
@@ -2422,11 +2760,97 @@ function ensureQuestionBankColumns() {
   }
 }
 
+function ensureStructuredProofModuleSchema() {
+  const attemptColumns = db
+    .prepare("PRAGMA table_info(tentativas_prova)")
+    .all()
+    .map((column) => column.name);
+
+  if (attemptColumns.length) {
+    const attemptMigrations = [
+      {
+        name: "total_acertos",
+        sql: "ALTER TABLE tentativas_prova ADD COLUMN total_acertos INTEGER NOT NULL DEFAULT 0",
+      },
+      {
+        name: "total_erros",
+        sql: "ALTER TABLE tentativas_prova ADD COLUMN total_erros INTEGER NOT NULL DEFAULT 0",
+      },
+    ];
+
+    attemptMigrations.forEach((migration) => {
+      if (!attemptColumns.includes(migration.name)) {
+        db.exec(migration.sql);
+      }
+    });
+  }
+
+  const reviewColumns = db
+    .prepare("PRAGMA table_info(revisoes_correcao)")
+    .all()
+    .map((column) => column.name);
+
+  if (reviewColumns.length) {
+    const reviewMigrations = [
+      {
+        name: "nota_anterior",
+        sql: "ALTER TABLE revisoes_correcao ADD COLUMN nota_anterior REAL NOT NULL DEFAULT 0",
+      },
+      {
+        name: "nota_nova",
+        sql: "ALTER TABLE revisoes_correcao ADD COLUMN nota_nova REAL NOT NULL DEFAULT 0",
+      },
+      {
+        name: "motivo",
+        sql: "ALTER TABLE revisoes_correcao ADD COLUMN motivo TEXT NOT NULL DEFAULT ''",
+      },
+    ];
+
+    reviewMigrations.forEach((migration) => {
+      if (!reviewColumns.includes(migration.name)) {
+        db.exec(migration.sql);
+      }
+    });
+  }
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_questoes_master_area_status
+    ON questoes_master (area, status, updated_at DESC);
+
+    CREATE INDEX IF NOT EXISTS idx_questao_gabaritos_questao_principal
+    ON questao_gabaritos (questao_id, principal DESC, id ASC);
+
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_prova_questoes_prova_ordem_unique
+    ON prova_questoes (prova_id, ordem)
+    WHERE ordem > 0;
+
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_prova_questoes_prova_numero_unique
+    ON prova_questoes (prova_id, numero_na_prova)
+    WHERE numero_na_prova > 0;
+
+    CREATE INDEX IF NOT EXISTS idx_prova_arquivos_prova_tipo
+    ON prova_arquivos (prova_id, tipo_arquivo, created_at DESC);
+
+    CREATE INDEX IF NOT EXISTS idx_tentativas_prova_prova_status
+    ON tentativas_prova (prova_id, status, created_at DESC);
+
+    CREATE INDEX IF NOT EXISTS idx_respostas_aluno_tentativa_status
+    ON respostas_aluno (tentativa_id, status_correcao, updated_at DESC);
+
+    CREATE INDEX IF NOT EXISTS idx_respostas_aluno_questao
+    ON respostas_aluno (questao_id, status_correcao, updated_at DESC);
+
+    CREATE INDEX IF NOT EXISTS idx_importacoes_assistidas_prova_status
+    ON importacoes_assistidas (prova_id, status, created_at DESC);
+  `);
+}
+
 ensureUserColumns();
 ensureStartSessionColumns();
 ensureEssaySubmissionColumns();
 ensureRoutinePreferenceColumns();
 ensureQuestionBankColumns();
+ensureStructuredProofModuleSchema();
 
 const insertUserStatement = db.prepare(`
   INSERT INTO users (name, first_name, last_name, email, password_hash, role, created_at)
@@ -2767,6 +3191,11 @@ const updateUserProfileStatement = db.prepare(`
     avatar_data_url = ?,
     focus_subject_key = ?,
     focus_subject_name = ?
+  WHERE id = ?
+`);
+
+const deleteUserByIdStatement = db.prepare(`
+  DELETE FROM users
   WHERE id = ?
 `);
 
@@ -3166,7 +3595,10 @@ const listQuestionProofsStatement = db.prepare(`
     provas.vestibular_id AS vestibularId,
     vestibulares.nome AS vestibularNome,
     vestibulares.sigla AS vestibularSigla,
+    provas.titulo,
+    provas.disciplina,
     provas.ano,
+    provas.tipo_prova AS tipoProva,
     provas.fase,
     provas.versao,
     provas.dia,
@@ -3180,6 +3612,7 @@ const listQuestionProofsStatement = db.prepare(`
     provas.gabarito_original_name AS answerKeyOriginalName,
     provas.gabarito_mime_type AS answerKeyMimeType,
     provas.gabarito_size_bytes AS answerKeySizeBytes,
+    provas.observacoes,
     provas.extracted_text AS extractedText,
     provas.process_status AS processStatus,
     provas.status,
@@ -3202,7 +3635,10 @@ const getQuestionProofByIdStatement = db.prepare(`
     provas.vestibular_id AS vestibularId,
     vestibulares.nome AS vestibularNome,
     vestibulares.sigla AS vestibularSigla,
+    provas.titulo,
+    provas.disciplina,
     provas.ano,
+    provas.tipo_prova AS tipoProva,
     provas.fase,
     provas.versao,
     provas.dia,
@@ -3216,6 +3652,7 @@ const getQuestionProofByIdStatement = db.prepare(`
     provas.gabarito_original_name AS answerKeyOriginalName,
     provas.gabarito_mime_type AS answerKeyMimeType,
     provas.gabarito_size_bytes AS answerKeySizeBytes,
+    provas.observacoes,
     provas.extracted_text AS extractedText,
     provas.process_status AS processStatus,
     provas.status,
@@ -3235,7 +3672,10 @@ const getQuestionProofByIdStatement = db.prepare(`
 const insertQuestionProofStatement = db.prepare(`
   INSERT INTO provas (
     vestibular_id,
+    titulo,
+    disciplina,
     ano,
+    tipo_prova,
     fase,
     versao,
     dia,
@@ -3249,20 +3689,24 @@ const insertQuestionProofStatement = db.prepare(`
     gabarito_original_name,
     gabarito_mime_type,
     gabarito_size_bytes,
+    observacoes,
     extracted_text,
     process_status,
     status,
     created_at,
     updated_at
   )
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `);
 
 const updateQuestionProofStatement = db.prepare(`
   UPDATE provas
   SET
     vestibular_id = ?,
+    titulo = ?,
+    disciplina = ?,
     ano = ?,
+    tipo_prova = ?,
     fase = ?,
     versao = ?,
     dia = ?,
@@ -3276,6 +3720,7 @@ const updateQuestionProofStatement = db.prepare(`
     gabarito_original_name = ?,
     gabarito_mime_type = ?,
     gabarito_size_bytes = ?,
+    observacoes = ?,
     extracted_text = ?,
     process_status = ?,
     status = ?,
@@ -3313,15 +3758,28 @@ const listQuestionsByProofStatement = db.prepare(`
     questoes.id,
     questoes.prova_id AS provaId,
     questoes.numero,
+    questoes.ordem,
     questoes.enunciado,
+    questoes.tipo_questao AS tipoQuestao,
     questoes.materia,
     questoes.tema,
+    questoes.assunto,
+    questoes.subassunto,
+    questoes.formula_principal AS formulaPrincipal,
     questoes.dificuldade,
+    questoes.metodo_correcao AS metodoCorrecao,
+    questoes.valor,
     questoes.resposta_correta AS respostaCorreta,
+    questoes.resposta_correta_texto AS respostaCorretaTexto,
+    questoes.resposta_correta_json AS respostaCorretaJson,
+    questoes.unidade,
+    questoes.tolerancia,
     questoes.status_revisao AS statusRevisao,
     questoes.origem_pdf AS origemPdf,
     questoes.resolucao,
     questoes.observacoes_adm AS observacoesAdm,
+    questoes.observacao_corretor AS observacaoCorretor,
+    questoes.criterio_correcao AS criterioCorrecao,
     questoes.sugestao_materia AS sugestaoMateria,
     questoes.sugestao_tema AS sugestaoTema,
     questoes.sugestao_dificuldade AS sugestaoDificuldade,
@@ -3336,7 +3794,10 @@ const listQuestionsByProofStatement = db.prepare(`
   FROM questoes
   LEFT JOIN question_stats ON question_stats.questao_id = questoes.id
   WHERE questoes.prova_id = ?
-  ORDER BY questoes.numero ASC, questoes.id ASC
+  ORDER BY
+    CASE WHEN questoes.ordem > 0 THEN questoes.ordem ELSE questoes.numero END ASC,
+    questoes.numero ASC,
+    questoes.id ASC
 `);
 
 const getQuestionByIdStatement = db.prepare(`
@@ -3344,15 +3805,28 @@ const getQuestionByIdStatement = db.prepare(`
     questoes.id,
     questoes.prova_id AS provaId,
     questoes.numero,
+    questoes.ordem,
     questoes.enunciado,
+    questoes.tipo_questao AS tipoQuestao,
     questoes.materia,
     questoes.tema,
+    questoes.assunto,
+    questoes.subassunto,
+    questoes.formula_principal AS formulaPrincipal,
     questoes.dificuldade,
+    questoes.metodo_correcao AS metodoCorrecao,
+    questoes.valor,
     questoes.resposta_correta AS respostaCorreta,
+    questoes.resposta_correta_texto AS respostaCorretaTexto,
+    questoes.resposta_correta_json AS respostaCorretaJson,
+    questoes.unidade,
+    questoes.tolerancia,
     questoes.status_revisao AS statusRevisao,
     questoes.origem_pdf AS origemPdf,
     questoes.resolucao,
     questoes.observacoes_adm AS observacoesAdm,
+    questoes.observacao_corretor AS observacaoCorretor,
+    questoes.criterio_correcao AS criterioCorrecao,
     questoes.sugestao_materia AS sugestaoMateria,
     questoes.sugestao_tema AS sugestaoTema,
     questoes.sugestao_dificuldade AS sugestaoDificuldade,
@@ -3360,7 +3834,10 @@ const getQuestionByIdStatement = db.prepare(`
     questoes.updated_at AS updatedAt,
     questoes.published_at AS publishedAt,
     provas.id AS proofId,
+    provas.titulo,
+    provas.disciplina,
     provas.ano,
+    provas.tipo_prova AS tipoProva,
     provas.fase,
     provas.versao,
     provas.dia,
@@ -3387,15 +3864,28 @@ const insertQuestionStatement = db.prepare(`
   INSERT INTO questoes (
     prova_id,
     numero,
+    ordem,
     enunciado,
+    tipo_questao,
     materia,
     tema,
+    assunto,
+    subassunto,
+    formula_principal,
     dificuldade,
+    metodo_correcao,
+    valor,
     resposta_correta,
+    resposta_correta_texto,
+    resposta_correta_json,
+    unidade,
+    tolerancia,
     status_revisao,
     origem_pdf,
     resolucao,
     observacoes_adm,
+    observacao_corretor,
+    criterio_correcao,
     sugestao_materia,
     sugestao_tema,
     sugestao_dificuldade,
@@ -3403,22 +3893,35 @@ const insertQuestionStatement = db.prepare(`
     updated_at,
     published_at
   )
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `);
 
 const updateQuestionStatement = db.prepare(`
   UPDATE questoes
   SET
     numero = ?,
+    ordem = ?,
     enunciado = ?,
+    tipo_questao = ?,
     materia = ?,
     tema = ?,
+    assunto = ?,
+    subassunto = ?,
+    formula_principal = ?,
     dificuldade = ?,
+    metodo_correcao = ?,
+    valor = ?,
     resposta_correta = ?,
+    resposta_correta_texto = ?,
+    resposta_correta_json = ?,
+    unidade = ?,
+    tolerancia = ?,
     status_revisao = ?,
     origem_pdf = ?,
     resolucao = ?,
     observacoes_adm = ?,
+    observacao_corretor = ?,
+    criterio_correcao = ?,
     sugestao_materia = ?,
     sugestao_tema = ?,
     sugestao_dificuldade = ?,
@@ -3602,7 +4105,10 @@ const listQuestionAttemptsForAnalyticsStatement = db.prepare(`
     questoes.materia,
     questoes.tema,
     provas.id AS proofId,
+    provas.titulo,
+    provas.disciplina,
     provas.ano,
+    provas.tipo_prova AS tipoProva,
     provas.fase,
     provas.versao,
     vestibulares.nome AS vestibularNome,
@@ -3614,6 +4120,42 @@ const listQuestionAttemptsForAnalyticsStatement = db.prepare(`
   WHERE question_attempts.user_id = ?
     AND provas.status = 'published'
     AND questoes.status_revisao = 'approved'
+  ORDER BY question_attempts.created_at DESC, question_attempts.id DESC
+  LIMIT ?
+`);
+
+const listAdminQuestionAttemptsStatement = db.prepare(`
+  SELECT
+    question_attempts.id,
+    question_attempts.user_id AS userId,
+    users.name AS userName,
+    users.email AS userEmail,
+    question_attempts.questao_id AS questaoId,
+    question_attempts.resposta_marcada AS respostaMarcada,
+    question_attempts.acertou AS acertou,
+    question_attempts.tempo_gasto_segundos AS tempoGastoSegundos,
+    question_attempts.created_at AS createdAt,
+    questoes.prova_id AS proofId,
+    questoes.numero,
+    questoes.tipo_questao AS tipoQuestao,
+    questoes.materia,
+    questoes.tema,
+    questoes.assunto,
+    questoes.metodo_correcao AS metodoCorrecao,
+    questoes.valor,
+    questoes.status_revisao AS statusRevisao,
+    provas.titulo,
+    provas.disciplina,
+    provas.ano,
+    provas.tipo_prova AS tipoProva,
+    provas.status AS proofStatus,
+    vestibulares.nome AS vestibularNome,
+    vestibulares.sigla AS vestibularSigla
+  FROM question_attempts
+  INNER JOIN users ON users.id = question_attempts.user_id
+  INNER JOIN questoes ON questoes.id = question_attempts.questao_id
+  INNER JOIN provas ON provas.id = questoes.prova_id
+  INNER JOIN vestibulares ON vestibulares.id = provas.vestibular_id
   ORDER BY question_attempts.created_at DESC, question_attempts.id DESC
   LIMIT ?
 `);
@@ -4443,6 +4985,169 @@ function sanitizeQuestionReviewStatus(value, fallback = "pending") {
   return QUESTION_BANK_REVIEW_STATUS_SET.has(status) ? status : fallback;
 }
 
+function sanitizeQuestionType(value, fallback = "objetiva") {
+  const normalized = normalizeQuestionBankTerm(value, 40).replace(/\s+/g, "_");
+  return QUESTION_BANK_TYPE_SET.has(normalized) ? normalized : fallback;
+}
+
+function sanitizeQuestionCorrectionMethod(value, fallback = "automatica") {
+  const normalized = normalizeQuestionBankTerm(value, 60).replace(/\s+/g, "_");
+  return QUESTION_BANK_CORRECTION_METHOD_SET.has(normalized) ? normalized : fallback;
+}
+
+function sanitizeQuestionScoreValue(value, fallback = 1) {
+  const safeValue = Number(value);
+
+  if (!Number.isFinite(safeValue)) {
+    return Math.max(0, Number(fallback) || 0);
+  }
+
+  return Math.max(0, Math.min(100, Number(safeValue.toFixed(2))));
+}
+
+function sanitizeQuestionToleranceValue(value, fallback = 0) {
+  const safeValue = Number(value);
+
+  if (!Number.isFinite(safeValue)) {
+    return Math.max(0, Number(fallback) || 0);
+  }
+
+  return Math.max(0, Math.min(1_000_000, Number(safeValue.toFixed(6))));
+}
+
+function sanitizeMasterQuestionStatus(value, fallback = "draft") {
+  const normalized = normalizeQuestionBankTerm(value, 30);
+  return MASTER_QUESTION_STATUS_VALUES.includes(normalized) ? normalized : fallback;
+}
+
+function sanitizeMasterQuestionOrigin(value, fallback = "manual") {
+  const normalized = normalizeQuestionBankTerm(value, 40);
+  return MASTER_QUESTION_ORIGIN_VALUES.includes(normalized) ? normalized : fallback;
+}
+
+function sanitizeMasterGabaritoType(value, fallback = "texto") {
+  const normalized = normalizeQuestionBankTerm(value, 30);
+  return MASTER_GABARITO_TYPE_VALUES.includes(normalized) ? normalized : fallback;
+}
+
+function sanitizeStructuredProofArea(value, fallback = "exatas") {
+  const normalized = normalizeQuestionBankTerm(value, 20);
+  return STRUCTURED_PROOF_AREA_VALUES.includes(normalized) ? normalized : fallback;
+}
+
+function sanitizeStructuredProofLevel(value, fallback = "misto") {
+  const normalized = normalizeQuestionBankTerm(value, 24);
+  return STRUCTURED_PROOF_LEVEL_VALUES.includes(normalized) ? normalized : fallback;
+}
+
+function sanitizeStructuredProofOrigin(value, fallback = "manual") {
+  const normalized = normalizeQuestionBankTerm(value, 40);
+  return STRUCTURED_PROOF_ORIGIN_VALUES.includes(normalized) ? normalized : fallback;
+}
+
+function sanitizeAttemptStatus(value, fallback = "em_andamento") {
+  const normalized = normalizeQuestionBankTerm(value, 30);
+  return ATTEMPT_STATUS_VALUES.includes(normalized) ? normalized : fallback;
+}
+
+function sanitizeAnswerCorrectionStatus(value, fallback = "pendente") {
+  const normalized = normalizeQuestionBankTerm(value, 40);
+  return ANSWER_CORRECTION_STATUS_VALUES.includes(normalized) ? normalized : fallback;
+}
+
+function sanitizeImportStatus(value, fallback = "pendente") {
+  const normalized = normalizeQuestionBankTerm(value, 30);
+  return IMPORT_STATUS_VALUES.includes(normalized) ? normalized : fallback;
+}
+
+function sanitizeReviewDecision(value, fallback = "comentada") {
+  const normalized = normalizeQuestionBankTerm(value, 30);
+  return REVIEW_DECISION_VALUES.includes(normalized) ? normalized : fallback;
+}
+
+function sanitizeProofFileType(value, fallback = "anexo") {
+  const normalized = normalizeQuestionBankTerm(value, 30);
+  return PROOF_FILE_TYPE_VALUES.includes(normalized) ? normalized : fallback;
+}
+
+function sanitizeQuestionAlternativesPayload(alternatives) {
+  const normalizedAlternatives = sanitizeQuestionAlternatives(alternatives, { includeEmptySlots: true });
+
+  return normalizedAlternatives.map((item, index) => ({
+    letra: sanitizeQuestionAlternativeLetter(item.letra || QUESTION_BANK_ALTERNATIVE_LETTERS[index] || "", true),
+    texto: sanitizeQuestionBankMultilineText(item.texto, 2_400).replace(/\n+/g, " ").trim(),
+    ordem: index + 1,
+    isCorreta: 0,
+  }));
+}
+
+function sanitizeMasterQuestionPayload(payload, currentQuestion = null) {
+  return {
+    tituloInterno: sanitizeShortText(payload?.tituloInterno ?? payload?.titulo_interno ?? currentQuestion?.tituloInterno ?? "", 180),
+    enunciado: sanitizeQuestionBankMultilineText(payload?.enunciado ?? currentQuestion?.enunciado ?? "", 20_000),
+    tipoQuestao: sanitizeQuestionType(payload?.tipoQuestao ?? payload?.tipo_questao ?? currentQuestion?.tipoQuestao ?? "objetiva"),
+    area: sanitizeStructuredProofArea(payload?.area ?? currentQuestion?.area ?? "exatas"),
+    assunto: normalizeQuestionBankTerm(payload?.assunto ?? currentQuestion?.assunto ?? "", 120),
+    subassunto: normalizeQuestionBankTerm(payload?.subassunto ?? currentQuestion?.subassunto ?? "", 120),
+    formulaPrincipal: sanitizeQuestionBankMultilineText(payload?.formulaPrincipal ?? payload?.formula_principal ?? currentQuestion?.formulaPrincipal ?? "", 240).replace(/\n+/g, " ").trim(),
+    unidadeResposta: sanitizeShortText(payload?.unidadeResposta ?? payload?.unidade_resposta ?? currentQuestion?.unidadeResposta ?? "", 80),
+    casasDecimaisEsperadas: clampInteger(payload?.casasDecimaisEsperadas ?? payload?.casas_decimais_esperadas ?? currentQuestion?.casasDecimaisEsperadas ?? 0, 0, 12),
+    aceitaNotacaoCientifica: Boolean(payload?.aceitaNotacaoCientifica ?? payload?.aceita_notacao_cientifica ?? currentQuestion?.aceitaNotacaoCientifica ?? false),
+    metodoCorrecao: sanitizeQuestionCorrectionMethod(payload?.metodoCorrecao ?? payload?.metodo_correcao ?? currentQuestion?.metodoCorrecao ?? "automatica"),
+    toleranciaAbsoluta: sanitizeQuestionToleranceValue(payload?.toleranciaAbsoluta ?? payload?.tolerancia_absoluta ?? currentQuestion?.toleranciaAbsoluta ?? 0, currentQuestion?.toleranciaAbsoluta ?? 0),
+    toleranciaPercentual: sanitizeQuestionToleranceValue(payload?.toleranciaPercentual ?? payload?.tolerancia_percentual ?? currentQuestion?.toleranciaPercentual ?? 0, currentQuestion?.toleranciaPercentual ?? 0),
+    pesoPadrao: sanitizeQuestionScoreValue(payload?.pesoPadrao ?? payload?.peso_padrao ?? currentQuestion?.pesoPadrao ?? 1, currentQuestion?.pesoPadrao ?? 1),
+    dificuldadeInterna: sanitizeQuestionDifficulty(payload?.dificuldadeInterna ?? payload?.dificuldade_interna ?? currentQuestion?.dificuldadeInterna ?? "media"),
+    possuiImagem: Boolean(payload?.possuiImagem ?? payload?.possui_imagem ?? currentQuestion?.possuiImagem ?? false),
+    imagemUrl: sanitizeQuestionBankMultilineText(payload?.imagemUrl ?? payload?.imagem_url ?? currentQuestion?.imagemUrl ?? "", 280).replace(/\n+/g, " ").trim(),
+    observacoesAdmin: sanitizeQuestionBankMultilineText(payload?.observacoesAdmin ?? payload?.observacoes_admin ?? currentQuestion?.observacoesAdmin ?? "", 4_000),
+    origemCadastro: sanitizeMasterQuestionOrigin(payload?.origemCadastro ?? payload?.origem_cadastro ?? currentQuestion?.origemCadastro ?? "manual"),
+    status: sanitizeMasterQuestionStatus(payload?.status ?? currentQuestion?.status ?? "draft"),
+    alternatives: sanitizeQuestionAlternativesPayload(payload?.alternatives ?? payload?.alternativas ?? currentQuestion?.alternatives ?? []),
+    answerKeys: Array.isArray(payload?.answerKeys ?? payload?.gabaritos)
+      ? (payload?.answerKeys ?? payload?.gabaritos).map((item, index) => ({
+          tipoGabarito: sanitizeMasterGabaritoType(item?.tipoGabarito ?? item?.tipo_gabarito, "texto"),
+          respostaBruta: sanitizeQuestionBankMultilineText(item?.respostaBruta ?? item?.resposta_bruta ?? "", 1_000).trim(),
+          respostaNormalizada: sanitizeQuestionBankMultilineText(item?.respostaNormalizada ?? item?.resposta_normalizada ?? "", 1_000).trim(),
+          valorNumerico: Number(item?.valorNumerico ?? item?.valor_numerico ?? 0) || 0,
+          expressaoCanonica: sanitizeQuestionBankMultilineText(item?.expressaoCanonica ?? item?.expressao_canonica ?? "", 1_000).trim(),
+          toleranciaAbsoluta: sanitizeQuestionToleranceValue(item?.toleranciaAbsoluta ?? item?.tolerancia_absoluta ?? 0),
+          toleranciaPercentual: sanitizeQuestionToleranceValue(item?.toleranciaPercentual ?? item?.tolerancia_percentual ?? 0),
+          unidade: sanitizeShortText(item?.unidade ?? "", 80),
+          principal: Boolean(item?.principal ?? index === 0),
+          observacao: sanitizeQuestionBankMultilineText(item?.observacao ?? "", 1_400),
+        }))
+      : [],
+  };
+}
+
+function sanitizeStructuredProofPayload(payload, currentProof = null) {
+  return {
+    titulo: sanitizeShortText(payload?.titulo ?? currentProof?.titulo ?? "", 180),
+    descricao: sanitizeQuestionBankMultilineText(payload?.descricao ?? currentProof?.descricao ?? "", 4_000),
+    ano: sanitizeQuestionBankYear(payload?.ano ?? currentProof?.ano ?? new Date().getFullYear()),
+    area: sanitizeStructuredProofArea(payload?.area ?? currentProof?.area ?? "exatas"),
+    nivel: sanitizeStructuredProofLevel(payload?.nivel ?? currentProof?.nivel ?? "misto"),
+    status: sanitizeQuestionProofStatus(payload?.status ?? currentProof?.status ?? "draft"),
+    origem: sanitizeStructuredProofOrigin(payload?.origem ?? currentProof?.origem ?? "manual"),
+    tempoLimiteMin: clampInteger(payload?.tempoLimiteMin ?? payload?.tempo_limite_min ?? currentProof?.tempoLimiteMin ?? 0, 0, 600),
+    disciplina: normalizeQuestionBankTerm(payload?.disciplina ?? currentProof?.disciplina ?? "", 80),
+    tipoProva: normalizeQuestionBankTerm(payload?.tipoProva ?? payload?.tipo_prova ?? currentProof?.tipoProva ?? "", 60),
+    observacoes: sanitizeQuestionBankMultilineText(payload?.observacoes ?? currentProof?.observacoes ?? "", 4_000),
+  };
+}
+
+function sanitizeProofQuestionMountPayload(payload, currentItem = null) {
+  return {
+    questaoId: Number(payload?.questaoId ?? payload?.questao_id ?? currentItem?.questaoId ?? 0),
+    numeroNaProva: clampInteger(payload?.numeroNaProva ?? payload?.numero_na_prova ?? currentItem?.numeroNaProva ?? 0, 0, 500),
+    ordem: clampInteger(payload?.ordem ?? currentItem?.ordem ?? 0, 0, 500),
+    peso: sanitizeQuestionScoreValue(payload?.peso ?? currentItem?.peso ?? 1, currentItem?.peso ?? 1),
+    obrigatoria: Boolean(payload?.obrigatoria ?? currentItem?.obrigatoria ?? true),
+    versaoEnunciado: sanitizeQuestionBankMultilineText(payload?.versaoEnunciado ?? payload?.versao_enunciado ?? currentItem?.versaoEnunciado ?? "", 20_000),
+  };
+}
+
 function sanitizeQuestionFlagFilter(value, fallback = "all") {
   const flag = normalizeQuestionBankTerm(value, 20);
   return QUESTION_BANK_FLAG_FILTERS.has(flag) ? flag : fallback;
@@ -4746,6 +5451,11 @@ function serializeQuestionProofRow(row, { includeExtractedText = false } = {}) {
     return null;
   }
 
+  const titleFromSource = String(row.titulo || "").trim();
+  const yearLabel = Number(row.ano) ? String(row.ano) : "";
+  const fallbackTitle = [row.vestibularSigla || row.vestibularNome || "Prova", yearLabel].filter(Boolean).join(" ").trim();
+  const displayTitle = titleFromSource || fallbackTitle || "Prova sem titulo";
+
   return {
     id: Number(row.id) || 0,
     vestibular: {
@@ -4753,7 +5463,11 @@ function serializeQuestionProofRow(row, { includeExtractedText = false } = {}) {
       nome: String(row.vestibularNome || ""),
       sigla: String(row.vestibularSigla || ""),
     },
+    titulo: titleFromSource,
+    displayTitle,
+    disciplina: String(row.disciplina || ""),
     ano: Number(row.ano) || 0,
+    tipoProva: String(row.tipoProva || ""),
     fase: String(row.fase || ""),
     versao: String(row.versao || ""),
     dia: Number(row.dia) || 0,
@@ -4775,6 +5489,7 @@ function serializeQuestionProofRow(row, { includeExtractedText = false } = {}) {
       sizeBytes: Number(row.answerKeySizeBytes) || 0,
       downloadUrl: row.answerKeyFilePath ? `/api/admin/question-bank/provas/${Number(row.id) || 0}/gabarito` : "",
     },
+    observacoes: String(row.observacoes || ""),
     extractedText: includeExtractedText ? String(row.extractedText || "") : "",
     extractedTextLength: String(row.extractedText || "").length,
     processStatus: sanitizeQuestionProcessStatus(row.processStatus),
@@ -4799,15 +5514,28 @@ function serializeAdminQuestionRow(row, alternatives = []) {
     id: Number(row.id) || 0,
     provaId: Number(row.provaId || row.proofId) || 0,
     numero: Number(row.numero) || 0,
+    ordem: Number(row.ordem) || Number(row.numero) || 0,
     enunciado: String(row.enunciado || ""),
+    tipoQuestao: sanitizeQuestionType(row.tipoQuestao),
     materia: String(row.materia || ""),
     tema: String(row.tema || ""),
+    assunto: String(row.assunto || row.tema || ""),
+    subassunto: String(row.subassunto || ""),
+    formulaPrincipal: String(row.formulaPrincipal || ""),
     dificuldade: sanitizeQuestionDifficulty(row.dificuldade),
+    metodoCorrecao: sanitizeQuestionCorrectionMethod(row.metodoCorrecao),
+    valor: sanitizeQuestionScoreValue(row.valor, 1),
     respostaCorreta: sanitizeQuestionAlternativeLetter(row.respostaCorreta, true),
+    respostaCorretaTexto: String(row.respostaCorretaTexto || ""),
+    respostaCorretaJson: String(row.respostaCorretaJson || ""),
+    unidade: String(row.unidade || ""),
+    tolerancia: sanitizeQuestionToleranceValue(row.tolerancia, 0),
     statusRevisao: sanitizeQuestionReviewStatus(row.statusRevisao),
     origemPdf: String(row.origemPdf || ""),
     resolucao: String(row.resolucao || ""),
     observacoesAdm: String(row.observacoesAdm || ""),
+    observacaoCorretor: String(row.observacaoCorretor || ""),
+    criterioCorrecao: String(row.criterioCorrecao || ""),
     sugestoes: {
       materia: String(row.sugestaoMateria || ""),
       tema: String(row.sugestaoTema || ""),
@@ -4820,7 +5548,10 @@ function serializeAdminQuestionRow(row, alternatives = []) {
     publishedAt: String(row.publishedAt || ""),
     prova: {
       id: Number(row.proofId || row.provaId) || 0,
+      titulo: String(row.titulo || ""),
       ano: Number(row.ano) || 0,
+      disciplina: String(row.disciplina || ""),
+      tipoProva: String(row.tipoProva || ""),
       fase: String(row.fase || ""),
       versao: String(row.versao || ""),
       dia: Number(row.dia) || 0,
@@ -5003,22 +5734,55 @@ function sanitizeQuestionPayload(payload, options = {}) {
   const numero = sanitizeQuestionNumber(payload?.numero ?? options.numero ?? 0, {
     allowEmpty: options.allowEmptyNumber !== false,
   });
+  const ordem = sanitizeQuestionNumber(payload?.ordem ?? options.ordem ?? numero, {
+    allowEmpty: true,
+  });
   const enunciado = sanitizeQuestionBankMultilineText(payload?.enunciado, 20_000);
+  const tipoQuestao = sanitizeQuestionType(payload?.tipoQuestao ?? payload?.tipo_questao ?? options.tipoQuestao ?? "objetiva");
   const materia = normalizeQuestionBankTerm(payload?.materia, 80);
   const tema = normalizeQuestionBankTerm(payload?.tema, 120);
+  const assunto = normalizeQuestionBankTerm(payload?.assunto || payload?.tema || tema, 120);
+  const subassunto = normalizeQuestionBankTerm(payload?.subassunto, 120);
+  const formulaPrincipal = sanitizeQuestionBankMultilineText(payload?.formulaPrincipal ?? payload?.formula_principal, 220)
+    .replace(/\n+/g, " ")
+    .trim();
   const dificuldade = sanitizeQuestionDifficulty(payload?.dificuldade ?? options.dificuldade ?? "media");
+  const metodoCorrecao = sanitizeQuestionCorrectionMethod(
+    payload?.metodoCorrecao ?? payload?.metodo_correcao ?? options.metodoCorrecao ?? "automatica"
+  );
+  const valor = sanitizeQuestionScoreValue(payload?.valor ?? options.valor ?? 1, options.valor ?? 1);
   const respostaCorreta = sanitizeQuestionAlternativeLetter(payload?.respostaCorreta, true);
+  const respostaCorretaTexto = sanitizeQuestionBankMultilineText(
+    payload?.respostaCorretaTexto ?? payload?.resposta_correta_texto,
+    2_400
+  ).trim();
+  const respostaCorretaJson = sanitizeQuestionBankMultilineText(
+    payload?.respostaCorretaJson ?? payload?.resposta_correta_json,
+    2_400
+  ).trim();
+  const unidade = sanitizeQuestionBankMultilineText(payload?.unidade, 80).replace(/\n+/g, " ").trim();
+  const tolerancia = sanitizeQuestionToleranceValue(payload?.tolerancia ?? options.tolerancia ?? 0, options.tolerancia ?? 0);
   const statusRevisao = sanitizeQuestionReviewStatus(payload?.statusRevisao, options.defaultStatusRevisao || "pending");
   const origemPdf = sanitizeQuestionBankMultilineText(payload?.origemPdf, 220).replace(/\n+/g, " ").trim();
   const resolucao = sanitizeQuestionBankMultilineText(payload?.resolucao, 12_000);
   const observacoesAdm = sanitizeQuestionBankMultilineText(payload?.observacoesAdm, 2_200);
+  const observacaoCorretor = sanitizeQuestionBankMultilineText(
+    payload?.observacaoCorretor ?? payload?.observacao_corretor,
+    2_200
+  );
+  const criterioCorrecao = sanitizeQuestionBankMultilineText(
+    payload?.criterioCorrecao ?? payload?.criterio_correcao,
+    4_200
+  );
   const sugestaoMateria = normalizeQuestionBankTerm(payload?.sugestaoMateria || payload?.sugestoes?.materia || materia, 80);
   const sugestaoTema = normalizeQuestionBankTerm(payload?.sugestaoTema || payload?.sugestoes?.tema || tema, 120);
   const sugestaoDificuldade = sanitizeQuestionDifficulty(
     payload?.sugestaoDificuldade || payload?.sugestoes?.dificuldade || dificuldade,
     dificuldade
   );
-  const alternatives = validateQuestionAlternativePayload(payload?.alternativas || payload?.alternatives, respostaCorreta);
+  const alternatives = tipoQuestao === "objetiva"
+    ? validateQuestionAlternativePayload(payload?.alternativas || payload?.alternatives, respostaCorreta)
+    : sanitizeQuestionAlternatives(payload?.alternativas || payload?.alternatives, { includeEmptySlots: true });
 
   if (!Number.isInteger(proofId) || proofId <= 0) {
     throw createError(400, "Selecione a prova da questao.");
@@ -5032,18 +5796,35 @@ function sanitizeQuestionPayload(payload, options = {}) {
     throw createError(400, "Defina o numero da questao antes de aprovar.");
   }
 
+  if (tipoQuestao !== "objetiva" && !respostaCorretaTexto && !respostaCorretaJson && !resolucao) {
+    throw createError(400, "Defina um gabarito em texto, JSON ou resolucao para questoes nao objetivas.");
+  }
+
   return {
     proofId,
     numero,
+    ordem,
     enunciado,
+    tipoQuestao,
     materia,
     tema,
+    assunto,
+    subassunto,
+    formulaPrincipal,
     dificuldade,
+    metodoCorrecao,
+    valor,
     respostaCorreta,
+    respostaCorretaTexto,
+    respostaCorretaJson,
+    unidade,
+    tolerancia,
     statusRevisao,
     origemPdf,
     resolucao,
     observacoesAdm,
+    observacaoCorretor,
+    criterioCorrecao,
     sugestaoMateria,
     sugestaoTema,
     sugestaoDificuldade,
@@ -5052,12 +5833,16 @@ function sanitizeQuestionPayload(payload, options = {}) {
 }
 
 function sanitizeQuestionProofPayload(payload, currentProof = null) {
+  const titulo = sanitizeShortText(payload?.titulo ?? currentProof?.titulo ?? "", 180);
+  const disciplina = normalizeQuestionBankTerm(payload?.disciplina ?? currentProof?.disciplina ?? "", 80);
   const ano = sanitizeQuestionBankYear(payload?.ano ?? currentProof?.ano);
+  const tipoProva = normalizeQuestionBankTerm(payload?.tipoProva ?? payload?.tipo_prova ?? currentProof?.tipoProva ?? "", 60);
   const fase = sanitizeShortText(payload?.fase ?? currentProof?.fase ?? "", 80);
   const versao = sanitizeShortText(payload?.versao ?? currentProof?.versao ?? "", 80);
   const dia = clampInteger(payload?.dia ?? currentProof?.dia ?? 0, 0, 9);
   const caderno = sanitizeQuestionBankBooklet(payload?.caderno ?? currentProof?.caderno ?? "");
   const materiaGeral = normalizeQuestionBankTerm(payload?.materiaGeral ?? currentProof?.materiaGeral ?? "", 80);
+  const observacoes = sanitizeQuestionBankMultilineText(payload?.observacoes ?? currentProof?.observacoes ?? "", 4_000);
   const extractedText = payload?.extractedText === undefined
     ? sanitizeQuestionBankMultilineText(currentProof?.extractedText || "", 220_000)
     : sanitizeQuestionBankMultilineText(payload?.extractedText, 220_000);
@@ -5067,12 +5852,16 @@ function sanitizeQuestionProofPayload(payload, currentProof = null) {
   const status = sanitizeQuestionProofStatus(payload?.status ?? currentProof?.status ?? "draft");
 
   return {
+    titulo,
+    disciplina,
     ano,
+    tipoProva,
     fase,
     versao,
     dia,
     caderno,
     materiaGeral,
+    observacoes,
     extractedText,
     processStatus,
     status,
@@ -5132,6 +5921,1422 @@ function ensureQuestionBankSeedData() {
       nowIso()
     );
   });
+}
+
+function ensureStructuredProofExamId() {
+  const existingExam = findQuestionBankExamBySiglaStatement.get("PROVAS");
+
+  if (existingExam) {
+    return Number(existingExam.id) || 0;
+  }
+
+  const result = insertQuestionBankExamStatement.run(
+    "Provas estruturadas",
+    "PROVAS",
+    "Cabecalho tecnico para o modulo de provas estruturadas.",
+    1,
+    nowIso()
+  );
+
+  return Number(result.lastInsertRowid) || 0;
+}
+
+function listMasterQuestionAlternatives(questionId) {
+  return db.prepare(`
+    SELECT
+      id,
+      questao_id AS questaoId,
+      letra,
+      texto,
+      ordem,
+      is_correta AS isCorreta,
+      created_at AS createdAt
+    FROM questao_alternativas
+    WHERE questao_id = ?
+    ORDER BY ordem ASC, letra ASC, id ASC
+  `).all(questionId).map((row) => ({
+    id: Number(row.id) || 0,
+    questaoId: Number(row.questaoId) || 0,
+    letra: sanitizeQuestionAlternativeLetter(row.letra, true),
+    texto: String(row.texto || ""),
+    ordem: Number(row.ordem) || 0,
+    isCorreta: Boolean(Number(row.isCorreta)),
+    createdAt: String(row.createdAt || ""),
+  }));
+}
+
+function listMasterQuestionAnswerKeys(questionId) {
+  return db.prepare(`
+    SELECT
+      id,
+      questao_id AS questaoId,
+      tipo_gabarito AS tipoGabarito,
+      resposta_bruta AS respostaBruta,
+      resposta_normalizada AS respostaNormalizada,
+      valor_numerico AS valorNumerico,
+      expressao_canonica AS expressaoCanonica,
+      tolerancia_absoluta AS toleranciaAbsoluta,
+      tolerancia_percentual AS toleranciaPercentual,
+      unidade,
+      principal,
+      observacao,
+      created_at AS createdAt
+    FROM questao_gabaritos
+    WHERE questao_id = ?
+    ORDER BY principal DESC, id ASC
+  `).all(questionId).map((row) => ({
+    id: Number(row.id) || 0,
+    questaoId: Number(row.questaoId) || 0,
+    tipoGabarito: sanitizeMasterGabaritoType(row.tipoGabarito),
+    respostaBruta: String(row.respostaBruta || ""),
+    respostaNormalizada: String(row.respostaNormalizada || ""),
+    valorNumerico: Number(row.valorNumerico) || 0,
+    expressaoCanonica: String(row.expressaoCanonica || ""),
+    toleranciaAbsoluta: Number(row.toleranciaAbsoluta) || 0,
+    toleranciaPercentual: Number(row.toleranciaPercentual) || 0,
+    unidade: String(row.unidade || ""),
+    principal: Boolean(Number(row.principal)),
+    observacao: String(row.observacao || ""),
+    createdAt: String(row.createdAt || ""),
+  }));
+}
+
+function serializeMasterQuestionRow(row, options = {}) {
+  if (!row) {
+    return null;
+  }
+
+  const includeRelations = options.includeRelations !== false;
+  const questionId = Number(row.id) || 0;
+
+  return {
+    id: questionId,
+    tituloInterno: String(row.tituloInterno || row.titulo_interno || ""),
+    enunciado: String(row.enunciado || ""),
+    tipoQuestao: sanitizeQuestionType(row.tipoQuestao || row.tipo_questao),
+    area: sanitizeStructuredProofArea(row.area),
+    assunto: String(row.assunto || ""),
+    subassunto: String(row.subassunto || ""),
+    formulaPrincipal: String(row.formulaPrincipal || row.formula_principal || ""),
+    unidadeResposta: String(row.unidadeResposta || row.unidade_resposta || ""),
+    casasDecimaisEsperadas: Number(row.casasDecimaisEsperadas || row.casas_decimais_esperadas) || 0,
+    aceitaNotacaoCientifica: Boolean(Number(row.aceitaNotacaoCientifica ?? row.aceita_notacao_cientifica)),
+    metodoCorrecao: sanitizeQuestionCorrectionMethod(row.metodoCorrecao || row.metodo_correcao),
+    toleranciaAbsoluta: Number(row.toleranciaAbsoluta || row.tolerancia_absoluta) || 0,
+    toleranciaPercentual: Number(row.toleranciaPercentual || row.tolerancia_percentual) || 0,
+    pesoPadrao: Number(row.pesoPadrao || row.peso_padrao) || 0,
+    dificuldadeInterna: sanitizeQuestionDifficulty(row.dificuldadeInterna || row.dificuldade_interna),
+    possuiImagem: Boolean(Number(row.possuiImagem ?? row.possui_imagem)),
+    imagemUrl: String(row.imagemUrl || row.imagem_url || ""),
+    observacoesAdmin: String(row.observacoesAdmin || row.observacoes_admin || ""),
+    origemCadastro: sanitizeMasterQuestionOrigin(row.origemCadastro || row.origem_cadastro),
+    status: sanitizeMasterQuestionStatus(row.status),
+    usageCount: Number(row.usageCount) || 0,
+    alternatives: includeRelations ? listMasterQuestionAlternatives(questionId) : [],
+    answerKeys: includeRelations ? listMasterQuestionAnswerKeys(questionId) : [],
+    createdAt: String(row.createdAt || row.created_at || ""),
+    updatedAt: String(row.updatedAt || row.updated_at || ""),
+  };
+}
+
+function serializeStructuredProofRow(row) {
+  if (!row) {
+    return null;
+  }
+
+  return {
+    id: Number(row.id) || 0,
+    titulo: String(row.titulo || ""),
+    descricao: String(row.descricao || ""),
+    observacoes: String(row.observacoes || ""),
+    ano: Number(row.ano) || 0,
+    area: sanitizeStructuredProofArea(row.area),
+    nivel: sanitizeStructuredProofLevel(row.nivel),
+    status: sanitizeQuestionProofStatus(row.status),
+    origem: sanitizeStructuredProofOrigin(row.origem),
+    tempoLimiteMin: Number(row.tempoLimiteMin || row.tempo_limite_min) || 0,
+    disciplina: String(row.disciplina || ""),
+    tipoProva: String(row.tipoProva || row.tipo_prova || ""),
+    createdBy: Number(row.createdBy || row.created_by) || 0,
+    counts: {
+      totalQuestions: Number(row.totalQuestions) || 0,
+      totalAttempts: Number(row.totalAttempts) || 0,
+      totalResponses: Number(row.totalResponses) || 0,
+    },
+    createdAt: String(row.createdAt || row.created_at || ""),
+    updatedAt: String(row.updatedAt || row.updated_at || ""),
+  };
+}
+
+function listStructuredProofFiles(proofId) {
+  return db.prepare(`
+    SELECT
+      id,
+      prova_id AS provaId,
+      tipo_arquivo AS tipoArquivo,
+      nome_original AS nomeOriginal,
+      storage_path AS storagePath,
+      url,
+      mime_type AS mimeType,
+      tamanho_bytes AS tamanhoBytes,
+      created_at AS createdAt
+    FROM prova_arquivos
+    WHERE prova_id = ?
+    ORDER BY created_at DESC, id DESC
+  `).all(proofId).map((row) => ({
+    id: Number(row.id) || 0,
+    provaId: Number(row.provaId) || 0,
+    tipoArquivo: sanitizeProofFileType(row.tipoArquivo),
+    nomeOriginal: String(row.nomeOriginal || ""),
+    storagePath: String(row.storagePath || ""),
+    url: String(row.url || ""),
+    mimeType: String(row.mimeType || ""),
+    tamanhoBytes: Number(row.tamanhoBytes) || 0,
+    createdAt: String(row.createdAt || ""),
+  }));
+}
+
+function listStructuredProofItems(proofId) {
+  return db.prepare(`
+    SELECT
+      prova_questoes.id,
+      prova_questoes.prova_id AS provaId,
+      prova_questoes.questao_id AS questaoId,
+      prova_questoes.numero_na_prova AS numeroNaProva,
+      prova_questoes.ordem,
+      prova_questoes.peso,
+      prova_questoes.obrigatoria,
+      prova_questoes.versao_enunciado AS versaoEnunciado,
+      prova_questoes.created_at AS createdAt,
+      questoes_master.titulo_interno AS tituloInterno,
+      questoes_master.enunciado,
+      questoes_master.tipo_questao AS tipoQuestao,
+      questoes_master.area,
+      questoes_master.assunto,
+      questoes_master.subassunto,
+      questoes_master.formula_principal AS formulaPrincipal,
+      questoes_master.metodo_correcao AS metodoCorrecao,
+      questoes_master.peso_padrao AS pesoPadrao,
+      questoes_master.status AS questionStatus
+    FROM prova_questoes
+    INNER JOIN questoes_master ON questoes_master.id = prova_questoes.questao_id
+    WHERE prova_questoes.prova_id = ?
+    ORDER BY prova_questoes.ordem ASC, prova_questoes.numero_na_prova ASC, prova_questoes.id ASC
+  `).all(proofId).map((row) => ({
+    id: Number(row.id) || 0,
+    provaId: Number(row.provaId) || 0,
+    questaoId: Number(row.questaoId) || 0,
+    numeroNaProva: Number(row.numeroNaProva) || 0,
+    ordem: Number(row.ordem) || 0,
+    peso: Number(row.peso) || 0,
+    obrigatoria: Boolean(Number(row.obrigatoria)),
+    versaoEnunciado: String(row.versaoEnunciado || ""),
+    createdAt: String(row.createdAt || ""),
+    questao: {
+      id: Number(row.questaoId) || 0,
+      tituloInterno: String(row.tituloInterno || ""),
+      enunciado: String(row.versaoEnunciado || row.enunciado || ""),
+      tipoQuestao: sanitizeQuestionType(row.tipoQuestao),
+      area: sanitizeStructuredProofArea(row.area),
+      assunto: String(row.assunto || ""),
+      subassunto: String(row.subassunto || ""),
+      formulaPrincipal: String(row.formulaPrincipal || ""),
+      metodoCorrecao: sanitizeQuestionCorrectionMethod(row.metodoCorrecao),
+      pesoPadrao: Number(row.pesoPadrao) || 0,
+      status: sanitizeMasterQuestionStatus(row.questionStatus),
+    },
+  }));
+}
+
+function listStructuredProofs() {
+  return db.prepare(`
+    SELECT
+      provas.id,
+      provas.titulo,
+      provas.descricao,
+      provas.observacoes,
+      provas.ano,
+      provas.area,
+      provas.nivel,
+      provas.status,
+      provas.origem,
+      provas.tempo_limite_min AS tempoLimiteMin,
+      provas.disciplina,
+      provas.tipo_prova AS tipoProva,
+      provas.created_by AS createdBy,
+      provas.created_at AS createdAt,
+      provas.updated_at AS updatedAt,
+      COUNT(DISTINCT prova_questoes.id) AS totalQuestions,
+      COUNT(DISTINCT tentativas_prova.id) AS totalAttempts,
+      COUNT(DISTINCT respostas_aluno.id) AS totalResponses
+    FROM provas
+    LEFT JOIN prova_questoes ON prova_questoes.prova_id = provas.id
+    LEFT JOIN tentativas_prova ON tentativas_prova.prova_id = provas.id
+    LEFT JOIN respostas_aluno ON respostas_aluno.tentativa_id = tentativas_prova.id
+    GROUP BY provas.id
+    ORDER BY provas.updated_at DESC, provas.id DESC
+  `).all().map((row) => serializeStructuredProofRow(row));
+}
+
+function getStructuredProofById(proofId) {
+  const row = db.prepare(`
+    SELECT
+      provas.id,
+      provas.titulo,
+      provas.descricao,
+      provas.observacoes,
+      provas.ano,
+      provas.area,
+      provas.nivel,
+      provas.status,
+      provas.origem,
+      provas.tempo_limite_min AS tempoLimiteMin,
+      provas.disciplina,
+      provas.tipo_prova AS tipoProva,
+      provas.created_by AS createdBy,
+      provas.created_at AS createdAt,
+      provas.updated_at AS updatedAt,
+      COUNT(DISTINCT prova_questoes.id) AS totalQuestions,
+      COUNT(DISTINCT tentativas_prova.id) AS totalAttempts,
+      COUNT(DISTINCT respostas_aluno.id) AS totalResponses
+    FROM provas
+    LEFT JOIN prova_questoes ON prova_questoes.prova_id = provas.id
+    LEFT JOIN tentativas_prova ON tentativas_prova.prova_id = provas.id
+    LEFT JOIN respostas_aluno ON respostas_aluno.tentativa_id = tentativas_prova.id
+    WHERE provas.id = ?
+    GROUP BY provas.id
+    LIMIT 1
+  `).get(proofId);
+
+  if (!row) {
+    return null;
+  }
+
+  return {
+    proof: serializeStructuredProofRow(row),
+    items: listStructuredProofItems(proofId),
+    files: listStructuredProofFiles(proofId),
+  };
+}
+
+function listMasterQuestions() {
+  return db.prepare(`
+    SELECT
+      questoes_master.*,
+      COUNT(DISTINCT prova_questoes.id) AS usageCount
+    FROM questoes_master
+    LEFT JOIN prova_questoes ON prova_questoes.questao_id = questoes_master.id
+    GROUP BY questoes_master.id
+    ORDER BY questoes_master.updated_at DESC, questoes_master.id DESC
+  `).all().map((row) => serializeMasterQuestionRow(row, { includeRelations: false }));
+}
+
+function getMasterQuestionById(questionId) {
+  const row = db.prepare(`
+    SELECT
+      questoes_master.*,
+      COUNT(DISTINCT prova_questoes.id) AS usageCount
+    FROM questoes_master
+    LEFT JOIN prova_questoes ON prova_questoes.questao_id = questoes_master.id
+    WHERE questoes_master.id = ?
+    GROUP BY questoes_master.id
+    LIMIT 1
+  `).get(questionId);
+
+  return serializeMasterQuestionRow(row, { includeRelations: true });
+}
+
+function buildStructuredProofCenterReferenceData() {
+  return {
+    proofTypes: QUESTION_BANK_PROOF_TYPE_VALUES.slice(),
+    proofStatuses: QUESTION_PROOF_STATUS_VALUES.slice(),
+    proofAreas: STRUCTURED_PROOF_AREA_VALUES.slice(),
+    proofLevels: STRUCTURED_PROOF_LEVEL_VALUES.slice(),
+    proofOrigins: STRUCTURED_PROOF_ORIGIN_VALUES.slice(),
+    questionTypes: QUESTION_BANK_TYPE_VALUES.slice(),
+    questionStatuses: MASTER_QUESTION_STATUS_VALUES.slice(),
+    questionOrigins: MASTER_QUESTION_ORIGIN_VALUES.slice(),
+    correctionMethods: QUESTION_BANK_CORRECTION_METHOD_VALUES.slice(),
+    difficulties: QUESTION_DIFFICULTY_VALUES.slice(),
+    answerKeyTypes: MASTER_GABARITO_TYPE_VALUES.slice(),
+    fileTypes: PROOF_FILE_TYPE_VALUES.slice(),
+    attemptStatuses: ATTEMPT_STATUS_VALUES.slice(),
+    answerStatuses: ANSWER_CORRECTION_STATUS_VALUES.slice(),
+    importStatuses: IMPORT_STATUS_VALUES.slice(),
+    reviewDecisions: REVIEW_DECISION_VALUES.slice(),
+  };
+}
+
+function normalizeProofText(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ");
+}
+
+function normalizeProofExpression(value) {
+  return normalizeProofText(value)
+    .replace(/\s+/g, "")
+    .replace(/,/g, ".")
+    .replace(/[×x]/g, "*")
+    .replace(/[−–]/g, "-");
+}
+
+function extractNumericAnswerValue(value) {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+
+  const normalized = String(value || "")
+    .trim()
+    .replace(/\s+/g, "")
+    .replace(/,/g, ".");
+
+  if (!normalized) {
+    return null;
+  }
+
+  const directValue = Number(normalized);
+
+  if (Number.isFinite(directValue)) {
+    return directValue;
+  }
+
+  const match = normalized.match(/-?\d+(?:\.\d+)?(?:e[+-]?\d+)?/i);
+
+  if (!match) {
+    return null;
+  }
+
+  const parsedValue = Number(match[0]);
+  return Number.isFinite(parsedValue) ? parsedValue : null;
+}
+
+function buildNormalizedMasterAnswerKeys(answerKeys, questionData) {
+  const normalizedKeys = [];
+
+  (Array.isArray(answerKeys) ? answerKeys : []).forEach((item, index) => {
+    const defaultType =
+      questionData.tipoQuestao === "objetiva"
+        ? "alternativa"
+        : questionData.tipoQuestao === "numerica"
+          ? "numero"
+          : questionData.tipoQuestao === "expressao_simples"
+            ? "expressao"
+            : "texto";
+    const tipoGabarito = sanitizeMasterGabaritoType(item?.tipoGabarito ?? item?.tipo_gabarito, defaultType);
+    let respostaBruta = sanitizeQuestionBankMultilineText(item?.respostaBruta ?? item?.resposta_bruta ?? "", 1_000).trim();
+    let respostaNormalizada = sanitizeQuestionBankMultilineText(
+      item?.respostaNormalizada ?? item?.resposta_normalizada ?? "",
+      1_000
+    ).trim();
+    let expressaoCanonica = sanitizeQuestionBankMultilineText(
+      item?.expressaoCanonica ?? item?.expressao_canonica ?? "",
+      1_000
+    ).trim();
+    const explicitNumericValue =
+      item?.valorNumerico !== undefined && item?.valorNumerico !== null && String(item?.valorNumerico).trim() !== ""
+        ? Number(item?.valorNumerico)
+        : item?.valor_numerico !== undefined && item?.valor_numerico !== null && String(item?.valor_numerico).trim() !== ""
+          ? Number(item?.valor_numerico)
+          : null;
+    let valorNumerico = Number.isFinite(explicitNumericValue) ? explicitNumericValue : 0;
+    const toleranciaAbsoluta = sanitizeQuestionToleranceValue(
+      item?.toleranciaAbsoluta ?? item?.tolerancia_absoluta ?? questionData.toleranciaAbsoluta ?? 0
+    );
+    const toleranciaPercentual = sanitizeQuestionToleranceValue(
+      item?.toleranciaPercentual ?? item?.tolerancia_percentual ?? questionData.toleranciaPercentual ?? 0
+    );
+    const unidade = sanitizeShortText(item?.unidade ?? questionData.unidadeResposta ?? "", 80);
+    const observacao = sanitizeQuestionBankMultilineText(item?.observacao ?? "", 1_400);
+
+    if (tipoGabarito === "alternativa") {
+      respostaBruta = sanitizeQuestionAlternativeLetter(respostaBruta || respostaNormalizada, true);
+      respostaNormalizada = respostaBruta;
+    }
+
+    if (tipoGabarito === "numero") {
+      const parsedNumericValue =
+        explicitNumericValue !== null ? explicitNumericValue : extractNumericAnswerValue(respostaBruta || respostaNormalizada);
+
+      if (Number.isFinite(parsedNumericValue)) {
+        valorNumerico = Number(parsedNumericValue);
+      }
+
+      if (!respostaBruta) {
+        respostaBruta = Number.isFinite(valorNumerico) ? String(valorNumerico) : "";
+      }
+
+      respostaNormalizada = Number.isFinite(valorNumerico)
+        ? String(valorNumerico)
+        : normalizeProofText(respostaBruta);
+    }
+
+    if (tipoGabarito === "expressao") {
+      expressaoCanonica = expressaoCanonica || respostaNormalizada || respostaBruta;
+      respostaNormalizada = normalizeProofExpression(respostaNormalizada || respostaBruta || expressaoCanonica);
+    }
+
+    if (tipoGabarito === "texto") {
+      respostaNormalizada = normalizeProofText(respostaNormalizada || respostaBruta);
+    }
+
+    const hasContent =
+      (tipoGabarito === "alternativa" && Boolean(respostaBruta)) ||
+      (tipoGabarito === "numero" && (Number.isFinite(valorNumerico) || Boolean(respostaBruta))) ||
+      (tipoGabarito === "expressao" && Boolean(respostaBruta || expressaoCanonica || respostaNormalizada)) ||
+      (tipoGabarito === "texto" && Boolean(respostaBruta || respostaNormalizada));
+
+    if (!hasContent) {
+      return;
+    }
+
+    normalizedKeys.push({
+      tipoGabarito,
+      respostaBruta,
+      respostaNormalizada,
+      valorNumerico: Number.isFinite(valorNumerico) ? valorNumerico : 0,
+      expressaoCanonica,
+      toleranciaAbsoluta,
+      toleranciaPercentual,
+      unidade,
+      principal: Boolean(item?.principal ?? index === 0),
+      observacao,
+    });
+  });
+
+  if (normalizedKeys.length && !normalizedKeys.some((item) => item.principal)) {
+    normalizedKeys[0].principal = true;
+  }
+
+  return normalizedKeys;
+}
+
+function validateStructuredMasterQuestionData(questionData) {
+  if (!questionData.enunciado) {
+    throw createError(400, "Preencha o enunciado da questao.");
+  }
+
+  if (!questionData.tituloInterno) {
+    questionData.tituloInterno = sanitizeShortText(questionData.enunciado, 180) || "Questao sem titulo";
+  }
+
+  const filledAlternatives = questionData.alternatives.filter((item) => item.texto);
+
+  if (questionData.tipoQuestao === "objetiva") {
+    if (filledAlternatives.length < 2) {
+      throw createError(400, "Questoes objetivas precisam de pelo menos duas alternativas preenchidas.");
+    }
+
+    const correctLetters = new Set(
+      questionData.answerKeys
+        .filter((item) => item.tipoGabarito === "alternativa")
+        .map((item) => sanitizeQuestionAlternativeLetter(item.respostaBruta, true))
+        .filter(Boolean)
+    );
+
+    if (!correctLetters.size) {
+      throw createError(400, "Defina a alternativa correta da questao.");
+    }
+
+    const availableLetters = new Set(filledAlternatives.map((item) => item.letra));
+
+    if ([...correctLetters].some((letter) => !availableLetters.has(letter))) {
+      throw createError(400, "O gabarito objetivo precisa apontar para uma alternativa preenchida.");
+    }
+  }
+
+  if (questionData.tipoQuestao === "numerica" && !questionData.answerKeys.length) {
+    throw createError(400, "Questoes numericas precisam de ao menos um gabarito.");
+  }
+}
+
+function buildStructuredMasterQuestionSaveData(payload, currentQuestion = null) {
+  const questionData = sanitizeMasterQuestionPayload(payload, currentQuestion);
+  questionData.answerKeys = buildNormalizedMasterAnswerKeys(questionData.answerKeys, questionData);
+  validateStructuredMasterQuestionData(questionData);
+  return questionData;
+}
+
+function persistStructuredMasterQuestionRelations(questionId, questionData) {
+  const safeQuestionId = Number(questionId);
+  const correctAlternativeLetters = new Set(
+    questionData.answerKeys
+      .filter((item) => item.tipoGabarito === "alternativa")
+      .map((item) => sanitizeQuestionAlternativeLetter(item.respostaBruta, true))
+      .filter(Boolean)
+  );
+
+  db.prepare("DELETE FROM questao_alternativas WHERE questao_id = ?").run(safeQuestionId);
+  db.prepare("DELETE FROM questao_gabaritos WHERE questao_id = ?").run(safeQuestionId);
+
+  questionData.alternatives
+    .filter((item) => item.texto)
+    .forEach((item, index) => {
+      db.prepare(`
+        INSERT INTO questao_alternativas (
+          questao_id,
+          letra,
+          texto,
+          ordem,
+          is_correta,
+          created_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).run(
+        safeQuestionId,
+        sanitizeQuestionAlternativeLetter(item.letra || QUESTION_BANK_ALTERNATIVE_LETTERS[index] || "", true),
+        item.texto,
+        Number(item.ordem) || index + 1,
+        correctAlternativeLetters.has(item.letra) ? 1 : 0,
+        nowIso()
+      );
+    });
+
+  questionData.answerKeys.forEach((item, index) => {
+    db.prepare(`
+      INSERT INTO questao_gabaritos (
+        questao_id,
+        tipo_gabarito,
+        resposta_bruta,
+        resposta_normalizada,
+        valor_numerico,
+        expressao_canonica,
+        tolerancia_absoluta,
+        tolerancia_percentual,
+        unidade,
+        principal,
+        observacao,
+        created_at
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      safeQuestionId,
+      item.tipoGabarito,
+      item.respostaBruta,
+      item.respostaNormalizada,
+      item.valorNumerico,
+      item.expressaoCanonica,
+      item.toleranciaAbsoluta,
+      item.toleranciaPercentual,
+      item.unidade,
+      item.principal || index === 0 ? 1 : 0,
+      item.observacao,
+      nowIso()
+    );
+  });
+}
+
+function getStructuredProofFileById(fileId) {
+  const row = db.prepare(`
+    SELECT
+      id,
+      prova_id AS provaId,
+      tipo_arquivo AS tipoArquivo,
+      nome_original AS nomeOriginal,
+      storage_path AS storagePath,
+      url,
+      mime_type AS mimeType,
+      tamanho_bytes AS tamanhoBytes,
+      created_at AS createdAt
+    FROM prova_arquivos
+    WHERE id = ?
+    LIMIT 1
+  `).get(fileId);
+
+  if (!row) {
+    return null;
+  }
+
+  return {
+    id: Number(row.id) || 0,
+    provaId: Number(row.provaId) || 0,
+    tipoArquivo: sanitizeProofFileType(row.tipoArquivo),
+    nomeOriginal: String(row.nomeOriginal || ""),
+    storagePath: String(row.storagePath || ""),
+    url: String(row.url || ""),
+    mimeType: String(row.mimeType || "application/pdf"),
+    tamanhoBytes: Number(row.tamanhoBytes) || 0,
+    createdAt: String(row.createdAt || ""),
+  };
+}
+
+async function saveStructuredProofFileRecord(proofId, tipoArquivo, filePayload) {
+  const savedFile = await saveQuestionBankPdfFile(filePayload);
+
+  if (!savedFile) {
+    return null;
+  }
+
+  const createdAt = nowIso();
+  const insertResult = db.prepare(`
+    INSERT INTO prova_arquivos (
+      prova_id,
+      tipo_arquivo,
+      nome_original,
+      storage_path,
+      url,
+      mime_type,
+      tamanho_bytes,
+      created_at
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    proofId,
+    sanitizeProofFileType(tipoArquivo),
+    savedFile.originalName,
+    savedFile.storedFileName,
+    "",
+    savedFile.mimeType,
+    savedFile.sizeBytes,
+    createdAt
+  );
+
+  const fileId = Number(insertResult.lastInsertRowid) || 0;
+  const fileUrl = fileId ? `/api/admin/proof-center/files/${fileId}` : "";
+
+  if (fileId) {
+    db.prepare("UPDATE prova_arquivos SET url = ? WHERE id = ?").run(fileUrl, fileId);
+  }
+
+  return {
+    id: fileId,
+    url: fileUrl,
+    storagePath: savedFile.storedFileName,
+    nomeOriginal: savedFile.originalName,
+    mimeType: savedFile.mimeType,
+    tamanhoBytes: savedFile.sizeBytes,
+  };
+}
+
+function touchStructuredProof(proofId) {
+  db.prepare("UPDATE provas SET updated_at = ? WHERE id = ?").run(nowIso(), proofId);
+}
+
+function listStructuredProofImports() {
+  return db.prepare(`
+    SELECT
+      importacoes_assistidas.id,
+      importacoes_assistidas.arquivo_id AS arquivoId,
+      importacoes_assistidas.prova_id AS provaId,
+      importacoes_assistidas.status,
+      importacoes_assistidas.texto_extraido AS textoExtraido,
+      importacoes_assistidas.confianca_media AS confiancaMedia,
+      importacoes_assistidas.total_questoes_detectadas AS totalQuestoesDetectadas,
+      importacoes_assistidas.log_parser AS logParser,
+      importacoes_assistidas.created_at AS createdAt,
+      importacoes_assistidas.finished_at AS finishedAt,
+      provas.titulo AS provaTitulo,
+      provas.disciplina,
+      prova_arquivos.nome_original AS arquivoNome,
+      prova_arquivos.tipo_arquivo AS tipoArquivo
+    FROM importacoes_assistidas
+    LEFT JOIN provas ON provas.id = importacoes_assistidas.prova_id
+    LEFT JOIN prova_arquivos ON prova_arquivos.id = importacoes_assistidas.arquivo_id
+    ORDER BY importacoes_assistidas.created_at DESC, importacoes_assistidas.id DESC
+  `).all().map((row) => ({
+    id: Number(row.id) || 0,
+    arquivoId: Number(row.arquivoId) || 0,
+    provaId: Number(row.provaId) || 0,
+    status: sanitizeImportStatus(row.status),
+    textoExtraido: String(row.textoExtraido || ""),
+    confiancaMedia: Number(row.confiancaMedia) || 0,
+    totalQuestoesDetectadas: Number(row.totalQuestoesDetectadas) || 0,
+    logParser: String(row.logParser || ""),
+    createdAt: String(row.createdAt || ""),
+    finishedAt: String(row.finishedAt || ""),
+    provaTitulo: String(row.provaTitulo || ""),
+    disciplina: String(row.disciplina || ""),
+    arquivoNome: String(row.arquivoNome || ""),
+    tipoArquivo: sanitizeProofFileType(row.tipoArquivo),
+  }));
+}
+
+function buildStructuredProofSummary() {
+  const counts = db.prepare(`
+    SELECT
+      (SELECT COUNT(*) FROM provas) AS totalProofs,
+      (SELECT COUNT(*) FROM questoes_master) AS totalMasterQuestions,
+      (SELECT COUNT(*) FROM prova_questoes) AS totalMountedQuestions,
+      (SELECT COUNT(*) FROM respostas_aluno) AS totalResponses,
+      (SELECT COUNT(*) FROM respostas_aluno WHERE status_correcao IN ('pendente', 'baixa_confianca', 'revisao_manual')) AS totalPendingReview,
+      (SELECT COUNT(*) FROM importacoes_assistidas) AS totalImports
+  `).get();
+
+  return {
+    counts: {
+      totalProofs: Number(counts?.totalProofs) || 0,
+      totalMasterQuestions: Number(counts?.totalMasterQuestions) || 0,
+      totalMountedQuestions: Number(counts?.totalMountedQuestions) || 0,
+      totalResponses: Number(counts?.totalResponses) || 0,
+      totalPendingReview: Number(counts?.totalPendingReview) || 0,
+      totalImports: Number(counts?.totalImports) || 0,
+    },
+    recentProofs: listStructuredProofs().slice(0, 4),
+    recentQuestions: listMasterQuestions().slice(0, 4),
+    recentImports: listStructuredProofImports().slice(0, 4),
+  };
+}
+
+function getStructuredProofMountById(itemId) {
+  const row = db.prepare(`
+    SELECT
+      id,
+      prova_id AS provaId,
+      questao_id AS questaoId,
+      numero_na_prova AS numeroNaProva,
+      ordem,
+      peso,
+      obrigatoria,
+      versao_enunciado AS versaoEnunciado,
+      created_at AS createdAt
+    FROM prova_questoes
+    WHERE id = ?
+    LIMIT 1
+  `).get(itemId);
+
+  if (!row) {
+    return null;
+  }
+
+  return {
+    id: Number(row.id) || 0,
+    provaId: Number(row.provaId) || 0,
+    questaoId: Number(row.questaoId) || 0,
+    numeroNaProva: Number(row.numeroNaProva) || 0,
+    ordem: Number(row.ordem) || 0,
+    peso: Number(row.peso) || 0,
+    obrigatoria: Boolean(Number(row.obrigatoria)),
+    versaoEnunciado: String(row.versaoEnunciado || ""),
+    createdAt: String(row.createdAt || ""),
+  };
+}
+
+function listStructuredAttemptRows() {
+  return db.prepare(`
+    SELECT
+      tentativas_prova.id,
+      tentativas_prova.prova_id AS provaId,
+      tentativas_prova.aluno_id AS alunoId,
+      tentativas_prova.status,
+      tentativas_prova.nota_parcial AS notaParcial,
+      tentativas_prova.nota_final AS notaFinal,
+      tentativas_prova.total_acertos AS totalAcertos,
+      tentativas_prova.total_erros AS totalErros,
+      tentativas_prova.iniciada_em AS iniciadaEm,
+      tentativas_prova.enviada_em AS enviadaEm,
+      tentativas_prova.finalizada_em AS finalizadaEm,
+      tentativas_prova.created_at AS createdAt,
+      tentativas_prova.updated_at AS updatedAt,
+      provas.titulo AS provaTitulo,
+      provas.disciplina,
+      provas.ano,
+      users.name AS alunoNome,
+      users.email AS alunoEmail
+    FROM tentativas_prova
+    INNER JOIN provas ON provas.id = tentativas_prova.prova_id
+    INNER JOIN users ON users.id = tentativas_prova.aluno_id
+    ORDER BY tentativas_prova.updated_at DESC, tentativas_prova.id DESC
+  `).all().map((row) => ({
+    id: Number(row.id) || 0,
+    provaId: Number(row.provaId) || 0,
+    alunoId: Number(row.alunoId) || 0,
+    status: sanitizeAttemptStatus(row.status),
+    notaParcial: Number(row.notaParcial) || 0,
+    notaFinal: Number(row.notaFinal) || 0,
+    totalAcertos: Number(row.totalAcertos) || 0,
+    totalErros: Number(row.totalErros) || 0,
+    iniciadaEm: String(row.iniciadaEm || ""),
+    enviadaEm: String(row.enviadaEm || ""),
+    finalizadaEm: String(row.finalizadaEm || ""),
+    createdAt: String(row.createdAt || ""),
+    updatedAt: String(row.updatedAt || ""),
+    provaTitulo: String(row.provaTitulo || ""),
+    disciplina: String(row.disciplina || ""),
+    ano: Number(row.ano) || 0,
+    alunoNome: String(row.alunoNome || ""),
+    alunoEmail: String(row.alunoEmail || ""),
+  }));
+}
+
+function getStructuredCorrectionRowById(responseId) {
+  return db.prepare(`
+    SELECT
+      respostas_aluno.id,
+      respostas_aluno.tentativa_id AS tentativaId,
+      respostas_aluno.prova_questao_id AS provaQuestaoId,
+      respostas_aluno.questao_id AS questaoId,
+      respostas_aluno.resposta_bruta AS respostaBruta,
+      respostas_aluno.alternativa_marcada AS alternativaMarcada,
+      respostas_aluno.valor_numerico AS valorNumerico,
+      respostas_aluno.expressao_bruta AS expressaoBruta,
+      respostas_aluno.resposta_normalizada AS respostaNormalizada,
+      respostas_aluno.status_correcao AS statusCorrecao,
+      respostas_aluno.confianca_correcao AS confiancaCorrecao,
+      respostas_aluno.nota_atribuida AS notaAtribuida,
+      respostas_aluno.correta,
+      respostas_aluno.motivo_pendencia AS motivoPendencia,
+      respostas_aluno.feedback,
+      respostas_aluno.corrigido_por AS corrigidoPor,
+      respostas_aluno.corrigido_em AS corrigidoEm,
+      respostas_aluno.created_at AS createdAt,
+      respostas_aluno.updated_at AS updatedAt,
+      tentativas_prova.prova_id AS provaId,
+      tentativas_prova.status AS tentativaStatus,
+      tentativas_prova.aluno_id AS alunoId,
+      tentativas_prova.nota_parcial AS notaParcial,
+      tentativas_prova.nota_final AS notaFinal,
+      tentativas_prova.total_acertos AS totalAcertos,
+      tentativas_prova.total_erros AS totalErros,
+      tentativas_prova.updated_at AS tentativaUpdatedAt,
+      provas.titulo AS provaTitulo,
+      provas.disciplina,
+      provas.ano,
+      provas.tipo_prova AS tipoProva,
+      users.name AS alunoNome,
+      users.email AS alunoEmail,
+      prova_questoes.numero_na_prova AS numeroNaProva,
+      prova_questoes.ordem AS ordemNaProva,
+      prova_questoes.peso AS pesoNaProva,
+      prova_questoes.obrigatoria,
+      prova_questoes.versao_enunciado AS versaoEnunciado,
+      questoes_master.titulo_interno AS tituloInterno,
+      questoes_master.enunciado,
+      questoes_master.tipo_questao AS tipoQuestao,
+      questoes_master.area,
+      questoes_master.assunto,
+      questoes_master.subassunto,
+      questoes_master.formula_principal AS formulaPrincipal,
+      questoes_master.unidade_resposta AS unidadeResposta,
+      questoes_master.metodo_correcao AS metodoCorrecao,
+      questoes_master.tolerancia_absoluta AS toleranciaAbsoluta,
+      questoes_master.tolerancia_percentual AS toleranciaPercentual,
+      questoes_master.peso_padrao AS pesoPadrao
+    FROM respostas_aluno
+    INNER JOIN tentativas_prova ON tentativas_prova.id = respostas_aluno.tentativa_id
+    INNER JOIN provas ON provas.id = tentativas_prova.prova_id
+    INNER JOIN users ON users.id = tentativas_prova.aluno_id
+    INNER JOIN prova_questoes ON prova_questoes.id = respostas_aluno.prova_questao_id
+    INNER JOIN questoes_master ON questoes_master.id = respostas_aluno.questao_id
+    WHERE respostas_aluno.id = ?
+    LIMIT 1
+  `).get(responseId);
+}
+
+function serializeStructuredCorrectionRow(row, options = {}) {
+  if (!row) {
+    return null;
+  }
+
+  const includeRelations = Boolean(options.includeRelations);
+  const responseId = Number(row.id) || 0;
+  const questionId = Number(row.questaoId) || 0;
+
+  return {
+    id: responseId,
+    tentativaId: Number(row.tentativaId) || 0,
+    provaQuestaoId: Number(row.provaQuestaoId) || 0,
+    provaId: Number(row.provaId) || 0,
+    alunoId: Number(row.alunoId) || 0,
+    prova: {
+      id: Number(row.provaId) || 0,
+      titulo: String(row.provaTitulo || ""),
+      disciplina: String(row.disciplina || ""),
+      ano: Number(row.ano) || 0,
+      tipoProva: String(row.tipoProva || ""),
+    },
+    aluno: {
+      id: Number(row.alunoId) || 0,
+      nome: String(row.alunoNome || ""),
+      email: String(row.alunoEmail || ""),
+    },
+    questao: {
+      id: questionId,
+      numeroNaProva: Number(row.numeroNaProva) || 0,
+      ordemNaProva: Number(row.ordemNaProva) || 0,
+      pesoNaProva: Number(row.pesoNaProva) || Number(row.pesoPadrao) || 1,
+      obrigatoria: Boolean(Number(row.obrigatoria)),
+      tituloInterno: String(row.tituloInterno || ""),
+      enunciado: String(row.versaoEnunciado || row.enunciado || ""),
+      tipoQuestao: sanitizeQuestionType(row.tipoQuestao),
+      area: sanitizeStructuredProofArea(row.area),
+      assunto: String(row.assunto || ""),
+      subassunto: String(row.subassunto || ""),
+      formulaPrincipal: String(row.formulaPrincipal || ""),
+      unidadeResposta: String(row.unidadeResposta || ""),
+      metodoCorrecao: sanitizeQuestionCorrectionMethod(row.metodoCorrecao),
+      toleranciaAbsoluta: Number(row.toleranciaAbsoluta) || 0,
+      toleranciaPercentual: Number(row.toleranciaPercentual) || 0,
+      pesoPadrao: Number(row.pesoPadrao) || 1,
+    },
+    resposta: {
+      bruta: String(row.respostaBruta || ""),
+      alternativaMarcada: sanitizeQuestionAlternativeLetter(row.alternativaMarcada, true),
+      valorNumerico: Number(row.valorNumerico) || 0,
+      expressaoBruta: String(row.expressaoBruta || ""),
+      normalizada: String(row.respostaNormalizada || ""),
+    },
+    statusCorrecao: sanitizeAnswerCorrectionStatus(row.statusCorrecao),
+    confiancaCorrecao: Number(row.confiancaCorrecao) || 0,
+    notaAtribuida: Number(row.notaAtribuida) || 0,
+    correta: Boolean(Number(row.correta)),
+    motivoPendencia: String(row.motivoPendencia || ""),
+    feedback: String(row.feedback || ""),
+    corrigidoPor: Number(row.corrigidoPor) || 0,
+    corrigidoEm: String(row.corrigidoEm || ""),
+    tentativa: {
+      status: sanitizeAttemptStatus(row.tentativaStatus),
+      notaParcial: Number(row.notaParcial) || 0,
+      notaFinal: Number(row.notaFinal) || 0,
+      totalAcertos: Number(row.totalAcertos) || 0,
+      totalErros: Number(row.totalErros) || 0,
+      updatedAt: String(row.tentativaUpdatedAt || ""),
+    },
+    answerKeys: includeRelations ? listMasterQuestionAnswerKeys(questionId) : [],
+    alternatives: includeRelations ? listMasterQuestionAlternatives(questionId) : [],
+    createdAt: String(row.createdAt || ""),
+    updatedAt: String(row.updatedAt || ""),
+  };
+}
+
+function listStructuredCorrectionRows() {
+  return db.prepare(`
+    SELECT
+      respostas_aluno.id,
+      respostas_aluno.tentativa_id AS tentativaId,
+      respostas_aluno.prova_questao_id AS provaQuestaoId,
+      respostas_aluno.questao_id AS questaoId,
+      respostas_aluno.resposta_bruta AS respostaBruta,
+      respostas_aluno.alternativa_marcada AS alternativaMarcada,
+      respostas_aluno.valor_numerico AS valorNumerico,
+      respostas_aluno.expressao_bruta AS expressaoBruta,
+      respostas_aluno.resposta_normalizada AS respostaNormalizada,
+      respostas_aluno.status_correcao AS statusCorrecao,
+      respostas_aluno.confianca_correcao AS confiancaCorrecao,
+      respostas_aluno.nota_atribuida AS notaAtribuida,
+      respostas_aluno.correta,
+      respostas_aluno.motivo_pendencia AS motivoPendencia,
+      respostas_aluno.feedback,
+      respostas_aluno.corrigido_por AS corrigidoPor,
+      respostas_aluno.corrigido_em AS corrigidoEm,
+      respostas_aluno.created_at AS createdAt,
+      respostas_aluno.updated_at AS updatedAt,
+      tentativas_prova.prova_id AS provaId,
+      tentativas_prova.status AS tentativaStatus,
+      tentativas_prova.aluno_id AS alunoId,
+      tentativas_prova.nota_parcial AS notaParcial,
+      tentativas_prova.nota_final AS notaFinal,
+      tentativas_prova.total_acertos AS totalAcertos,
+      tentativas_prova.total_erros AS totalErros,
+      tentativas_prova.updated_at AS tentativaUpdatedAt,
+      provas.titulo AS provaTitulo,
+      provas.disciplina,
+      provas.ano,
+      provas.tipo_prova AS tipoProva,
+      users.name AS alunoNome,
+      users.email AS alunoEmail,
+      prova_questoes.numero_na_prova AS numeroNaProva,
+      prova_questoes.ordem AS ordemNaProva,
+      prova_questoes.peso AS pesoNaProva,
+      prova_questoes.obrigatoria,
+      prova_questoes.versao_enunciado AS versaoEnunciado,
+      questoes_master.titulo_interno AS tituloInterno,
+      questoes_master.enunciado,
+      questoes_master.tipo_questao AS tipoQuestao,
+      questoes_master.area,
+      questoes_master.assunto,
+      questoes_master.subassunto,
+      questoes_master.formula_principal AS formulaPrincipal,
+      questoes_master.unidade_resposta AS unidadeResposta,
+      questoes_master.metodo_correcao AS metodoCorrecao,
+      questoes_master.tolerancia_absoluta AS toleranciaAbsoluta,
+      questoes_master.tolerancia_percentual AS toleranciaPercentual,
+      questoes_master.peso_padrao AS pesoPadrao
+    FROM respostas_aluno
+    INNER JOIN tentativas_prova ON tentativas_prova.id = respostas_aluno.tentativa_id
+    INNER JOIN provas ON provas.id = tentativas_prova.prova_id
+    INNER JOIN users ON users.id = tentativas_prova.aluno_id
+    INNER JOIN prova_questoes ON prova_questoes.id = respostas_aluno.prova_questao_id
+    INNER JOIN questoes_master ON questoes_master.id = respostas_aluno.questao_id
+    ORDER BY respostas_aluno.updated_at DESC, respostas_aluno.id DESC
+  `).all().map((row) => serializeStructuredCorrectionRow(row));
+}
+
+function calculateAllowedTolerance(expectedValue, absoluteTolerance, percentualTolerance) {
+  const expected = Number(expectedValue) || 0;
+  const safeAbsolute = Math.max(0, Number(absoluteTolerance) || 0);
+  const safePercentual = Math.max(0, Number(percentualTolerance) || 0);
+  const percentualWindow = Math.abs(expected) * (safePercentual / 100);
+  return Math.max(safeAbsolute, percentualWindow);
+}
+
+function evaluateStructuredCorrection(detail) {
+  if (!detail) {
+    return null;
+  }
+
+  const questionWeight = Number(detail.questao?.pesoNaProva || detail.questao?.pesoPadrao) || 1;
+  const answerKeys = Array.isArray(detail.answerKeys) ? detail.answerKeys : [];
+  const rawResponseText =
+    detail.resposta?.bruta ||
+    detail.resposta?.expressaoBruta ||
+    detail.resposta?.normalizada ||
+    detail.resposta?.alternativaMarcada ||
+    "";
+
+  if (detail.questao?.tipoQuestao === "objetiva") {
+    const selectedAlternative = sanitizeQuestionAlternativeLetter(
+      detail.resposta?.alternativaMarcada || detail.resposta?.bruta,
+      true
+    );
+    const validAlternatives = new Set(
+      answerKeys
+        .filter((item) => item.tipoGabarito === "alternativa")
+        .map((item) => sanitizeQuestionAlternativeLetter(item.respostaBruta, true))
+        .filter(Boolean)
+    );
+
+    if (!selectedAlternative || !validAlternatives.size) {
+      return {
+        respostaNormalizada: selectedAlternative || "",
+        statusCorrecao: "baixa_confianca",
+        confiancaCorrecao: 0.2,
+        notaAtribuida: 0,
+        correta: false,
+        motivoPendencia: "Faltou resposta marcada ou gabarito valido para comparar.",
+        feedback: "Nao foi possivel comparar automaticamente a alternativa marcada.",
+      };
+    }
+
+    const isCorrect = validAlternatives.has(selectedAlternative);
+
+    return {
+      respostaNormalizada: selectedAlternative,
+      statusCorrecao: "corrigida_automatica",
+      confiancaCorrecao: 1,
+      notaAtribuida: isCorrect ? questionWeight : 0,
+      correta: isCorrect,
+      motivoPendencia: "",
+      feedback: isCorrect
+        ? "Alternativa compatível com o gabarito estruturado."
+        : "Alternativa diferente da resposta correta cadastrada.",
+    };
+  }
+
+  if (detail.questao?.tipoQuestao === "numerica") {
+    const primaryKey = answerKeys.find((item) => item.principal) || answerKeys[0] || null;
+    const studentValue = extractNumericAnswerValue(
+      detail.resposta?.valorNumerico || detail.resposta?.bruta || detail.resposta?.normalizada
+    );
+    const expectedValue = extractNumericAnswerValue(
+      primaryKey?.valorNumerico ?? primaryKey?.respostaBruta ?? primaryKey?.respostaNormalizada
+    );
+
+    if (studentValue === null || expectedValue === null || !primaryKey) {
+      return {
+        respostaNormalizada: normalizeProofText(rawResponseText),
+        statusCorrecao: "baixa_confianca",
+        confiancaCorrecao: 0.24,
+        notaAtribuida: 0,
+        correta: false,
+        motivoPendencia: "Nao foi possivel normalizar a resposta numerica ou o gabarito.",
+        feedback: "A resposta precisa de revisao manual para validar o valor numerico.",
+      };
+    }
+
+    const toleranceWindow = calculateAllowedTolerance(
+      expectedValue,
+      primaryKey.toleranciaAbsoluta || detail.questao?.toleranciaAbsoluta,
+      primaryKey.toleranciaPercentual || detail.questao?.toleranciaPercentual
+    );
+    const isCorrect = Math.abs(studentValue - expectedValue) <= toleranceWindow;
+
+    return {
+      respostaNormalizada: String(studentValue),
+      statusCorrecao: "corrigida_automatica",
+      confiancaCorrecao: toleranceWindow > 0 ? 0.96 : 0.99,
+      notaAtribuida: isCorrect ? questionWeight : 0,
+      correta: isCorrect,
+      motivoPendencia: "",
+      feedback: isCorrect
+        ? "Valor numerico dentro da tolerancia configurada."
+        : "Valor fora da faixa aceita pelo gabarito numerico.",
+    };
+  }
+
+  if (detail.questao?.tipoQuestao === "expressao_simples") {
+    const normalizedStudentExpression = normalizeProofExpression(
+      detail.resposta?.expressaoBruta || detail.resposta?.bruta || detail.resposta?.normalizada
+    );
+    const matchedKey = answerKeys.find((item) => {
+      const candidate = normalizeProofExpression(
+        item.expressaoCanonica || item.respostaNormalizada || item.respostaBruta
+      );
+      return candidate && candidate === normalizedStudentExpression;
+    });
+
+    if (matchedKey) {
+      return {
+        respostaNormalizada: normalizedStudentExpression,
+        statusCorrecao: "baixa_confianca",
+        confiancaCorrecao: 0.66,
+        notaAtribuida: questionWeight,
+        correta: true,
+        motivoPendencia: "Equivalencia textual detectada. Vale confirmacao humana.",
+        feedback: "O sistema encontrou equivalencia basica e sugere confirmar a expressao.",
+      };
+    }
+
+    return {
+      respostaNormalizada: normalizedStudentExpression,
+      statusCorrecao: "revisao_manual",
+      confiancaCorrecao: 0.18,
+      notaAtribuida: 0,
+      correta: false,
+      motivoPendencia: "Expressao precisa de validacao manual.",
+      feedback: "Resposta encaminhada para revisao por equivalencia simbolica.",
+    };
+  }
+
+  return {
+    respostaNormalizada: normalizeProofText(rawResponseText),
+    statusCorrecao: "revisao_manual",
+    confiancaCorrecao: 0.1,
+    notaAtribuida: 0,
+    correta: false,
+    motivoPendencia: "Questao configurada para revisao manual.",
+    feedback: "O sistema exibiu a resposta e o gabarito para decisao do administrador.",
+  };
+}
+
+function recalculateStructuredAttemptSummary(attemptId) {
+  const currentAttempt = db.prepare(`
+    SELECT
+      id,
+      status,
+      enviada_em AS enviadaEm,
+      finalizada_em AS finalizadaEm
+    FROM tentativas_prova
+    WHERE id = ?
+    LIMIT 1
+  `).get(attemptId);
+
+  if (!currentAttempt) {
+    return null;
+  }
+
+  const aggregate = db.prepare(`
+    SELECT
+      COUNT(*) AS totalRespostas,
+      SUM(CASE WHEN status_correcao IN ('corrigida_automatica', 'baixa_confianca', 'concluida') THEN 1 ELSE 0 END) AS totalResolvidas,
+      SUM(nota_atribuida) AS notaSomada,
+      SUM(CASE WHEN correta = 1 THEN 1 ELSE 0 END) AS totalAcertos,
+      SUM(CASE WHEN status_correcao IN ('corrigida_automatica', 'baixa_confianca', 'concluida') AND correta = 0 THEN 1 ELSE 0 END) AS totalErros
+    FROM respostas_aluno
+    WHERE tentativa_id = ?
+  `).get(attemptId);
+
+  const totalRespostas = Number(aggregate?.totalRespostas) || 0;
+  const totalResolvidas = Number(aggregate?.totalResolvidas) || 0;
+  const notaSomada = Number(aggregate?.notaSomada) || 0;
+  const totalAcertos = Number(aggregate?.totalAcertos) || 0;
+  const totalErros = Number(aggregate?.totalErros) || 0;
+  const isFullyResolved = totalRespostas > 0 && totalResolvidas >= totalRespostas;
+  let nextStatus = sanitizeAttemptStatus(currentAttempt.status);
+  let finalizadaEm = String(currentAttempt.finalizadaEm || "");
+
+  if (isFullyResolved) {
+    nextStatus = "finalizada";
+    finalizadaEm = finalizadaEm || nowIso();
+  } else if (totalResolvidas > 0) {
+    nextStatus = "em_correcao";
+    finalizadaEm = "";
+  } else if (String(currentAttempt.enviadaEm || "")) {
+    nextStatus = "enviada";
+    finalizadaEm = "";
+  } else {
+    nextStatus = "em_andamento";
+    finalizadaEm = "";
+  }
+
+  db.prepare(`
+    UPDATE tentativas_prova
+    SET
+      status = ?,
+      nota_parcial = ?,
+      nota_final = ?,
+      total_acertos = ?,
+      total_erros = ?,
+      finalizada_em = ?,
+      updated_at = ?
+    WHERE id = ?
+  `).run(
+    nextStatus,
+    notaSomada,
+    isFullyResolved ? notaSomada : notaSomada,
+    totalAcertos,
+    totalErros,
+    finalizadaEm,
+    nowIso(),
+    attemptId
+  );
+
+  return db.prepare(`
+    SELECT
+      id,
+      status,
+      nota_parcial AS notaParcial,
+      nota_final AS notaFinal,
+      total_acertos AS totalAcertos,
+      total_erros AS totalErros,
+      updated_at AS updatedAt
+    FROM tentativas_prova
+    WHERE id = ?
+    LIMIT 1
+  `).get(attemptId);
+}
+
+function applyStructuredAutoCorrection(responseId) {
+  const detail = serializeStructuredCorrectionRow(getStructuredCorrectionRowById(responseId), {
+    includeRelations: true,
+  });
+
+  if (!detail) {
+    throw createError(404, "Resposta nao encontrada.");
+  }
+
+  const evaluation = evaluateStructuredCorrection(detail);
+
+  if (!evaluation) {
+    return detail;
+  }
+
+  db.prepare(`
+    UPDATE respostas_aluno
+    SET
+      resposta_normalizada = ?,
+      status_correcao = ?,
+      confianca_correcao = ?,
+      nota_atribuida = ?,
+      correta = ?,
+      motivo_pendencia = ?,
+      feedback = ?,
+      updated_at = ?
+    WHERE id = ?
+  `).run(
+    evaluation.respostaNormalizada,
+    evaluation.statusCorrecao,
+    evaluation.confiancaCorrecao,
+    evaluation.notaAtribuida,
+    evaluation.correta ? 1 : 0,
+    evaluation.motivoPendencia,
+    evaluation.feedback,
+    nowIso(),
+    responseId
+  );
+
+  recalculateStructuredAttemptSummary(detail.tentativaId);
+  return serializeStructuredCorrectionRow(getStructuredCorrectionRowById(responseId), {
+    includeRelations: true,
+  });
+}
+
+function runStructuredAutoCorrection({ proofId = 0, force = false } = {}) {
+  const normalizedProofId = Number(proofId) || 0;
+  const responseIds = db.prepare(`
+    SELECT respostas_aluno.id
+    FROM respostas_aluno
+    INNER JOIN tentativas_prova ON tentativas_prova.id = respostas_aluno.tentativa_id
+    INNER JOIN questoes_master ON questoes_master.id = respostas_aluno.questao_id
+    WHERE (? <= 0 OR tentativas_prova.prova_id = ?)
+      AND (
+        respostas_aluno.status_correcao = 'pendente'
+        OR (? = 1 AND respostas_aluno.status_correcao IN ('baixa_confianca', 'revisao_manual'))
+      )
+      AND questoes_master.metodo_correcao IN ('automatica', 'automatica_com_tolerancia', 'semiassistida', 'manual')
+    ORDER BY respostas_aluno.id ASC
+  `).all(normalizedProofId, normalizedProofId, force ? 1 : 0);
+
+  const updatedResponses = [];
+
+  responseIds.forEach((row) => {
+    const updated = applyStructuredAutoCorrection(Number(row.id) || 0);
+
+    if (updated) {
+      updatedResponses.push(updated);
+    }
+  });
+
+  return {
+    processedCount: updatedResponses.length,
+    responses: updatedResponses,
+  };
+}
+
+function buildStructuredResultsSnapshot() {
+  const attempts = listStructuredAttemptRows();
+  const byProofRows = db.prepare(`
+    SELECT
+      provas.id AS provaId,
+      provas.titulo AS provaTitulo,
+      provas.disciplina,
+      COUNT(DISTINCT tentativas_prova.id) AS totalTentativas,
+      SUM(tentativas_prova.nota_final) AS notaTotal,
+      SUM(tentativas_prova.total_acertos) AS totalAcertos,
+      SUM(tentativas_prova.total_erros) AS totalErros
+    FROM tentativas_prova
+    INNER JOIN provas ON provas.id = tentativas_prova.prova_id
+    GROUP BY provas.id
+    ORDER BY provas.updated_at DESC, provas.id DESC
+  `).all().map((row) => ({
+    provaId: Number(row.provaId) || 0,
+    provaTitulo: String(row.provaTitulo || ""),
+    disciplina: String(row.disciplina || ""),
+    totalTentativas: Number(row.totalTentativas) || 0,
+    notaTotal: Number(row.notaTotal) || 0,
+    totalAcertos: Number(row.totalAcertos) || 0,
+    totalErros: Number(row.totalErros) || 0,
+  }));
+  const bySubjectRows = db.prepare(`
+    SELECT
+      questoes_master.assunto,
+      COUNT(*) AS totalRespostas,
+      SUM(CASE WHEN respostas_aluno.correta = 1 THEN 1 ELSE 0 END) AS totalAcertos,
+      SUM(CASE WHEN respostas_aluno.status_correcao IN ('corrigida_automatica', 'baixa_confianca', 'concluida') AND respostas_aluno.correta = 0 THEN 1 ELSE 0 END) AS totalErros
+    FROM respostas_aluno
+    INNER JOIN questoes_master ON questoes_master.id = respostas_aluno.questao_id
+    GROUP BY questoes_master.assunto
+    ORDER BY totalRespostas DESC, questoes_master.assunto ASC
+  `).all().map((row) => ({
+    assunto: String(row.assunto || "sem assunto"),
+    totalRespostas: Number(row.totalRespostas) || 0,
+    totalAcertos: Number(row.totalAcertos) || 0,
+    totalErros: Number(row.totalErros) || 0,
+  }));
+  const totals = attempts.reduce(
+    (accumulator, attempt) => {
+      accumulator.totalAttempts += 1;
+      accumulator.totalScore += Number(attempt.notaFinal) || 0;
+      accumulator.totalCorrect += Number(attempt.totalAcertos) || 0;
+      accumulator.totalErrors += Number(attempt.totalErros) || 0;
+      return accumulator;
+    },
+    {
+      totalAttempts: 0,
+      totalScore: 0,
+      totalCorrect: 0,
+      totalErrors: 0,
+    }
+  );
+
+  return {
+    totals,
+    byProof: byProofRows,
+    bySubject: bySubjectRows,
+    history: attempts.slice(0, 12),
+  };
 }
 
 function listAdminQuestionsByProof(proofId) {
@@ -5210,9 +7415,12 @@ function buildQuestionBankReferenceData({ publishedOnly = false } = {}) {
     anos: yearRows.map((row) => Number(row.value)).filter((value) => Number.isInteger(value) && value > 0),
     dias: dayRows.map((row) => Number(row.value)).filter((value) => Number.isInteger(value) && value > 0),
     cadernos: bookletRows.map((row) => sanitizeQuestionBankBooklet(row.value || "")).filter(Boolean),
+    proofTypes: QUESTION_BANK_PROOF_TYPE_VALUES.slice(),
     proofStatuses: QUESTION_PROOF_STATUS_VALUES.slice(),
     reviewStatuses: QUESTION_REVIEW_STATUS_VALUES.slice(),
     processStatuses: QUESTION_PROCESS_STATUS_VALUES.slice(),
+    questionTypes: QUESTION_BANK_TYPE_VALUES.slice(),
+    correctionMethods: QUESTION_BANK_CORRECTION_METHOD_VALUES.slice(),
   };
 }
 
@@ -5455,10 +7663,52 @@ function listQuestionAttemptsForAnalytics(userId, limit = 1000) {
   }));
 }
 
+function listAdminQuestionAttempts(limit = 2000) {
+  const normalizedLimit = clampInteger(limit, 1, 5000);
+  const rows = listAdminQuestionAttemptsStatement.all(normalizedLimit);
+
+  return rows.map((row) => ({
+    id: Number(row.id) || 0,
+    user: {
+      id: Number(row.userId) || 0,
+      name: String(row.userName || "Aluno"),
+      email: String(row.userEmail || ""),
+    },
+    question: {
+      id: Number(row.questaoId) || 0,
+      proofId: Number(row.proofId) || 0,
+      number: Number(row.numero) || 0,
+      type: sanitizeQuestionType(row.tipoQuestao),
+      subject: String(row.materia || ""),
+      topic: String(row.tema || ""),
+      subtopic: String(row.assunto || ""),
+      correctionMethod: sanitizeQuestionCorrectionMethod(row.metodoCorrecao),
+      value: sanitizeQuestionScoreValue(row.valor, 1),
+      reviewStatus: sanitizeQuestionReviewStatus(row.statusRevisao),
+    },
+    proof: {
+      id: Number(row.proofId) || 0,
+      title: String(row.titulo || "").trim(),
+      displayTitle: String(row.titulo || "").trim()
+        || [row.vestibularSigla || row.vestibularNome || "Prova", Number(row.ano) ? String(row.ano) : ""].filter(Boolean).join(" ").trim(),
+      discipline: String(row.disciplina || ""),
+      year: Number(row.ano) || 0,
+      type: String(row.tipoProva || ""),
+      status: sanitizeQuestionProofStatus(row.proofStatus),
+      examName: String(row.vestibularSigla || row.vestibularNome || ""),
+    },
+    answer: sanitizeQuestionAlternativeLetter(row.respostaMarcada, true),
+    isCorrect: Boolean(row.acertou),
+    timeSpentSeconds: Number(row.tempoGastoSegundos) || 0,
+    createdAt: String(row.createdAt || ""),
+  }));
+}
+
 function listPublishedQuestionBankQuestions(userId, filters = {}) {
   const conditions = [
     "provas.status = 'published'",
     "questoes.status_revisao = 'approved'",
+    "questoes.tipo_questao = 'objetiva'",
   ];
   const params = [userId, userId];
   const proofId = Number(filters.proofId || filters.provaId || 0);
@@ -5618,6 +7868,7 @@ function getPublishedQuestionForUser(userId, questionId, options = {}) {
     WHERE questoes.id = ?
       AND provas.status = 'published'
       AND questoes.status_revisao = 'approved'
+      AND questoes.tipo_questao = 'objetiva'
     LIMIT 1
   `).get(userId, userId, questionId);
 
@@ -9346,6 +11597,7 @@ function sanitizeAdminUser(row) {
     focusSubjectKey,
     focusSubjectName,
     focusSubjectLabel: getSubjectLabel(focusSubjectKey, focusSubjectName),
+    email: row.email,
     role: row.role,
     isPrimaryAdmin: Boolean(row.isPrimaryAdmin),
     adminCanManageAdmins: Boolean(row.adminCanManageAdmins),
@@ -9405,6 +11657,171 @@ function ensureAdminManager(user) {
   if (!user.adminCanManageAdmins) {
     throw createError(403, "Somente admins autorizados podem gerenciar outros admins.");
   }
+}
+
+function normalizeAdminTargetUserIds(value) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  const seenIds = new Set();
+  const normalizedIds = [];
+
+  value.forEach((entry) => {
+    const userId = Number(entry);
+
+    if (!Number.isInteger(userId) || userId <= 0 || seenIds.has(userId)) {
+      return;
+    }
+
+    seenIds.add(userId);
+    normalizedIds.push(userId);
+  });
+
+  return normalizedIds;
+}
+
+function getAdminTargetUsers(userIds) {
+  return userIds.map((userId) => {
+    const targetUser = findUserByIdStatement.get(userId);
+
+    if (!targetUser) {
+      throw createError(404, "Um ou mais perfis nao foram encontrados.");
+    }
+
+    return targetUser;
+  });
+}
+
+function buildAdminBatchActionMessage(action, processedCount) {
+  if (action === "grant-admin") {
+    return processedCount
+      ? processedCount === 1
+        ? "1 perfil recebeu permissao administrativa."
+        : `${processedCount} perfis receberam permissao administrativa.`
+      : "Os perfis selecionados ja possuem permissao administrativa.";
+  }
+
+  if (action === "revoke-admin") {
+    return processedCount
+      ? processedCount === 1
+        ? "1 perfil voltou para usuario comum."
+        : `${processedCount} perfis voltaram para usuario comum.`
+      : "Os perfis selecionados ja estavam sem permissao administrativa.";
+  }
+
+  return processedCount
+    ? processedCount === 1
+      ? "1 perfil foi excluido do banco."
+      : `${processedCount} perfis foram excluidos do banco.`
+    : "Nenhum perfil foi alterado.";
+}
+
+function applyAdminBatchAction(actorUser, action, targetUsers) {
+  if (!targetUsers.length) {
+    throw createError(400, "Selecione ao menos um perfil.");
+  }
+
+  if (action === "grant-admin") {
+    const targetsToPromote = targetUsers.filter((targetUser) => targetUser.role !== "admin");
+
+    if (!targetsToPromote.length) {
+      return 0;
+    }
+
+    const grantedAt = nowIso();
+
+    withTransaction(() => {
+      targetsToPromote.forEach((targetUser) => {
+        updateUserAdminAccessStatement.run("admin", 0, 0, actorUser.id, grantedAt, targetUser.id);
+      });
+    });
+
+    return targetsToPromote.length;
+  }
+
+  if (action === "revoke-admin") {
+    const targetsToDemote = targetUsers.filter((targetUser) => targetUser.role === "admin");
+
+    if (targetsToDemote.some((targetUser) => targetUser.id === actorUser.id)) {
+      throw createError(400, "Voce nao pode remover sua propria permissao em lote.");
+    }
+
+    targetsToDemote.forEach((targetUser) => {
+      if (targetUser.isPrimaryAdmin) {
+        throw createError(400, "O admin principal nao pode perder o acesso administrativo.");
+      }
+
+      if (targetUser.adminCanManageAdmins && !actorUser.isPrimaryAdmin) {
+        throw createError(403, "Somente o admin principal pode alterar outro gestor administrativo.");
+      }
+    });
+
+    if (!targetsToDemote.length) {
+      return 0;
+    }
+
+    const remainingAdminCount = Number(countAdminsStatement.get().total) - targetsToDemote.length;
+
+    if (remainingAdminCount <= 0) {
+      throw createError(400, "Nao e possivel remover a permissao do ultimo admin.");
+    }
+
+    const managerTargets = targetsToDemote.filter((targetUser) => Boolean(targetUser.adminCanManageAdmins));
+    const remainingManagerCount = Number(countAdminManagersStatement.get().total) - managerTargets.length;
+
+    if (managerTargets.length && remainingManagerCount <= 0) {
+      throw createError(400, "Nao e possivel remover a permissao do ultimo gestor administrativo.");
+    }
+
+    withTransaction(() => {
+      targetsToDemote.forEach((targetUser) => {
+        updateUserAdminAccessStatement.run("user", 0, 0, null, "", targetUser.id);
+      });
+    });
+
+    return targetsToDemote.length;
+  }
+
+  if (action === "delete") {
+    if (targetUsers.some((targetUser) => targetUser.id === actorUser.id)) {
+      throw createError(400, "Voce nao pode excluir sua propria conta.");
+    }
+
+    targetUsers.forEach((targetUser) => {
+      if (targetUser.isPrimaryAdmin) {
+        throw createError(400, "O admin principal nao pode ser excluido.");
+      }
+
+      if (targetUser.adminCanManageAdmins && !actorUser.isPrimaryAdmin) {
+        throw createError(403, "Somente o admin principal pode excluir outro gestor administrativo.");
+      }
+    });
+
+    const adminTargets = targetUsers.filter((targetUser) => targetUser.role === "admin");
+    const remainingAdminCount = Number(countAdminsStatement.get().total) - adminTargets.length;
+
+    if (adminTargets.length && remainingAdminCount <= 0) {
+      throw createError(400, "Nao e possivel excluir o ultimo admin.");
+    }
+
+    const managerTargets = targetUsers.filter((targetUser) => Boolean(targetUser.adminCanManageAdmins));
+    const remainingManagerCount = Number(countAdminManagersStatement.get().total) - managerTargets.length;
+
+    if (managerTargets.length && remainingManagerCount <= 0) {
+      throw createError(400, "Nao e possivel excluir o ultimo gestor administrativo.");
+    }
+
+    withTransaction(() => {
+      targetUsers.forEach((targetUser) => {
+        deleteUserByIdStatement.run(targetUser.id);
+      });
+    });
+
+    return targetUsers.length;
+  }
+
+  throw createError(400, "Acao administrativa invalida.");
 }
 
 function normalizeSessionPayload(payload) {
@@ -10583,6 +13000,18 @@ function handleListQuestionProofs(request, response) {
   });
 }
 
+function handleListAdminQuestionAttempts(request, response) {
+  const user = getAuthenticatedUser(request);
+  ensureAdmin(user);
+
+  const requestUrl = new URL(request.url, `http://${request.headers.host}`);
+  const limit = requestUrl.searchParams.get("limit");
+
+  sendJson(response, 200, {
+    attempts: listAdminQuestionAttempts(limit || 2000),
+  });
+}
+
 async function handleCreateQuestionProof(request, response) {
   const user = getAuthenticatedUser(request);
   ensureAdmin(user);
@@ -10608,7 +13037,10 @@ async function handleCreateQuestionProof(request, response) {
     const timestamp = nowIso();
     const result = insertQuestionProofStatement.run(
       vestibularId,
+      normalizedProof.titulo,
+      normalizedProof.disciplina,
       normalizedProof.ano,
+      normalizedProof.tipoProva,
       normalizedProof.fase,
       normalizedProof.versao,
       normalizedProof.dia,
@@ -10622,6 +13054,7 @@ async function handleCreateQuestionProof(request, response) {
       savedAnswerKey?.originalName || "",
       savedAnswerKey?.mimeType || "",
       savedAnswerKey?.sizeBytes || 0,
+      normalizedProof.observacoes,
       normalizedProof.extractedText,
       normalizedProof.processStatus,
       normalizedProof.status,
@@ -10721,7 +13154,10 @@ async function handleUpdateQuestionProof(request, response, rawProofId) {
   try {
     updateQuestionProofStatement.run(
       vestibularId,
+      normalizedProof.titulo,
+      normalizedProof.disciplina,
       normalizedProof.ano,
+      normalizedProof.tipoProva,
       normalizedProof.fase,
       normalizedProof.versao,
       normalizedProof.dia,
@@ -10735,6 +13171,7 @@ async function handleUpdateQuestionProof(request, response, rawProofId) {
       savedAnswerKey?.originalName || currentProof.answerKey.originalName,
       savedAnswerKey?.mimeType || currentProof.answerKey.mimeType || "application/pdf",
       savedAnswerKey?.sizeBytes || currentProof.answerKey.sizeBytes || 0,
+      normalizedProof.observacoes,
       normalizedProof.extractedText,
       normalizedProof.processStatus,
       normalizedProof.status,
@@ -10840,13 +13277,26 @@ async function handleProcessQuestionProof(request, response, rawProofId) {
       const insertResult = insertQuestionStatement.run(
         proofId,
         sanitizeQuestionNumber(questionDraft.numero || 0, { allowEmpty: true }),
+        sanitizeQuestionNumber(questionDraft.numero || 0, { allowEmpty: true }),
         sanitizeQuestionBankMultilineText(questionDraft.enunciado || "", 20_000),
+        "objetiva",
         normalizeQuestionBankTerm(questionDraft.materia || proof.materiaGeral || "", 80),
         normalizeQuestionBankTerm(questionDraft.tema || "", 120),
+        normalizeQuestionBankTerm(questionDraft.tema || "", 120),
+        "",
+        "",
         "media",
+        "automatica",
+        1,
         sanitizeQuestionAlternativeLetter(questionDraft.respostaCorreta, true),
+        "",
+        "",
+        "",
+        0,
         sanitizeQuestionReviewStatus(questionDraft.statusRevisao || "pending"),
         sanitizeQuestionBankMultilineText(questionDraft.origemPdf || "", 220).replace(/\n+/g, " ").trim(),
+        "",
+        "",
         "",
         "",
         normalizeQuestionBankTerm(questionDraft.sugestaoMateria || questionDraft.materia || "", 80),
@@ -10954,15 +13404,28 @@ async function handleCreateAdminQuestion(request, response) {
     const result = insertQuestionStatement.run(
       normalizedQuestion.proofId,
       normalizedQuestion.numero,
+      normalizedQuestion.ordem,
       normalizedQuestion.enunciado,
+      normalizedQuestion.tipoQuestao,
       normalizedQuestion.materia,
       normalizedQuestion.tema,
+      normalizedQuestion.assunto,
+      normalizedQuestion.subassunto,
+      normalizedQuestion.formulaPrincipal,
       normalizedQuestion.dificuldade,
+      normalizedQuestion.metodoCorrecao,
+      normalizedQuestion.valor,
       normalizedQuestion.respostaCorreta,
+      normalizedQuestion.respostaCorretaTexto,
+      normalizedQuestion.respostaCorretaJson,
+      normalizedQuestion.unidade,
+      normalizedQuestion.tolerancia,
       normalizedQuestion.statusRevisao,
       normalizedQuestion.origemPdf,
       normalizedQuestion.resolucao,
       normalizedQuestion.observacoesAdm,
+      normalizedQuestion.observacaoCorretor,
+      normalizedQuestion.criterioCorrecao,
       normalizedQuestion.sugestaoMateria,
       normalizedQuestion.sugestaoTema,
       normalizedQuestion.sugestaoDificuldade,
@@ -11004,7 +13467,12 @@ async function handleUpdateAdminQuestion(request, response, rawQuestionId) {
     },
     {
       proofId: currentQuestion.proofId,
+      ordem: currentQuestion.ordem,
+      tipoQuestao: currentQuestion.tipoQuestao,
       dificuldade: currentQuestion.dificuldade,
+      metodoCorrecao: currentQuestion.metodoCorrecao,
+      valor: currentQuestion.valor,
+      tolerancia: currentQuestion.tolerancia,
       allowEmptyNumber: false,
       defaultStatusRevisao: currentQuestion.statusRevisao,
     }
@@ -11029,15 +13497,28 @@ async function handleUpdateAdminQuestion(request, response, rawQuestionId) {
   withTransaction(() => {
     updateQuestionStatement.run(
       normalizedQuestion.numero,
+      normalizedQuestion.ordem,
       normalizedQuestion.enunciado,
+      normalizedQuestion.tipoQuestao,
       normalizedQuestion.materia,
       normalizedQuestion.tema,
+      normalizedQuestion.assunto,
+      normalizedQuestion.subassunto,
+      normalizedQuestion.formulaPrincipal,
       normalizedQuestion.dificuldade,
+      normalizedQuestion.metodoCorrecao,
+      normalizedQuestion.valor,
       normalizedQuestion.respostaCorreta,
+      normalizedQuestion.respostaCorretaTexto,
+      normalizedQuestion.respostaCorretaJson,
+      normalizedQuestion.unidade,
+      normalizedQuestion.tolerancia,
       normalizedQuestion.statusRevisao,
       normalizedQuestion.origemPdf,
       normalizedQuestion.resolucao,
       normalizedQuestion.observacoesAdm,
+      normalizedQuestion.observacaoCorretor,
+      normalizedQuestion.criterioCorrecao,
       normalizedQuestion.sugestaoMateria,
       normalizedQuestion.sugestaoTema,
       normalizedQuestion.sugestaoDificuldade,
@@ -11368,6 +13849,888 @@ async function handleUpdateQuestionState(request, response, rawQuestionId) {
   });
 }
 
+function handleStructuredProofCenterReference(request, response) {
+  const user = getAuthenticatedUser(request);
+  ensureAdmin(user);
+  sendJson(response, 200, { reference: buildStructuredProofCenterReferenceData() });
+}
+
+function handleStructuredProofCenterSummary(request, response) {
+  const user = getAuthenticatedUser(request);
+  ensureAdmin(user);
+  sendJson(response, 200, { summary: buildStructuredProofSummary() });
+}
+
+function handleListStructuredProofs(request, response) {
+  const user = getAuthenticatedUser(request);
+  ensureAdmin(user);
+  sendJson(response, 200, { proofs: listStructuredProofs() });
+}
+
+function handleGetStructuredProof(request, response, rawProofId) {
+  const user = getAuthenticatedUser(request);
+  ensureAdmin(user);
+
+  const proofId = Number(rawProofId);
+
+  if (!Number.isInteger(proofId) || proofId <= 0) {
+    throw createError(400, "Prova invalida.");
+  }
+
+  const proof = getStructuredProofById(proofId);
+
+  if (!proof) {
+    throw createError(404, "Prova nao encontrada.");
+  }
+
+  sendJson(response, 200, proof);
+}
+
+async function handleCreateStructuredProof(request, response) {
+  const user = getAuthenticatedUser(request);
+  ensureAdmin(user);
+
+  const payload = await readRequestBody(request, { maxBytes: QUESTION_BANK_UPLOAD_LIMIT_BYTES * 3 });
+  const proofData = sanitizeStructuredProofPayload(payload);
+
+  if (!proofData.titulo) {
+    throw createError(400, "Informe o nome da prova.");
+  }
+
+  const createdAt = nowIso();
+  const structuredExamId = ensureStructuredProofExamId();
+  const insertResult = db.prepare(`
+    INSERT INTO provas (
+      vestibular_id,
+      titulo,
+      descricao,
+      disciplina,
+      area,
+      nivel,
+      ano,
+      tipo_prova,
+      origem,
+      tempo_limite_min,
+      created_by,
+      observacoes,
+      status,
+      created_at,
+      updated_at
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    structuredExamId,
+    proofData.titulo,
+    proofData.descricao,
+    proofData.disciplina,
+    proofData.area,
+    proofData.nivel,
+    proofData.ano,
+    proofData.tipoProva,
+    proofData.origem,
+    proofData.tempoLimiteMin,
+    user.id,
+    proofData.observacoes,
+    proofData.status,
+    createdAt,
+    createdAt
+  );
+  const proofId = Number(insertResult.lastInsertRowid) || 0;
+
+  if (payload?.pdfOriginal) {
+    const savedPdf = await saveStructuredProofFileRecord(proofId, "pdf_original", payload.pdfOriginal);
+
+    if (savedPdf) {
+      db.prepare(`
+        UPDATE provas
+        SET
+          pdf_file_path = ?,
+          pdf_original_name = ?,
+          pdf_mime_type = ?,
+          pdf_size_bytes = ?,
+          updated_at = ?
+        WHERE id = ?
+      `).run(
+        savedPdf.storagePath,
+        savedPdf.nomeOriginal,
+        savedPdf.mimeType,
+        savedPdf.tamanhoBytes,
+        nowIso(),
+        proofId
+      );
+    }
+  }
+
+  if (payload?.gabaritoPdf) {
+    const savedAnswerKey = await saveStructuredProofFileRecord(proofId, "pdf_gabarito", payload.gabaritoPdf);
+
+    if (savedAnswerKey) {
+      db.prepare(`
+        UPDATE provas
+        SET
+          gabarito_file_path = ?,
+          gabarito_original_name = ?,
+          gabarito_mime_type = ?,
+          gabarito_size_bytes = ?,
+          updated_at = ?
+        WHERE id = ?
+      `).run(
+        savedAnswerKey.storagePath,
+        savedAnswerKey.nomeOriginal,
+        savedAnswerKey.mimeType,
+        savedAnswerKey.tamanhoBytes,
+        nowIso(),
+        proofId
+      );
+    }
+  }
+
+  sendJson(response, 201, getStructuredProofById(proofId));
+}
+
+async function handleUpdateStructuredProof(request, response, rawProofId) {
+  const user = getAuthenticatedUser(request);
+  ensureAdmin(user);
+
+  const proofId = Number(rawProofId);
+
+  if (!Number.isInteger(proofId) || proofId <= 0) {
+    throw createError(400, "Prova invalida.");
+  }
+
+  const currentProof = getStructuredProofById(proofId)?.proof;
+
+  if (!currentProof) {
+    throw createError(404, "Prova nao encontrada.");
+  }
+
+  const payload = await readRequestBody(request, { maxBytes: QUESTION_BANK_UPLOAD_LIMIT_BYTES * 3 });
+  const proofData = sanitizeStructuredProofPayload(payload, currentProof);
+
+  if (!proofData.titulo) {
+    throw createError(400, "Informe o nome da prova.");
+  }
+
+  db.prepare(`
+    UPDATE provas
+    SET
+      titulo = ?,
+      descricao = ?,
+      disciplina = ?,
+      area = ?,
+      nivel = ?,
+      ano = ?,
+      tipo_prova = ?,
+      origem = ?,
+      tempo_limite_min = ?,
+      observacoes = ?,
+      status = ?,
+      updated_at = ?
+    WHERE id = ?
+  `).run(
+    proofData.titulo,
+    proofData.descricao,
+    proofData.disciplina,
+    proofData.area,
+    proofData.nivel,
+    proofData.ano,
+    proofData.tipoProva,
+    proofData.origem,
+    proofData.tempoLimiteMin,
+    proofData.observacoes,
+    proofData.status,
+    nowIso(),
+    proofId
+  );
+
+  if (payload?.pdfOriginal) {
+    const savedPdf = await saveStructuredProofFileRecord(proofId, "pdf_original", payload.pdfOriginal);
+
+    if (savedPdf) {
+      db.prepare(`
+        UPDATE provas
+        SET
+          pdf_file_path = ?,
+          pdf_original_name = ?,
+          pdf_mime_type = ?,
+          pdf_size_bytes = ?,
+          updated_at = ?
+        WHERE id = ?
+      `).run(
+        savedPdf.storagePath,
+        savedPdf.nomeOriginal,
+        savedPdf.mimeType,
+        savedPdf.tamanhoBytes,
+        nowIso(),
+        proofId
+      );
+    }
+  }
+
+  if (payload?.gabaritoPdf) {
+    const savedAnswerKey = await saveStructuredProofFileRecord(proofId, "pdf_gabarito", payload.gabaritoPdf);
+
+    if (savedAnswerKey) {
+      db.prepare(`
+        UPDATE provas
+        SET
+          gabarito_file_path = ?,
+          gabarito_original_name = ?,
+          gabarito_mime_type = ?,
+          gabarito_size_bytes = ?,
+          updated_at = ?
+        WHERE id = ?
+      `).run(
+        savedAnswerKey.storagePath,
+        savedAnswerKey.nomeOriginal,
+        savedAnswerKey.mimeType,
+        savedAnswerKey.tamanhoBytes,
+        nowIso(),
+        proofId
+      );
+    }
+  }
+
+  sendJson(response, 200, getStructuredProofById(proofId));
+}
+
+function handleListStructuredMasterQuestions(request, response) {
+  const user = getAuthenticatedUser(request);
+  ensureAdmin(user);
+  sendJson(response, 200, { questions: listMasterQuestions() });
+}
+
+function handleGetStructuredMasterQuestion(request, response, rawQuestionId) {
+  const user = getAuthenticatedUser(request);
+  ensureAdmin(user);
+
+  const questionId = Number(rawQuestionId);
+
+  if (!Number.isInteger(questionId) || questionId <= 0) {
+    throw createError(400, "Questao invalida.");
+  }
+
+  const question = getMasterQuestionById(questionId);
+
+  if (!question) {
+    throw createError(404, "Questao nao encontrada.");
+  }
+
+  sendJson(response, 200, { question });
+}
+
+async function handleCreateStructuredMasterQuestion(request, response) {
+  const user = getAuthenticatedUser(request);
+  ensureAdmin(user);
+
+  const payload = await readRequestBody(request);
+  const questionData = buildStructuredMasterQuestionSaveData(payload);
+  const createdAt = nowIso();
+  const insertResult = db.prepare(`
+    INSERT INTO questoes_master (
+      titulo_interno,
+      enunciado,
+      tipo_questao,
+      area,
+      assunto,
+      subassunto,
+      formula_principal,
+      unidade_resposta,
+      casas_decimais_esperadas,
+      aceita_notacao_cientifica,
+      metodo_correcao,
+      tolerancia_absoluta,
+      tolerancia_percentual,
+      peso_padrao,
+      dificuldade_interna,
+      possui_imagem,
+      imagem_url,
+      observacoes_admin,
+      origem_cadastro,
+      status,
+      created_at,
+      updated_at
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    questionData.tituloInterno,
+    questionData.enunciado,
+    questionData.tipoQuestao,
+    questionData.area,
+    questionData.assunto,
+    questionData.subassunto,
+    questionData.formulaPrincipal,
+    questionData.unidadeResposta,
+    questionData.casasDecimaisEsperadas,
+    questionData.aceitaNotacaoCientifica ? 1 : 0,
+    questionData.metodoCorrecao,
+    questionData.toleranciaAbsoluta,
+    questionData.toleranciaPercentual,
+    questionData.pesoPadrao,
+    questionData.dificuldadeInterna,
+    questionData.possuiImagem ? 1 : 0,
+    questionData.imagemUrl,
+    questionData.observacoesAdmin,
+    questionData.origemCadastro,
+    questionData.status,
+    createdAt,
+    createdAt
+  );
+  const questionId = Number(insertResult.lastInsertRowid) || 0;
+
+  persistStructuredMasterQuestionRelations(questionId, questionData);
+  sendJson(response, 201, { question: getMasterQuestionById(questionId) });
+}
+
+async function handleUpdateStructuredMasterQuestion(request, response, rawQuestionId) {
+  const user = getAuthenticatedUser(request);
+  ensureAdmin(user);
+
+  const questionId = Number(rawQuestionId);
+
+  if (!Number.isInteger(questionId) || questionId <= 0) {
+    throw createError(400, "Questao invalida.");
+  }
+
+  const currentQuestion = getMasterQuestionById(questionId);
+
+  if (!currentQuestion) {
+    throw createError(404, "Questao nao encontrada.");
+  }
+
+  const payload = await readRequestBody(request);
+  const questionData = buildStructuredMasterQuestionSaveData(payload, currentQuestion);
+
+  db.prepare(`
+    UPDATE questoes_master
+    SET
+      titulo_interno = ?,
+      enunciado = ?,
+      tipo_questao = ?,
+      area = ?,
+      assunto = ?,
+      subassunto = ?,
+      formula_principal = ?,
+      unidade_resposta = ?,
+      casas_decimais_esperadas = ?,
+      aceita_notacao_cientifica = ?,
+      metodo_correcao = ?,
+      tolerancia_absoluta = ?,
+      tolerancia_percentual = ?,
+      peso_padrao = ?,
+      dificuldade_interna = ?,
+      possui_imagem = ?,
+      imagem_url = ?,
+      observacoes_admin = ?,
+      origem_cadastro = ?,
+      status = ?,
+      updated_at = ?
+    WHERE id = ?
+  `).run(
+    questionData.tituloInterno,
+    questionData.enunciado,
+    questionData.tipoQuestao,
+    questionData.area,
+    questionData.assunto,
+    questionData.subassunto,
+    questionData.formulaPrincipal,
+    questionData.unidadeResposta,
+    questionData.casasDecimaisEsperadas,
+    questionData.aceitaNotacaoCientifica ? 1 : 0,
+    questionData.metodoCorrecao,
+    questionData.toleranciaAbsoluta,
+    questionData.toleranciaPercentual,
+    questionData.pesoPadrao,
+    questionData.dificuldadeInterna,
+    questionData.possuiImagem ? 1 : 0,
+    questionData.imagemUrl,
+    questionData.observacoesAdmin,
+    questionData.origemCadastro,
+    questionData.status,
+    nowIso(),
+    questionId
+  );
+
+  persistStructuredMasterQuestionRelations(questionId, questionData);
+  sendJson(response, 200, { question: getMasterQuestionById(questionId) });
+}
+
+async function handleCreateStructuredProofMount(request, response, rawProofId) {
+  const user = getAuthenticatedUser(request);
+  ensureAdmin(user);
+
+  const proofId = Number(rawProofId);
+
+  if (!Number.isInteger(proofId) || proofId <= 0) {
+    throw createError(400, "Prova invalida.");
+  }
+
+  const proof = getStructuredProofById(proofId)?.proof;
+
+  if (!proof) {
+    throw createError(404, "Prova nao encontrada.");
+  }
+
+  const payload = await readRequestBody(request);
+  const mountData = sanitizeProofQuestionMountPayload(payload);
+  const question = getMasterQuestionById(mountData.questaoId);
+
+  if (!question) {
+    throw createError(404, "Questao do banco nao encontrada.");
+  }
+
+  const existingMount = db.prepare(`
+    SELECT id
+    FROM prova_questoes
+    WHERE prova_id = ? AND questao_id = ?
+    LIMIT 1
+  `).get(proofId, mountData.questaoId);
+
+  if (existingMount) {
+    throw createError(409, "Essa questao ja esta montada nessa prova.");
+  }
+
+  const currentItems = listStructuredProofItems(proofId);
+  const nextOrder = mountData.ordem || currentItems.reduce((max, item) => Math.max(max, item.ordem), 0) + 1;
+  const nextNumber =
+    mountData.numeroNaProva || currentItems.reduce((max, item) => Math.max(max, item.numeroNaProva), 0) + 1;
+
+  const conflictingNumber = db.prepare(`
+    SELECT id
+    FROM prova_questoes
+    WHERE prova_id = ? AND numero_na_prova = ?
+    LIMIT 1
+  `).get(proofId, nextNumber);
+
+  if (conflictingNumber) {
+    throw createError(409, "Ja existe uma questao com esse numero dentro da prova.");
+  }
+
+  const conflictingOrder = db.prepare(`
+    SELECT id
+    FROM prova_questoes
+    WHERE prova_id = ? AND ordem = ?
+    LIMIT 1
+  `).get(proofId, nextOrder);
+
+  if (conflictingOrder) {
+    throw createError(409, "Ja existe uma questao ocupando essa ordem na prova.");
+  }
+
+  db.prepare(`
+    INSERT INTO prova_questoes (
+      prova_id,
+      questao_id,
+      numero_na_prova,
+      ordem,
+      peso,
+      obrigatoria,
+      versao_enunciado,
+      created_at
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    proofId,
+    mountData.questaoId,
+    nextNumber,
+    nextOrder,
+    mountData.peso || question.pesoPadrao || 1,
+    mountData.obrigatoria ? 1 : 0,
+    mountData.versaoEnunciado,
+    nowIso()
+  );
+
+  touchStructuredProof(proofId);
+  sendJson(response, 201, getStructuredProofById(proofId));
+}
+
+async function handleUpdateStructuredProofMount(request, response, rawMountId) {
+  const user = getAuthenticatedUser(request);
+  ensureAdmin(user);
+
+  const mountId = Number(rawMountId);
+
+  if (!Number.isInteger(mountId) || mountId <= 0) {
+    throw createError(400, "Item de montagem invalido.");
+  }
+
+  const currentMount = getStructuredProofMountById(mountId);
+
+  if (!currentMount) {
+    throw createError(404, "Item de montagem nao encontrado.");
+  }
+
+  const payload = await readRequestBody(request);
+  const mountData = sanitizeProofQuestionMountPayload(payload, currentMount);
+  const nextQuestionId = mountData.questaoId || currentMount.questaoId;
+  const question = getMasterQuestionById(nextQuestionId);
+
+  if (!question) {
+    throw createError(404, "Questao do banco nao encontrada.");
+  }
+
+  const duplicateNumber = db.prepare(`
+    SELECT id
+    FROM prova_questoes
+    WHERE prova_id = ? AND numero_na_prova = ? AND id <> ?
+    LIMIT 1
+  `).get(currentMount.provaId, mountData.numeroNaProva, mountId);
+
+  if (duplicateNumber) {
+    throw createError(409, "Ja existe uma questao com esse numero dentro da prova.");
+  }
+
+  const duplicateOrder = db.prepare(`
+    SELECT id
+    FROM prova_questoes
+    WHERE prova_id = ? AND ordem = ? AND id <> ?
+    LIMIT 1
+  `).get(currentMount.provaId, mountData.ordem, mountId);
+
+  if (duplicateOrder) {
+    throw createError(409, "Ja existe uma questao ocupando essa ordem na prova.");
+  }
+
+  db.prepare(`
+    UPDATE prova_questoes
+    SET
+      questao_id = ?,
+      numero_na_prova = ?,
+      ordem = ?,
+      peso = ?,
+      obrigatoria = ?,
+      versao_enunciado = ?
+    WHERE id = ?
+  `).run(
+    nextQuestionId,
+    mountData.numeroNaProva,
+    mountData.ordem,
+    mountData.peso || question.pesoPadrao || 1,
+    mountData.obrigatoria ? 1 : 0,
+    mountData.versaoEnunciado,
+    mountId
+  );
+
+  touchStructuredProof(currentMount.provaId);
+  sendJson(response, 200, getStructuredProofById(currentMount.provaId));
+}
+
+function handleDeleteStructuredProofMount(request, response, rawMountId) {
+  const user = getAuthenticatedUser(request);
+  ensureAdmin(user);
+
+  const mountId = Number(rawMountId);
+
+  if (!Number.isInteger(mountId) || mountId <= 0) {
+    throw createError(400, "Item de montagem invalido.");
+  }
+
+  const currentMount = getStructuredProofMountById(mountId);
+
+  if (!currentMount) {
+    throw createError(404, "Item de montagem nao encontrado.");
+  }
+
+  db.prepare("DELETE FROM prova_questoes WHERE id = ?").run(mountId);
+  touchStructuredProof(currentMount.provaId);
+  sendJson(response, 200, getStructuredProofById(currentMount.provaId));
+}
+
+function handleListStructuredImports(request, response) {
+  const user = getAuthenticatedUser(request);
+  ensureAdmin(user);
+  sendJson(response, 200, { imports: listStructuredProofImports() });
+}
+
+async function handleCreateStructuredImport(request, response) {
+  const user = getAuthenticatedUser(request);
+  ensureAdmin(user);
+
+  const payload = await readRequestBody(request, { maxBytes: QUESTION_BANK_UPLOAD_LIMIT_BYTES * 3 });
+  const proofId = Number(payload?.proofId);
+
+  if (!Number.isInteger(proofId) || proofId <= 0) {
+    throw createError(400, "Selecione a prova que vai receber a importacao.");
+  }
+
+  const proof = getStructuredProofById(proofId)?.proof;
+
+  if (!proof) {
+    throw createError(404, "Prova nao encontrada.");
+  }
+
+  const importStatus = sanitizeImportStatus(payload?.status ?? "pendente");
+  const fileType = sanitizeProofFileType(payload?.fileType ?? payload?.tipoArquivo ?? "pdf_original");
+  const savedFile = payload?.file ? await saveStructuredProofFileRecord(proofId, fileType, payload.file) : null;
+  const createdAt = nowIso();
+  const finishedAt = importStatus === "concluida" || importStatus === "falhou" ? createdAt : "";
+  const insertResult = db.prepare(`
+    INSERT INTO importacoes_assistidas (
+      arquivo_id,
+      prova_id,
+      status,
+      texto_extraido,
+      confianca_media,
+      total_questoes_detectadas,
+      log_parser,
+      created_at,
+      finished_at
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    savedFile?.id || 0,
+    proofId,
+    importStatus,
+    sanitizeQuestionBankMultilineText(payload?.textoExtraido ?? "", 200_000),
+    Math.max(0, Number(payload?.confiancaMedia) || 0),
+    clampInteger(payload?.totalQuestoesDetectadas ?? 0, 0, 500),
+    sanitizeQuestionBankMultilineText(payload?.logParser ?? payload?.observacoes ?? "", 12_000),
+    createdAt,
+    finishedAt
+  );
+
+  touchStructuredProof(proofId);
+  sendJson(response, 201, {
+    importId: Number(insertResult.lastInsertRowid) || 0,
+    imports: listStructuredProofImports(),
+    proof: getStructuredProofById(proofId),
+  });
+}
+
+async function handleDownloadStructuredProofFile(request, response, rawFileId) {
+  const user = getAuthenticatedUser(request);
+  ensureAdmin(user);
+
+  const fileId = Number(rawFileId);
+
+  if (!Number.isInteger(fileId) || fileId <= 0) {
+    throw createError(400, "Arquivo invalido.");
+  }
+
+  const fileRecord = getStructuredProofFileById(fileId);
+
+  if (!fileRecord) {
+    throw createError(404, "Arquivo nao encontrado.");
+  }
+
+  const filePath = getQuestionBankUploadFilePath(fileRecord.storagePath);
+
+  if (!filePath || !existsSync(filePath)) {
+    throw createError(404, "Arquivo nao encontrado.");
+  }
+
+  const downloadName = sanitizeShortText(fileRecord.nomeOriginal || `arquivo-${fileId}.pdf`, 180) || `arquivo-${fileId}.pdf`;
+  await sendInlinePdfFile(response, filePath, downloadName);
+}
+
+function handleListStructuredCorrectionQueue(request, response) {
+  const user = getAuthenticatedUser(request);
+  ensureAdmin(user);
+
+  const rows = listStructuredCorrectionRows();
+  const summary = rows.reduce(
+    (accumulator, row) => {
+      const method = row.questao?.metodoCorrecao || "";
+
+      if (row.statusCorrecao === "corrigida_automatica") {
+        accumulator.automaticas += 1;
+      } else if (row.statusCorrecao === "baixa_confianca") {
+        accumulator.conflitos += 1;
+      } else if (row.statusCorrecao === "revisao_manual" && method === "semiassistida") {
+        accumulator.semiassistidas += 1;
+      } else if (row.statusCorrecao === "revisao_manual" || method === "manual") {
+        accumulator.manuais += 1;
+      } else {
+        accumulator.pendentes += 1;
+      }
+
+      return accumulator;
+    },
+    {
+      automaticas: 0,
+      pendentes: 0,
+      conflitos: 0,
+      semiassistidas: 0,
+      manuais: 0,
+    }
+  );
+
+  sendJson(response, 200, { queue: rows, summary });
+}
+
+async function handleRunStructuredCorrectionQueue(request, response) {
+  const user = getAuthenticatedUser(request);
+  ensureAdmin(user);
+
+  const payload = await readRequestBody(request);
+  const result = runStructuredAutoCorrection({
+    proofId: payload?.proofId,
+    force: Boolean(payload?.force),
+  });
+
+  sendJson(response, 200, {
+    processedCount: result.processedCount,
+    queue: listStructuredCorrectionRows(),
+  });
+}
+
+function handleGetStructuredCorrectionDetail(request, response, rawResponseId) {
+  const user = getAuthenticatedUser(request);
+  ensureAdmin(user);
+
+  const responseId = Number(rawResponseId);
+
+  if (!Number.isInteger(responseId) || responseId <= 0) {
+    throw createError(400, "Resposta invalida.");
+  }
+
+  const detail = serializeStructuredCorrectionRow(getStructuredCorrectionRowById(responseId), {
+    includeRelations: true,
+  });
+
+  if (!detail) {
+    throw createError(404, "Resposta nao encontrada.");
+  }
+
+  sendJson(response, 200, { response: detail });
+}
+
+async function handleUpdateStructuredCorrectionDetail(request, response, rawResponseId) {
+  const user = getAuthenticatedUser(request);
+  ensureAdmin(user);
+
+  const responseId = Number(rawResponseId);
+
+  if (!Number.isInteger(responseId) || responseId <= 0) {
+    throw createError(400, "Resposta invalida.");
+  }
+
+  const currentDetail = serializeStructuredCorrectionRow(getStructuredCorrectionRowById(responseId), {
+    includeRelations: true,
+  });
+
+  if (!currentDetail) {
+    throw createError(404, "Resposta nao encontrada.");
+  }
+
+  const payload = await readRequestBody(request);
+  const maxQuestionScore = Number(currentDetail.questao?.pesoNaProva || currentDetail.questao?.pesoPadrao) || 1;
+  const nextScore = Math.max(
+    0,
+    Math.min(
+      maxQuestionScore,
+      Number(payload?.notaAtribuida ?? payload?.nota ?? currentDetail.notaAtribuida) || 0
+    )
+  );
+  const nextCorrect = payload?.correta === undefined
+    ? nextScore >= maxQuestionScore
+    : Boolean(payload?.correta);
+  const nextFeedback = sanitizeQuestionBankMultilineText(payload?.feedback ?? currentDetail.feedback ?? "", 4_000);
+  const nextDecision = sanitizeReviewDecision(payload?.decisao ?? "confirmada");
+  const nextReason = sanitizeQuestionBankMultilineText(
+    payload?.motivo ?? payload?.comentario ?? currentDetail.motivoPendencia ?? "",
+    2_000
+  );
+  const previousState = JSON.stringify({
+    statusCorrecao: currentDetail.statusCorrecao,
+    notaAtribuida: currentDetail.notaAtribuida,
+    correta: currentDetail.correta,
+    feedback: currentDetail.feedback,
+  });
+  const nextState = JSON.stringify({
+    statusCorrecao: "concluida",
+    notaAtribuida: nextScore,
+    correta: nextCorrect,
+    feedback: nextFeedback,
+  });
+
+  db.prepare(`
+    UPDATE respostas_aluno
+    SET
+      status_correcao = ?,
+      confianca_correcao = ?,
+      nota_atribuida = ?,
+      correta = ?,
+      motivo_pendencia = ?,
+      feedback = ?,
+      corrigido_por = ?,
+      corrigido_em = ?,
+      updated_at = ?
+    WHERE id = ?
+  `).run(
+    "concluida",
+    1,
+    nextScore,
+    nextCorrect ? 1 : 0,
+    "",
+    nextFeedback,
+    user.id,
+    nowIso(),
+    nowIso(),
+    responseId
+  );
+
+  db.prepare(`
+    INSERT INTO revisoes_correcao (
+      resposta_aluno_id,
+      admin_id,
+      decisao,
+      nota_atribuida,
+      comentario,
+      nota_anterior,
+      nota_nova,
+      motivo,
+      created_at
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    responseId,
+    user.id,
+    nextDecision,
+    nextScore,
+    nextFeedback,
+    currentDetail.notaAtribuida,
+    nextScore,
+    nextReason,
+    nowIso()
+  );
+
+  db.prepare(`
+    INSERT INTO correcoes_log (
+      resposta_aluno_id,
+      acao,
+      valor_anterior_json,
+      valor_novo_json,
+      observacao,
+      admin_id,
+      created_at
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    responseId,
+    "revisao_manual",
+    previousState,
+    nextState,
+    nextReason,
+    user.id,
+    nowIso()
+  );
+
+  recalculateStructuredAttemptSummary(currentDetail.tentativaId);
+
+  sendJson(response, 200, {
+    response: serializeStructuredCorrectionRow(getStructuredCorrectionRowById(responseId), {
+      includeRelations: true,
+    }),
+  });
+}
+
+function handleStructuredResults(request, response) {
+  const user = getAuthenticatedUser(request);
+  ensureAdmin(user);
+  sendJson(response, 200, { results: buildStructuredResultsSnapshot() });
+}
+
 function handleAdminOverview(request, response) {
   const user = getAuthenticatedUser(request);
   ensureAdmin(user);
@@ -11384,6 +14747,30 @@ function handleAdminUsers(request, response) {
   const user = getAuthenticatedUser(request);
   ensureAdmin(user);
   sendJson(response, 200, { users: adminUsersStatement.all().map((row) => sanitizeAdminUser(row)) });
+}
+
+async function handleAdminUsersBatch(request, response) {
+  const user = getAuthenticatedUser(request);
+  ensureAdminManager(user);
+
+  const payload = await readRequestBody(request);
+  const action = String(payload?.action || "").trim().toLowerCase();
+  const userIds = normalizeAdminTargetUserIds(payload?.userIds);
+
+  if (!userIds.length) {
+    throw createError(400, "Selecione ao menos um perfil.");
+  }
+
+  const targetUsers = getAdminTargetUsers(userIds);
+  const processedCount = applyAdminBatchAction(user, action, targetUsers);
+
+  sendJson(response, 200, {
+    success: true,
+    action,
+    processedCount,
+    message: buildAdminBatchActionMessage(action, processedCount),
+    users: adminUsersStatement.all().map((row) => sanitizeAdminUser(row)),
+  });
 }
 
 function handleGrantAdmin(request, response, rawUserId) {
@@ -11730,6 +15117,129 @@ async function handleApiRequest(request, response, pathname) {
     return;
   }
 
+  if (request.method === "GET" && pathname === "/api/admin/proof-center/reference") {
+    handleStructuredProofCenterReference(request, response);
+    return;
+  }
+
+  if (request.method === "GET" && pathname === "/api/admin/proof-center/summary") {
+    handleStructuredProofCenterSummary(request, response);
+    return;
+  }
+
+  if (request.method === "GET" && pathname === "/api/admin/proof-center/proofs") {
+    handleListStructuredProofs(request, response);
+    return;
+  }
+
+  if (request.method === "POST" && pathname === "/api/admin/proof-center/proofs") {
+    await handleCreateStructuredProof(request, response);
+    return;
+  }
+
+  const structuredProofMatch =
+    pathname.match(/^\/api\/admin\/proof-center\/proofs\/(\d+)$/);
+
+  if (request.method === "GET" && structuredProofMatch) {
+    handleGetStructuredProof(request, response, structuredProofMatch[1]);
+    return;
+  }
+
+  if (request.method === "PATCH" && structuredProofMatch) {
+    await handleUpdateStructuredProof(request, response, structuredProofMatch[1]);
+    return;
+  }
+
+  const structuredProofMountCreateMatch =
+    request.method === "POST" && pathname.match(/^\/api\/admin\/proof-center\/proofs\/(\d+)\/items$/);
+
+  if (structuredProofMountCreateMatch) {
+    await handleCreateStructuredProofMount(request, response, structuredProofMountCreateMatch[1]);
+    return;
+  }
+
+  const structuredProofMountMatch =
+    pathname.match(/^\/api\/admin\/proof-center\/proof-items\/(\d+)$/);
+
+  if (request.method === "PATCH" && structuredProofMountMatch) {
+    await handleUpdateStructuredProofMount(request, response, structuredProofMountMatch[1]);
+    return;
+  }
+
+  if (request.method === "DELETE" && structuredProofMountMatch) {
+    handleDeleteStructuredProofMount(request, response, structuredProofMountMatch[1]);
+    return;
+  }
+
+  if (request.method === "GET" && pathname === "/api/admin/proof-center/questions") {
+    handleListStructuredMasterQuestions(request, response);
+    return;
+  }
+
+  if (request.method === "POST" && pathname === "/api/admin/proof-center/questions") {
+    await handleCreateStructuredMasterQuestion(request, response);
+    return;
+  }
+
+  const structuredQuestionMatch =
+    pathname.match(/^\/api\/admin\/proof-center\/questions\/(\d+)$/);
+
+  if (request.method === "GET" && structuredQuestionMatch) {
+    handleGetStructuredMasterQuestion(request, response, structuredQuestionMatch[1]);
+    return;
+  }
+
+  if (request.method === "PATCH" && structuredQuestionMatch) {
+    await handleUpdateStructuredMasterQuestion(request, response, structuredQuestionMatch[1]);
+    return;
+  }
+
+  if (request.method === "GET" && pathname === "/api/admin/proof-center/imports") {
+    handleListStructuredImports(request, response);
+    return;
+  }
+
+  if (request.method === "POST" && pathname === "/api/admin/proof-center/imports") {
+    await handleCreateStructuredImport(request, response);
+    return;
+  }
+
+  const structuredProofFileMatch =
+    request.method === "GET" && pathname.match(/^\/api\/admin\/proof-center\/files\/(\d+)$/);
+
+  if (structuredProofFileMatch) {
+    await handleDownloadStructuredProofFile(request, response, structuredProofFileMatch[1]);
+    return;
+  }
+
+  if (request.method === "GET" && pathname === "/api/admin/proof-center/correction/queue") {
+    handleListStructuredCorrectionQueue(request, response);
+    return;
+  }
+
+  if (request.method === "POST" && pathname === "/api/admin/proof-center/correction/reprocess") {
+    await handleRunStructuredCorrectionQueue(request, response);
+    return;
+  }
+
+  const structuredCorrectionResponseMatch =
+    pathname.match(/^\/api\/admin\/proof-center\/correction\/responses\/(\d+)$/);
+
+  if (request.method === "GET" && structuredCorrectionResponseMatch) {
+    handleGetStructuredCorrectionDetail(request, response, structuredCorrectionResponseMatch[1]);
+    return;
+  }
+
+  if (request.method === "PATCH" && structuredCorrectionResponseMatch) {
+    await handleUpdateStructuredCorrectionDetail(request, response, structuredCorrectionResponseMatch[1]);
+    return;
+  }
+
+  if (request.method === "GET" && pathname === "/api/admin/proof-center/results") {
+    handleStructuredResults(request, response);
+    return;
+  }
+
   if (request.method === "GET" && pathname === "/api/admin/question-bank/reference") {
     handleAdminQuestionBankReference(request, response);
     return;
@@ -11742,6 +15252,11 @@ async function handleApiRequest(request, response, pathname) {
 
   if (request.method === "GET" && pathname === "/api/admin/question-bank/provas") {
     handleListQuestionProofs(request, response);
+    return;
+  }
+
+  if (request.method === "GET" && pathname === "/api/admin/question-bank/attempts") {
+    handleListAdminQuestionAttempts(request, response);
     return;
   }
 
@@ -11880,6 +15395,11 @@ async function handleApiRequest(request, response, pathname) {
 
   if (request.method === "GET" && pathname === "/api/admin/users") {
     handleAdminUsers(request, response);
+    return;
+  }
+
+  if (request.method === "POST" && pathname === "/api/admin/users/batch") {
+    await handleAdminUsersBatch(request, response);
     return;
   }
 

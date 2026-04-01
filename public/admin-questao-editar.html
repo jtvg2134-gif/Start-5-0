@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Start 5 | Editar Questao</title>
+  <meta name="description" content="Edicao da questao mestre estruturada no admin do Start 5." />
+  <meta name="theme-color" content="#05080d" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Fraunces:wght@500;600;700&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/admin.css" /><link rel="stylesheet" href="css/admin-proof-center.css" />
+</head>
+<body class="dashboard-page protected-page admin-page" data-admin-view="proofs-hub" data-proof-center-view="question-edit">
+  <a class="skip-link" href="#mainContent">Pular para o conteudo principal</a>
+  <div class="page-shell">
+    <header class="header"><div class="header-inner"><section class="header-account" aria-label="Conta conectada"><div class="header-account-avatar" data-auth-avatar><img class="header-account-avatar-image" data-auth-avatar-image alt="Foto do perfil" width="42" height="42" decoding="async" hidden /><span class="header-account-avatar-fallback" data-auth-initials>U</span></div><div class="header-account-copy"><strong class="header-account-name" data-auth-name>Usuario</strong><span class="header-account-email" data-auth-email>email@start5.app</span><span class="header-account-month" data-auth-month-minutes>0 min no mes</span></div></section><button class="menu-toggle" id="menuToggle" type="button" aria-label="Abrir menu" aria-expanded="false" aria-controls="menuPanel"><span class="menu-icon" aria-hidden="true"><span></span><span></span></span></button></div></header>
+    <aside class="menu-panel" id="menuPanel" aria-label="Menu principal"><div class="menu-panel-inner"><nav class="menu-nav" aria-label="Navegacao principal"><div class="menu-user"><span class="menu-user-label">Conectado como</span><strong class="menu-user-name" data-auth-name>Usuario</strong><span class="menu-user-email" data-auth-email>email@start5.app</span></div><div class="menu-column"><a href="index.html" class="menu-link">Inicio</a><a href="dashboard.html" class="menu-link">Painel</a><a href="questoes.html" class="menu-link">Questoes</a><a href="profile.html" class="menu-link">Perfil</a></div><div class="menu-column"><a href="redacao.html" class="menu-link">Redacao</a><a href="admin.html" class="menu-link" data-admin-only hidden>Admin</a><button type="button" class="menu-link menu-link-button" data-logout>Sair</button></div></nav></div></aside>
+    <main id="mainContent" class="admin-main-stack">
+      <section class="dashboard-intro admin-page-hero"><div class="dashboard-intro-inner admin-hero-inner admin-page-hero-inner"><div class="admin-page-heading"><a href="admin-banco-questoes.html" class="admin-back-link">Voltar ao banco de questoes</a><p class="section-label">Questao</p><h1 class="progress-title">Editor da questao mestre</h1><p class="dashboard-copy admin-page-copy">Cadastre a questao uma vez, com estrutura completa. Depois a mesma base serve para montagem, correcao e resultados.</p></div></div></section>
+      <section class="proof-center-layout-wide">
+        <article class="admin-panel admin-page-panel">
+          <div class="admin-section-head"><div><p class="section-label">Formulario</p><h2 class="analysis-title">Dados estruturados da questao</h2><p class="module-copy">Defina tipo, assunto, metodo de correcao, tolerancias, alternativas e gabaritos.</p></div></div>
+          <form id="questionEditForm" class="proof-center-form">
+            <input type="hidden" id="questionEditIdInput" />
+            <div class="proof-center-grid">
+              <label class="proof-center-field"><span class="proof-center-label">Titulo interno</span><input id="questionEditTitleInput" class="admin-modal-input" placeholder="Ex.: Funcao do 2 grau - vertice" /></label>
+              <label class="proof-center-field"><span class="proof-center-label">Tipo de questao</span><select id="questionEditTypeSelect" class="admin-modal-input"></select></label>
+            </div>
+            <label class="proof-center-field"><span class="proof-center-label">Enunciado</span><textarea id="questionEditPromptInput" class="admin-modal-input proof-center-textarea" placeholder="Cole aqui o enunciado estruturado da questao"></textarea></label>
+            <div class="proof-center-grid-wide">
+              <label class="proof-center-field"><span class="proof-center-label">Area</span><select id="questionEditAreaSelect" class="admin-modal-input"></select></label>
+              <label class="proof-center-field"><span class="proof-center-label">Assunto</span><input id="questionEditSubjectInput" class="admin-modal-input" placeholder="Ex.: funcoes" /></label>
+              <label class="proof-center-field"><span class="proof-center-label">Subassunto</span><input id="questionEditSubsubjectInput" class="admin-modal-input" placeholder="Ex.: funcao quadratica" /></label>
+              <label class="proof-center-field"><span class="proof-center-label">Formula principal</span><input id="questionEditFormulaInput" class="admin-modal-input" placeholder="Ex.: x = -b/2a" /></label>
+            </div>
+            <div class="proof-center-grid-wide">
+              <label class="proof-center-field"><span class="proof-center-label">Metodo de correcao</span><select id="questionEditMethodSelect" class="admin-modal-input"></select></label>
+              <label class="proof-center-field"><span class="proof-center-label">Peso padrao</span><input id="questionEditWeightInput" type="number" step="any" class="admin-modal-input" value="1" /></label>
+              <label class="proof-center-field"><span class="proof-center-label">Dificuldade</span><select id="questionEditDifficultySelect" class="admin-modal-input"></select></label>
+              <label class="proof-center-field"><span class="proof-center-label">Status</span><select id="questionEditStatusSelect" class="admin-modal-input"></select></label>
+            </div>
+            <div class="proof-center-grid-wide">
+              <label class="proof-center-field"><span class="proof-center-label">Origem</span><select id="questionEditOriginSelect" class="admin-modal-input"></select></label>
+              <label class="proof-center-field"><span class="proof-center-label">Casas decimais</span><input id="questionEditDecimalsInput" type="number" class="admin-modal-input" value="0" /></label>
+              <label class="proof-center-field"><span class="proof-center-label">Unidade esperada</span><input id="questionEditUnitInput" class="admin-modal-input" placeholder="Ex.: cm" /></label>
+              <label class="proof-center-field"><span class="proof-center-label">URL da imagem</span><input id="questionEditImageUrlInput" class="admin-modal-input" placeholder="Opcional" /></label>
+            </div>
+            <div class="proof-center-grid">
+              <label class="proof-center-field"><span class="proof-center-label">Tolerancia absoluta</span><input id="questionEditToleranceAbsInput" type="number" step="any" class="admin-modal-input" value="0" /></label>
+              <label class="proof-center-field"><span class="proof-center-label">Tolerancia percentual</span><input id="questionEditTolerancePercentInput" type="number" step="any" class="admin-modal-input" value="0" /></label>
+            </div>
+            <div class="proof-center-grid">
+              <label class="proof-center-field"><span class="proof-center-label">Aceita notacao cientifica</span><input id="questionEditScientificCheckbox" type="checkbox" /></label>
+              <label class="proof-center-field"><span class="proof-center-label">Possui imagem</span><input id="questionEditHasImageCheckbox" type="checkbox" /></label>
+            </div>
+            <section id="questionEditAlternativesSection">
+              <div class="admin-section-head"><div><p class="section-label">Objetiva</p><h2 class="analysis-title">Alternativas</h2></div></div>
+              <div class="proof-center-grid"><label class="proof-center-field"><span class="proof-center-label">Alternativa A</span><input id="questionEditAlternativeAInput" class="admin-modal-input" /></label><label class="proof-center-field"><span class="proof-center-label">Alternativa B</span><input id="questionEditAlternativeBInput" class="admin-modal-input" /></label><label class="proof-center-field"><span class="proof-center-label">Alternativa C</span><input id="questionEditAlternativeCInput" class="admin-modal-input" /></label><label class="proof-center-field"><span class="proof-center-label">Alternativa D</span><input id="questionEditAlternativeDInput" class="admin-modal-input" /></label><label class="proof-center-field"><span class="proof-center-label">Alternativa E</span><input id="questionEditAlternativeEInput" class="admin-modal-input" /></label></div>
+            </section>
+            <section id="questionEditObjectiveSection">
+              <label class="proof-center-field"><span class="proof-center-label">Alternativa correta</span><select id="questionEditCorrectAlternativeSelect" class="admin-modal-input"><option value="">Selecione</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option></select></label>
+            </section>
+            <section id="questionEditAdvancedKeysSection">
+              <div class="proof-center-toolbar"><div><p class="section-label">Gabaritos</p><h2 class="analysis-title">Linhas avancadas de resposta</h2></div><button type="button" id="questionEditAddAnswerKeyButton" class="proof-center-button proof-center-button-secondary">Adicionar gabarito</button></div>
+              <div class="proof-center-answer-rows" id="questionEditAnswerKeysList"></div>
+            </section>
+            <label class="proof-center-field"><span class="proof-center-label">Observacoes administrativas</span><textarea id="questionEditNotesInput" class="admin-modal-input proof-center-textarea-small"></textarea></label>
+            <div class="proof-center-actions"><button type="submit" class="proof-center-button">Salvar questao</button><a href="admin-gabaritos.html" class="proof-center-link-button proof-center-button-secondary">Abrir gabaritos</a></div>
+            <div id="questionEditFeedback" class="proof-center-feedback"></div>
+          </form>
+        </article>
+        <article class="admin-panel admin-page-panel">
+          <div class="admin-section-head"><div><p class="section-label">Contexto</p><h2 class="analysis-title">Uso da questao</h2><p class="module-copy">Assim que a questao entrar em provas, o contador de uso aparece aqui para orientar revisoes futuras.</p></div></div>
+          <div id="questionEditUsageList" class="proof-center-card-list"><div class="proof-center-empty">Nenhum vinculo carregado ainda.</div></div>
+        </article>
+      </section>
+      <footer class="support-copy" aria-hidden="true"></footer>
+    </main>
+  </div>
+  <script src="js/main.js"></script><script src="js/auth.js"></script><script src="js/admin.js"></script><script src="js/admin-proof-center-api.js"></script><script src="js/admin-proof-center.js"></script>
+</body>
+</html>

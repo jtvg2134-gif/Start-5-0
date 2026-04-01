@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Start 5 | Lista de Provas</title>
+  <meta name="description" content="Lista operacional de provas estruturadas do modulo administrativo Start 5." />
+  <meta name="theme-color" content="#05080d" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Fraunces:wght@500;600;700&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/admin.css" />
+  <link rel="stylesheet" href="css/admin-proof-center.css" />
+</head>
+<body class="dashboard-page protected-page admin-page" data-admin-view="proofs-hub" data-proof-center-view="proofs-list">
+  <a class="skip-link" href="#mainContent">Pular para o conteudo principal</a>
+  <div class="page-shell">
+    <header class="header">
+      <div class="header-inner">
+        <section class="header-account" aria-label="Conta conectada">
+          <div class="header-account-avatar" data-auth-avatar>
+            <img class="header-account-avatar-image" data-auth-avatar-image alt="Foto do perfil" width="42" height="42" decoding="async" hidden />
+            <span class="header-account-avatar-fallback" data-auth-initials>U</span>
+          </div>
+          <div class="header-account-copy">
+            <strong class="header-account-name" data-auth-name>Usuario</strong>
+            <span class="header-account-email" data-auth-email>email@start5.app</span>
+            <span class="header-account-month" data-auth-month-minutes>0 min no mes</span>
+          </div>
+        </section>
+        <button class="menu-toggle" id="menuToggle" type="button" aria-label="Abrir menu" aria-expanded="false" aria-controls="menuPanel">
+          <span class="menu-icon" aria-hidden="true"><span></span><span></span></span>
+        </button>
+      </div>
+    </header>
+    <aside class="menu-panel" id="menuPanel" aria-label="Menu principal">
+      <div class="menu-panel-inner">
+        <nav class="menu-nav" aria-label="Navegacao principal">
+          <div class="menu-user">
+            <span class="menu-user-label">Conectado como</span>
+            <strong class="menu-user-name" data-auth-name>Usuario</strong>
+            <span class="menu-user-email" data-auth-email>email@start5.app</span>
+          </div>
+          <div class="menu-column">
+            <a href="index.html" class="menu-link">Inicio</a>
+            <a href="dashboard.html" class="menu-link">Painel</a>
+            <a href="questoes.html" class="menu-link">Questoes</a>
+            <a href="profile.html" class="menu-link">Perfil</a>
+          </div>
+          <div class="menu-column">
+            <a href="redacao.html" class="menu-link">Redacao</a>
+            <a href="admin.html" class="menu-link" data-admin-only hidden>Admin</a>
+            <button type="button" class="menu-link menu-link-button" data-logout>Sair</button>
+          </div>
+        </nav>
+      </div>
+    </aside>
+    <main id="mainContent" class="admin-main-stack">
+      <section class="dashboard-intro admin-page-hero">
+        <div class="dashboard-intro-inner admin-hero-inner admin-page-hero-inner">
+          <div class="admin-page-heading">
+            <a href="admin-provas.html" class="admin-back-link">Voltar a central de provas</a>
+            <p class="section-label">Provas</p>
+            <h1 class="progress-title">Lista operacional de provas</h1>
+            <p class="dashboard-copy admin-page-copy">Use esta tela para localizar rapido a prova certa e saltar para gabarito, PDF, montagem ou correcao sem depender de um dashboard cheio.</p>
+          </div>
+        </div>
+      </section>
+
+      <nav class="proof-center-subnav" aria-label="Areas do modulo de provas">
+        <a class="proof-center-subnav-link" href="admin-provas.html">Central</a>
+        <a class="proof-center-subnav-link is-active" href="admin-provas-lista.html">Provas</a>
+        <a class="proof-center-subnav-link" href="admin-provas-criar.html">Cadastro</a>
+        <a class="proof-center-subnav-link" href="admin-provas-montagem.html">Montagem</a>
+        <a class="proof-center-subnav-link" href="admin-banco-questoes.html">Banco</a>
+        <a class="proof-center-subnav-link" href="admin-gabaritos.html">Gabaritos</a>
+        <a class="proof-center-subnav-link" href="admin-importacao.html">Importacao</a>
+        <a class="proof-center-subnav-link" href="admin-correcao.html">Correcao</a>
+      </nav>
+
+      <section class="proof-center-layout">
+        <article class="admin-panel admin-page-panel">
+          <div class="admin-section-head">
+            <div>
+              <p class="section-label">Filtros</p>
+              <h2 class="analysis-title">Encontrar prova</h2>
+              <p class="module-copy">Filtre por nome, proof code, status ou area para abrir exatamente a prova que voce precisa operar.</p>
+            </div>
+          </div>
+          <div class="proof-center-filter-grid">
+            <label class="proof-center-field"><span class="proof-center-label">Buscar</span><input id="proofListSearchInput" class="admin-modal-input" placeholder="Nome, proof code, ano, disciplina ou area" /></label>
+            <label class="proof-center-field"><span class="proof-center-label">Status</span><select id="proofListStatusSelect" class="admin-modal-input"><option value="">Todos</option></select></label>
+            <label class="proof-center-field"><span class="proof-center-label">Area</span><select id="proofListAreaSelect" class="admin-modal-input"><option value="">Todas</option></select></label>
+          </div>
+          <div class="proof-center-toolbar">
+            <strong class="proof-center-section-title" id="proofListCountValue">0 provas</strong>
+            <div class="proof-center-inline-actions">
+              <a class="proof-center-inline-link" href="admin-provas-criar.html">Nova prova</a>
+              <a class="proof-center-inline-link" href="admin-gabaritos.html">Novo gabarito</a>
+            </div>
+          </div>
+          <div class="proof-center-card-list" id="proofListContainer"><div class="proof-center-empty">Carregando provas...</div></div>
+        </article>
+
+        <article class="admin-panel admin-page-panel">
+          <div class="admin-section-head">
+            <div>
+              <p class="section-label">Uso</p>
+              <h2 class="analysis-title">Leitura rapida da lista</h2>
+              <p class="module-copy">Cada item ja mostra o code da prova, o estado do gabarito e o ultimo passo do PDF para reduzir cliques e contexto perdido.</p>
+            </div>
+          </div>
+          <div class="proof-center-card-list">
+            <article class="proof-center-card"><strong class="proof-center-card-title">Gabarito como centro</strong><p class="proof-center-copy">Abra o gabarito para revisar a identidade da prova, aliases, parser profile e respostas esperadas.</p></article>
+            <article class="proof-center-card"><strong class="proof-center-card-title">PDF como apoio</strong><p class="proof-center-copy">Use o link de PDF para enviar, analisar e confirmar a correspondencia automatica do arquivo com a prova certa.</p></article>
+            <article class="proof-center-card"><strong class="proof-center-card-title">Correcao rastreavel</strong><p class="proof-center-copy">Depois da identificacao e da importacao, a fila de correcao segue usando dados estruturados e logs de reprocessamento.</p></article>
+          </div>
+        </article>
+      </section>
+      <footer class="support-copy" aria-hidden="true"></footer>
+    </main>
+  </div>
+  <script src="js/main.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/admin.js"></script>
+  <script src="js/admin-proof-center-api.js"></script>
+  <script src="js/admin-proof-center.js"></script>
+</body>
+</html>

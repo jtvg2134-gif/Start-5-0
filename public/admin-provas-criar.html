@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Start 5 | Criar Prova</title>
+  <meta name="description" content="Cadastro da prova estruturada no admin do Start 5." />
+  <meta name="theme-color" content="#05080d" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Fraunces:wght@500;600;700&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/admin.css" />
+  <link rel="stylesheet" href="css/admin-proof-center.css" />
+</head>
+<body class="dashboard-page protected-page admin-page" data-admin-view="proofs-hub" data-proof-center-view="proofs-create">
+  <a class="skip-link" href="#mainContent">Pular para o conteudo principal</a>
+  <div class="page-shell">
+    <header class="header"><div class="header-inner"><section class="header-account" aria-label="Conta conectada"><div class="header-account-avatar" data-auth-avatar><img class="header-account-avatar-image" data-auth-avatar-image alt="Foto do perfil" width="42" height="42" decoding="async" hidden /><span class="header-account-avatar-fallback" data-auth-initials>U</span></div><div class="header-account-copy"><strong class="header-account-name" data-auth-name>Usuario</strong><span class="header-account-email" data-auth-email>email@start5.app</span><span class="header-account-month" data-auth-month-minutes>0 min no mes</span></div></section><button class="menu-toggle" id="menuToggle" type="button" aria-label="Abrir menu" aria-expanded="false" aria-controls="menuPanel"><span class="menu-icon" aria-hidden="true"><span></span><span></span></span></button></div></header>
+    <aside class="menu-panel" id="menuPanel" aria-label="Menu principal"><div class="menu-panel-inner"><nav class="menu-nav" aria-label="Navegacao principal"><div class="menu-user"><span class="menu-user-label">Conectado como</span><strong class="menu-user-name" data-auth-name>Usuario</strong><span class="menu-user-email" data-auth-email>email@start5.app</span></div><div class="menu-column"><a href="index.html" class="menu-link">Inicio</a><a href="dashboard.html" class="menu-link">Painel</a><a href="questoes.html" class="menu-link">Questoes</a><a href="profile.html" class="menu-link">Perfil</a></div><div class="menu-column"><a href="redacao.html" class="menu-link">Redacao</a><a href="admin.html" class="menu-link" data-admin-only hidden>Admin</a><button type="button" class="menu-link menu-link-button" data-logout>Sair</button></div></nav></div></aside>
+    <main id="mainContent" class="admin-main-stack">
+      <section class="dashboard-intro admin-page-hero"><div class="dashboard-intro-inner admin-hero-inner admin-page-hero-inner"><div class="admin-page-heading"><a href="admin-provas.html" class="admin-back-link">Voltar ao hub de provas</a><p class="section-label">Criar prova</p><h1 class="progress-title">Cabecalho da prova estruturada</h1><p class="dashboard-copy admin-page-copy">Essa etapa define os metadados da prova. Depois dela, a montagem usa o banco de questoes e o PDF vira apenas apoio opcional.</p></div></div></section>
+      <section class="proof-center-layout">
+        <article class="admin-panel admin-page-panel">
+          <div class="admin-section-head"><div><p class="section-label">Cadastro</p><h2 class="analysis-title">Dados principais da prova</h2><p class="module-copy">Crie uma prova nova ou reabra uma existente pelo parametro da URL para editar o cabecalho.</p></div></div>
+          <form id="proofCreateForm" class="proof-center-form">
+            <input type="hidden" id="proofCreateIdInput" />
+            <div class="proof-center-grid">
+              <label class="proof-center-field"><span class="proof-center-label">Nome da prova</span><input id="proofCreateTitleInput" class="admin-modal-input" placeholder="Ex.: Simulado de Matematica - Funcoes" required /></label>
+              <label class="proof-center-field"><span class="proof-center-label">Disciplina</span><input id="proofCreateDisciplineInput" class="admin-modal-input" placeholder="Ex.: matematica" /></label>
+            </div>
+            <label class="proof-center-field"><span class="proof-center-label">Descricao</span><textarea id="proofCreateDescriptionInput" class="admin-modal-input proof-center-textarea-small" placeholder="Resumo rapido do objetivo dessa prova"></textarea></label>
+            <div class="proof-center-grid-wide">
+              <label class="proof-center-field"><span class="proof-center-label">Area</span><select id="proofCreateAreaSelect" class="admin-modal-input"></select></label>
+              <label class="proof-center-field"><span class="proof-center-label">Nivel</span><select id="proofCreateLevelSelect" class="admin-modal-input"></select></label>
+              <label class="proof-center-field"><span class="proof-center-label">Ano</span><input id="proofCreateYearInput" type="number" class="admin-modal-input" placeholder="2026" /></label>
+              <label class="proof-center-field"><span class="proof-center-label">Tipo</span><select id="proofCreateTypeSelect" class="admin-modal-input"></select></label>
+            </div>
+            <div class="proof-center-grid-wide">
+              <label class="proof-center-field"><span class="proof-center-label">Status</span><select id="proofCreateStatusSelect" class="admin-modal-input"></select></label>
+              <label class="proof-center-field"><span class="proof-center-label">Origem</span><select id="proofCreateOriginSelect" class="admin-modal-input"></select></label>
+              <label class="proof-center-field"><span class="proof-center-label">Tempo limite (min)</span><input id="proofCreateTimeInput" type="number" class="admin-modal-input" placeholder="90" /></label>
+              <label class="proof-center-field"><span class="proof-center-label">PDF original</span><input id="proofCreatePdfInput" type="file" accept="application/pdf" class="admin-modal-input" /></label>
+            </div>
+            <div class="proof-center-grid">
+              <label class="proof-center-field"><span class="proof-center-label">PDF de gabarito</span><input id="proofCreateAnswerKeyPdfInput" type="file" accept="application/pdf" class="admin-modal-input" /></label>
+              <label class="proof-center-field"><span class="proof-center-label">Observacoes</span><textarea id="proofCreateNotesInput" class="admin-modal-input proof-center-textarea-small" placeholder="Regras, contexto e observacoes internas"></textarea></label>
+            </div>
+            <div class="proof-center-actions"><button type="submit" class="proof-center-button">Salvar prova</button><a href="admin-provas-montagem.html" class="proof-center-link-button proof-center-button-secondary">Ir para montagem</a></div>
+            <div id="proofCreateFeedback" class="proof-center-feedback"></div>
+            <div class="proof-center-inline-section">
+              <strong class="proof-center-section-title">Arquivos vinculados</strong>
+              <div id="proofCreateFilesList" class="proof-center-file-list"><div class="proof-center-empty">Nenhum arquivo vinculado a essa prova ainda.</div></div>
+            </div>
+          </form>
+        </article>
+        <article class="admin-panel admin-page-panel">
+          <div class="admin-section-head"><div><p class="section-label">Recentes</p><h2 class="analysis-title">Ultimas provas salvas</h2><p class="module-copy">Atalhos para retomar rapidamente uma prova que voce acabou de criar ou ajustar.</p></div></div>
+          <div class="proof-center-card-list" id="proofCreateRecentList"><div class="proof-center-empty">Carregando provas...</div></div>
+        </article>
+      </section>
+      <footer class="support-copy" aria-hidden="true"></footer>
+    </main>
+  </div>
+  <script src="js/main.js"></script><script src="js/auth.js"></script><script src="js/admin.js"></script><script src="js/admin-proof-center-api.js"></script><script src="js/admin-proof-center.js"></script>
+</body>
+</html>

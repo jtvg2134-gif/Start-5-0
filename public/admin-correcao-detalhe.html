@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Start 5 | Detalhe da Correcao</title>
+  <meta name="description" content="Detalhe administrativo da resposta corrigida no Start 5." />
+  <meta name="theme-color" content="#05080d" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Fraunces:wght@500;600;700&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/admin.css" /><link rel="stylesheet" href="css/admin-proof-center.css" />
+</head>
+<body class="dashboard-page protected-page admin-page" data-admin-view="proofs-hub" data-proof-center-view="correction-detail">
+  <a class="skip-link" href="#mainContent">Pular para o conteudo principal</a>
+  <div class="page-shell">
+    <header class="header"><div class="header-inner"><section class="header-account" aria-label="Conta conectada"><div class="header-account-avatar" data-auth-avatar><img class="header-account-avatar-image" data-auth-avatar-image alt="Foto do perfil" width="42" height="42" decoding="async" hidden /><span class="header-account-avatar-fallback" data-auth-initials>U</span></div><div class="header-account-copy"><strong class="header-account-name" data-auth-name>Usuario</strong><span class="header-account-email" data-auth-email>email@start5.app</span><span class="header-account-month" data-auth-month-minutes>0 min no mes</span></div></section><button class="menu-toggle" id="menuToggle" type="button" aria-label="Abrir menu" aria-expanded="false" aria-controls="menuPanel"><span class="menu-icon" aria-hidden="true"><span></span><span></span></span></button></div></header>
+    <aside class="menu-panel" id="menuPanel" aria-label="Menu principal"><div class="menu-panel-inner"><nav class="menu-nav" aria-label="Navegacao principal"><div class="menu-user"><span class="menu-user-label">Conectado como</span><strong class="menu-user-name" data-auth-name>Usuario</strong><span class="menu-user-email" data-auth-email>email@start5.app</span></div><div class="menu-column"><a href="index.html" class="menu-link">Inicio</a><a href="dashboard.html" class="menu-link">Painel</a><a href="questoes.html" class="menu-link">Questoes</a><a href="profile.html" class="menu-link">Perfil</a></div><div class="menu-column"><a href="redacao.html" class="menu-link">Redacao</a><a href="admin.html" class="menu-link" data-admin-only hidden>Admin</a><button type="button" class="menu-link menu-link-button" data-logout>Sair</button></div></nav></div></aside>
+    <main id="mainContent" class="admin-main-stack">
+      <section class="dashboard-intro admin-page-hero"><div class="dashboard-intro-inner admin-hero-inner admin-page-hero-inner"><div class="admin-page-heading"><a href="admin-correcao.html" class="admin-back-link">Voltar para a fila de correcao</a><p class="section-label">Detalhe</p><h1 class="progress-title">Revisao manual com rastreabilidade</h1><p class="dashboard-copy admin-page-copy">Compare a resposta do aluno com o gabarito estruturado, ajuste a nota quando precisar e deixe a decisao registrada.</p></div></div></section>
+      <section class="proof-center-detail-grid">
+        <div class="proof-center-stack">
+          <div id="correctionDetailSummary"><div class="proof-center-empty">Carregando resposta...</div></div>
+          <div id="correctionDetailExpected"><div class="proof-center-empty">Carregando gabarito...</div></div>
+        </div>
+        <article class="admin-panel admin-page-panel">
+          <div class="admin-section-head"><div><p class="section-label">Decisao</p><h2 class="analysis-title">Confirmar ou ajustar</h2><p class="module-copy">Essa acao fecha a revisao e deixa um historico no log administrativo.</p></div></div>
+          <form id="correctionDetailForm" class="proof-center-form">
+            <div class="proof-center-grid">
+              <label class="proof-center-field"><span class="proof-center-label">Nota atribuida</span><input id="correctionDetailScoreInput" type="number" step="any" class="admin-modal-input" value="0" /></label>
+              <label class="proof-center-field"><span class="proof-center-label">Resposta correta?</span><select id="correctionDetailCorrectSelect" class="admin-modal-input"><option value="1">Sim</option><option value="0">Nao</option></select></label>
+            </div>
+            <div class="proof-center-grid">
+              <label class="proof-center-field"><span class="proof-center-label">Decisao</span><select id="correctionDetailDecisionSelect" class="admin-modal-input"><option value="confirmada">Confirmada</option><option value="ajustada">Ajustada</option><option value="invalidada">Invalidada</option><option value="comentada">Comentada</option></select></label>
+              <label class="proof-center-field"><span class="proof-center-label">Motivo</span><input id="correctionDetailReasonInput" class="admin-modal-input" placeholder="Ex.: equivalencia confirmada manualmente" /></label>
+            </div>
+            <label class="proof-center-field"><span class="proof-center-label">Feedback / observacao</span><textarea id="correctionDetailFeedbackInput" class="admin-modal-input proof-center-textarea-small" placeholder="Observacao da revisao para o historico"></textarea></label>
+            <div class="proof-center-actions"><button type="submit" class="proof-center-button">Salvar revisao</button></div>
+            <div id="correctionDetailFeedback" class="proof-center-feedback"></div>
+          </form>
+        </article>
+      </section>
+      <footer class="support-copy" aria-hidden="true"></footer>
+    </main>
+  </div>
+  <script src="js/main.js"></script><script src="js/auth.js"></script><script src="js/admin.js"></script><script src="js/admin-proof-center-api.js"></script><script src="js/admin-proof-center.js"></script>
+</body>
+</html>

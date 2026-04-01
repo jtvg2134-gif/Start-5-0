@@ -299,21 +299,70 @@
       "dashboard.html": "/images/painel.jpg",
       "questoes.html": "/images/painel.jpg",
       "redacao.html": "/images/redacao.jpg",
+      "rotina.html": "/images/rotina.jpg",
     };
 
     const backgroundPath = jpgBackgroundByPage[currentPage];
 
     if (!backgroundPath) {
+      body.classList.remove("page-background-loading", "page-background-loaded", "page-background-failed");
       return;
     }
 
-    const probeImage = new Image();
+    body.classList.remove("page-background-loaded", "page-background-failed");
+    body.classList.add("page-background-loading");
+    body.style.setProperty("--page-background-image", "none");
 
-    probeImage.onload = () => {
+    const existingPreload = document.head?.querySelector('link[data-page-background-preload="true"]');
+    const preloadLink = existingPreload || document.createElement("link");
+
+    preloadLink.rel = "preload";
+    preloadLink.as = "image";
+    preloadLink.href = backgroundPath;
+    preloadLink.setAttribute("fetchpriority", "high");
+    preloadLink.dataset.pageBackgroundPreload = "true";
+
+    if (!existingPreload) {
+      document.head?.appendChild(preloadLink);
+    }
+
+    const probeImage = new Image();
+    probeImage.decoding = "async";
+    probeImage.loading = "eager";
+
+    if ("fetchPriority" in probeImage) {
+      probeImage.fetchPriority = "high";
+    }
+
+    const finalizeBackground = () => {
       body.style.setProperty("--page-background-image", `url("${backgroundPath}")`);
+      body.classList.remove("page-background-loading", "page-background-failed");
+      body.classList.add("page-background-loaded");
     };
 
+    const handleLoad = () => {
+      if (typeof probeImage.decode === "function") {
+        probeImage.decode()
+          .catch(() => {})
+          .finally(() => {
+            window.requestAnimationFrame(finalizeBackground);
+          });
+        return;
+      }
+
+      window.requestAnimationFrame(finalizeBackground);
+    };
+
+    probeImage.onload = handleLoad;
+    probeImage.onerror = () => {
+      body.classList.remove("page-background-loading");
+      body.classList.add("page-background-failed");
+    };
     probeImage.src = backgroundPath;
+
+    if (probeImage.complete && probeImage.naturalWidth > 0) {
+      handleLoad();
+    }
   }
 
   window.Start5Main = {

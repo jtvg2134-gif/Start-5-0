@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Start 5 | Gabaritos</title>
+  <meta name="description" content="Cadastro mestre de gabaritos e identidade de prova no admin do Start 5." />
+  <meta name="theme-color" content="#05080d" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Fraunces:wght@500;600;700&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/admin.css" />
+  <link rel="stylesheet" href="css/admin-proof-center.css" />
+</head>
+<body class="dashboard-page protected-page admin-page" data-admin-view="proofs-hub" data-proof-center-view="answer-key-manager">
+  <a class="skip-link" href="#mainContent">Pular para o conteudo principal</a>
+  <div class="page-shell">
+    <header class="header">
+      <div class="header-inner">
+        <section class="header-account" aria-label="Conta conectada">
+          <div class="header-account-avatar" data-auth-avatar>
+            <img class="header-account-avatar-image" data-auth-avatar-image alt="Foto do perfil" width="42" height="42" decoding="async" hidden />
+            <span class="header-account-avatar-fallback" data-auth-initials>U</span>
+          </div>
+          <div class="header-account-copy">
+            <strong class="header-account-name" data-auth-name>Usuario</strong>
+            <span class="header-account-email" data-auth-email>email@start5.app</span>
+            <span class="header-account-month" data-auth-month-minutes>0 min no mes</span>
+          </div>
+        </section>
+        <button class="menu-toggle" id="menuToggle" type="button" aria-label="Abrir menu" aria-expanded="false" aria-controls="menuPanel">
+          <span class="menu-icon" aria-hidden="true"><span></span><span></span></span>
+        </button>
+      </div>
+    </header>
+    <aside class="menu-panel" id="menuPanel" aria-label="Menu principal">
+      <div class="menu-panel-inner">
+        <nav class="menu-nav" aria-label="Navegacao principal">
+          <div class="menu-user">
+            <span class="menu-user-label">Conectado como</span>
+            <strong class="menu-user-name" data-auth-name>Usuario</strong>
+            <span class="menu-user-email" data-auth-email>email@start5.app</span>
+          </div>
+          <div class="menu-column">
+            <a href="index.html" class="menu-link">Inicio</a>
+            <a href="dashboard.html" class="menu-link">Painel</a>
+            <a href="questoes.html" class="menu-link">Questoes</a>
+            <a href="profile.html" class="menu-link">Perfil</a>
+          </div>
+          <div class="menu-column">
+            <a href="redacao.html" class="menu-link">Redacao</a>
+            <a href="admin.html" class="menu-link" data-admin-only hidden>Admin</a>
+            <button type="button" class="menu-link menu-link-button" data-logout>Sair</button>
+          </div>
+        </nav>
+      </div>
+    </aside>
+    <main id="mainContent" class="admin-main-stack">
+      <section class="dashboard-intro admin-page-hero">
+        <div class="dashboard-intro-inner admin-hero-inner admin-page-hero-inner">
+          <div class="admin-page-heading">
+            <a href="admin-provas.html" class="admin-back-link">Voltar a central de provas</a>
+            <p class="section-label">Gabaritos</p>
+            <h1 class="progress-title">Identidade mestre da prova</h1>
+            <p class="dashboard-copy admin-page-copy">
+              Aqui o gabarito deixa de ser so uma lista de respostas. Ele passa a definir a identidade forte da prova e o perfil usado para reconhecer o PDF com precisao.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="proof-center-layout-wide">
+        <article class="admin-panel admin-page-panel">
+          <div class="admin-section-head">
+            <div>
+              <p class="section-label">Biblioteca</p>
+              <h2 class="analysis-title">Gabaritos cadastrados</h2>
+              <p class="module-copy">Selecione um gabarito para revisar ou comece um novo cadastro mestre a partir de uma prova existente.</p>
+            </div>
+          </div>
+          <div class="proof-center-form">
+            <label class="proof-center-field">
+              <span class="proof-center-label">Filtrar por prova</span>
+              <select id="answerKeyProofSelect" class="admin-modal-input">
+                <option value="">Todas as provas</option>
+              </select>
+            </label>
+            <div class="proof-center-actions">
+              <button type="button" id="answerKeyNewButton" class="proof-center-button">Novo gabarito</button>
+              <a href="admin-importacao.html" class="proof-center-link-button proof-center-button-secondary">Abrir importacao</a>
+            </div>
+            <div class="proof-center-toolbar">
+              <strong class="proof-center-section-title" id="answerKeyRecordCount">0 gabaritos</strong>
+            </div>
+            <div id="answerKeyRecordList" class="proof-center-record-list">
+              <div class="proof-center-empty">Carregando gabaritos...</div>
+            </div>
+          </div>
+        </article>
+
+        <article class="admin-panel admin-page-panel">
+          <div class="admin-section-head">
+            <div>
+              <p class="section-label">Cadastro mestre</p>
+              <h2 class="analysis-title">Prova, regras e itens do gabarito</h2>
+              <p class="module-copy">A mesma tela concentra identificacao da prova, configuracao de correcao e respostas esperadas por questao.</p>
+            </div>
+          </div>
+
+          <form id="answerKeyManagerForm" class="proof-center-form">
+            <input type="hidden" id="answerKeyRecordIdInput" />
+            <input type="hidden" id="answerKeyProofIdInput" />
+
+            <section class="proof-center-block-section">
+              <div class="proof-center-toolbar">
+                <div>
+                  <p class="section-label">A</p>
+                  <h3 class="analysis-title">Identificacao da prova</h3>
+                </div>
+              </div>
+              <div class="proof-center-grid">
+                <label class="proof-center-field"><span class="proof-center-label">Titulo interno</span><input id="answerKeyProofTitleInput" class="admin-modal-input" placeholder="Ex.: ENEM 2025 - Linguagens - Azul" required /></label>
+                <label class="proof-center-field"><span class="proof-center-label">Proof code</span><input id="answerKeyProofCodeInput" class="admin-modal-input" placeholder="ENEM-2025-D1-LINGUAGENS-AZUL" /></label>
+              </div>
+              <div class="proof-center-grid">
+                <label class="proof-center-field"><span class="proof-center-label">Banca</span><input id="answerKeyExamProviderInput" class="admin-modal-input" placeholder="Ex.: ENEM" /></label>
+                <label class="proof-center-field"><span class="proof-center-label">Nome da prova</span><input id="answerKeyExamNameInput" class="admin-modal-input" placeholder="Ex.: Exame Nacional do Ensino Medio" /></label>
+              </div>
+              <div class="proof-center-grid-wide">
+                <label class="proof-center-field"><span class="proof-center-label">Ano</span><input id="answerKeyExamYearInput" type="number" class="admin-modal-input" placeholder="2025" /></label>
+                <label class="proof-center-field"><span class="proof-center-label">Edicao</span><input id="answerKeyExamEditionInput" class="admin-modal-input" placeholder="Ex.: regular" /></label>
+                <label class="proof-center-field"><span class="proof-center-label">Dia</span><input id="answerKeyExamDayInput" class="admin-modal-input" placeholder="Ex.: D1" /></label>
+                <label class="proof-center-field"><span class="proof-center-label">Data da aplicacao</span><input id="answerKeyApplicationDateInput" type="date" class="admin-modal-input" /></label>
+              </div>
+              <div class="proof-center-grid-wide">
+                <label class="proof-center-field"><span class="proof-center-label">Area</span><select id="answerKeyAreaSelect" class="admin-modal-input"></select></label>
+                <label class="proof-center-field"><span class="proof-center-label">Materia / bloco</span><input id="answerKeySubjectGroupInput" class="admin-modal-input" placeholder="Ex.: Linguagens" /></label>
+                <label class="proof-center-field"><span class="proof-center-label">Caderno / cor</span><input id="answerKeyBookletColorInput" class="admin-modal-input" placeholder="Ex.: Azul" /></label>
+                <label class="proof-center-field"><span class="proof-center-label">Versao</span><input id="answerKeyExamVersionInput" class="admin-modal-input" placeholder="Ex.: V1" /></label>
+              </div>
+              <div class="proof-center-grid-wide">
+                <label class="proof-center-field"><span class="proof-center-label">Idioma</span><input id="answerKeyLanguageInput" class="admin-modal-input" placeholder="Ex.: Portugues" /></label>
+                <label class="proof-center-field"><span class="proof-center-label">Qtd. esperada de questoes</span><input id="answerKeyExpectedQuestionCountInput" type="number" class="admin-modal-input" placeholder="45" /></label>
+                <label class="proof-center-field"><span class="proof-center-label">Parser profile</span><input id="answerKeyParserProfileInput" class="admin-modal-input" placeholder="Ex.: enem_d1_objetiva" /></label>
+                <label class="proof-center-field"><span class="proof-center-label">Disciplina interna</span><input id="answerKeyProofDisciplineInput" class="admin-modal-input" placeholder="Ex.: linguagens" /></label>
+              </div>
+              <label class="proof-center-field"><span class="proof-center-label">Aliases / palavras-chave</span><textarea id="answerKeyAliasKeywordsInput" class="admin-modal-input proof-center-textarea-small" placeholder="ENEM 2025, 1 dia, Linguagens, Caderno Azul"></textarea></label>
+              <div class="proof-center-grid">
+                <label class="proof-center-field"><span class="proof-center-label">Descricao interna</span><textarea id="answerKeyProofDescriptionInput" class="admin-modal-input proof-center-textarea-small" placeholder="Descricao operacional curta"></textarea></label>
+                <label class="proof-center-field"><span class="proof-center-label">Observacoes de identificacao</span><textarea id="answerKeyIdentificationNotesInput" class="admin-modal-input proof-center-textarea-small" placeholder="Sinais usados para reconhecer o PDF, excecoes e notas internas"></textarea></label>
+              </div>
+            </section>
+
+            <section class="proof-center-block-section">
+              <div class="proof-center-toolbar">
+                <div>
+                  <p class="section-label">B</p>
+                  <h3 class="analysis-title">Configuracao da correcao</h3>
+                </div>
+              </div>
+              <div class="proof-center-grid-wide">
+                <label class="proof-center-field"><span class="proof-center-label">Tipo do gabarito</span><select id="answerKeyTypeSelect" class="admin-modal-input"></select></label>
+                <label class="proof-center-field"><span class="proof-center-label">Origem</span><select id="answerKeySourceSelect" class="admin-modal-input"></select></label>
+                <label class="proof-center-field"><span class="proof-center-label">Status</span><select id="answerKeyStatusSelect" class="admin-modal-input"></select></label>
+                <label class="proof-center-field"><span class="proof-center-label">Confianca</span><input id="answerKeyConfidenceInput" type="number" step="any" class="admin-modal-input" placeholder="0 a 100" /></label>
+              </div>
+              <div class="proof-center-grid-wide">
+                <label class="proof-center-field"><span class="proof-center-label">Tipo padrao da questao</span><select id="answerKeyDefaultQuestionTypeSelect" class="admin-modal-input"></select></label>
+                <label class="proof-center-field"><span class="proof-center-label">Tol. padrao</span><input id="answerKeyDefaultToleranceInput" type="number" step="any" class="admin-modal-input" placeholder="0" /></label>
+                <label class="proof-center-field"><span class="proof-center-label">Peso padrao</span><input id="answerKeyDefaultWeightInput" type="number" step="any" class="admin-modal-input" placeholder="1" value="1" /></label>
+                <label class="proof-center-field"><span class="proof-center-label">Modo sugerido</span><select id="answerKeyDefaultModeSelect" class="admin-modal-input"><option value="automatica">Automatica</option><option value="automatica_com_tolerancia">Automatica com tolerancia</option><option value="semiassistida">Semiassistida</option><option value="manual">Manual</option></select></label>
+              </div>
+              <div class="proof-center-grid">
+                <label class="proof-center-field"><span class="proof-center-label">Regra de validacao padrao</span><textarea id="answerKeyDefaultValidationRuleInput" class="admin-modal-input proof-center-textarea-small" placeholder='JSON opcional ou regra curta, ex.: {"unit":"cm"}'></textarea></label>
+                <label class="proof-center-field"><span class="proof-center-label">Notas do gabarito</span><textarea id="answerKeyNotesInput" class="admin-modal-input proof-center-textarea-small" placeholder="Contexto da correcao, excecoes e observacoes para revisao"></textarea></label>
+              </div>
+            </section>
+
+            <section class="proof-center-block-section">
+              <div class="proof-center-toolbar">
+                <div>
+                  <p class="section-label">C</p>
+                  <h3 class="analysis-title">Gabarito por questao</h3>
+                </div>
+                <div class="proof-center-actions">
+                  <button type="button" id="answerKeyItemGenerateButton" class="proof-center-button proof-center-button-secondary">Gerar linhas</button>
+                  <button type="button" id="answerKeyItemAddButton" class="proof-center-button proof-center-button-secondary">Adicionar questao</button>
+                </div>
+              </div>
+              <div id="answerKeyItemRowsList" class="proof-center-item-list">
+                <div class="proof-center-empty">Adicione os itens do gabarito para definir a prova mestre.</div>
+              </div>
+            </section>
+
+            <div class="proof-center-actions">
+              <button type="submit" class="proof-center-button">Salvar gabarito mestre</button>
+              <a href="admin-importacao.html" class="proof-center-link-button proof-center-button-secondary">Ir para importacao</a>
+            </div>
+            <div id="answerKeyManagerFeedback" class="proof-center-feedback"></div>
+          </form>
+        </article>
+      </section>
+      <footer class="support-copy" aria-hidden="true"></footer>
+    </main>
+  </div>
+  <script src="js/main.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/admin.js"></script>
+  <script src="js/admin-proof-center-api.js"></script>
+  <script src="js/admin-proof-center.js"></script>
+  <script src="js/admin-proof-center-operations.js"></script>
+</body>
+</html>

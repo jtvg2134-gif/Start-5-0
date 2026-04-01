@@ -2,6 +2,7 @@
 const menuToggle = document.getElementById("menuToggle");
 const menuPanel = document.getElementById("menuPanel");
 const sidebarNavigationManaged = Boolean(window.Start5Main?.sidebarNavigation?.isManaged);
+const adminPageView = body?.dataset.adminView || "hub";
 
 const adminUsersValue = document.getElementById("adminUsersValue");
 const adminAdminsValue = document.getElementById("adminAdminsValue");
@@ -21,6 +22,14 @@ const adminEmailAdminsValue = document.getElementById("adminEmailAdminsValue");
 const adminEmailActiveValue = document.getElementById("adminEmailActiveValue");
 const adminEmailRecentValue = document.getElementById("adminEmailRecentValue");
 const adminEmailList = document.getElementById("adminEmailList");
+const adminProfileSelectionList = document.getElementById("adminProfileSelectionList");
+const adminSelectionCountValue = document.getElementById("adminSelectionCountValue");
+const adminSelectionHintValue = document.getElementById("adminSelectionHintValue");
+const adminClearSelectionButton = document.getElementById("adminClearSelectionButton");
+const adminGrantSelectedButton = document.getElementById("adminGrantSelectedButton");
+const adminRevokeSelectedButton = document.getElementById("adminRevokeSelectedButton");
+const adminDeleteSelectedButton = document.getElementById("adminDeleteSelectedButton");
+const adminBulkFeedback = document.getElementById("adminBulkFeedback");
 const adminProfileAvatar = document.getElementById("adminProfileAvatar");
 const adminProfileNameValue = document.getElementById("adminProfileNameValue");
 const adminProfileEmailValue = document.getElementById("adminProfileEmailValue");
@@ -40,12 +49,20 @@ const adminEditPasswordInput = document.getElementById("adminEditPasswordInput")
 const adminCanManageAdminsInput = document.getElementById("adminCanManageAdminsInput");
 const closeAdminModalButtons = document.querySelectorAll("[data-close-admin-modal]");
 const roleOptionButtons = [...document.querySelectorAll("[data-role-option]")];
+const adminDeleteConfirmBackdrop = document.getElementById("adminDeleteConfirmBackdrop");
+const adminDeleteConfirmSummary = document.getElementById("adminDeleteConfirmSummary");
+const adminDeleteConfirmList = document.getElementById("adminDeleteConfirmList");
+const adminDeleteConfirmFeedback = document.getElementById("adminDeleteConfirmFeedback");
+const adminConfirmDeleteSelectedButton = document.getElementById("adminConfirmDeleteSelectedButton");
+const closeAdminDeleteModalButtons = document.querySelectorAll("[data-close-admin-delete-modal]");
 
 let adminUsers = [];
+let selectedAdminUserIds = new Set();
 let openUserMenuId = null;
 let modalMode = "edit";
 let modalUserId = null;
 let selectedRole = "user";
+let isApplyingBulkAction = false;
 
 function getAdminSession() {
   return window.Start5Auth?.getSession?.() || null;
@@ -192,6 +209,306 @@ function getUserById(userId) {
   return adminUsers.find((user) => user.id === userId) || null;
 }
 
+function getSelectedAdminUsers() {
+  return [...selectedAdminUserIds]
+    .map((userId) => getUserById(userId))
+    .filter(Boolean);
+}
+
+function getAdminSelectionRestrictionReason(user) {
+  if (!user || !currentAdminCanManageAdmins()) {
+    return "";
+  }
+
+  const session = getAdminSession();
+
+  if (user.isPrimaryAdmin) {
+    return "Admin principal protegido";
+  }
+
+  if (session?.id === user.id) {
+    return "Sua conta nao entra em acoes em lote";
+  }
+
+  if (user.adminCanManageAdmins && !currentAdminIsPrimary()) {
+    return "Somente o admin principal gerencia este perfil";
+  }
+
+  return "";
+}
+
+function isAdminUserSelectable(user) {
+  return !getAdminSelectionRestrictionReason(user);
+}
+
+function syncSelectedAdminUserIds() {
+  selectedAdminUserIds = new Set(
+    [...selectedAdminUserIds].filter((userId) => {
+      const user = adminUsers.find((entry) => entry.id === userId);
+      return Boolean(user && isAdminUserSelectable(user));
+    })
+  );
+}
+
+function setAdminBulkFeedback(message, state = "") {
+  if (!adminBulkFeedback) {
+    return;
+  }
+
+  adminBulkFeedback.textContent = message;
+  adminBulkFeedback.dataset.state = state;
+}
+
+function setAdminDeleteConfirmFeedback(message, state = "") {
+  if (!adminDeleteConfirmFeedback) {
+    return;
+  }
+
+  adminDeleteConfirmFeedback.textContent = message;
+  adminDeleteConfirmFeedback.dataset.state = state;
+}
+
+function updateAdminSelectionSummary() {
+  const selectedUsers = getSelectedAdminUsers();
+  const selectedCount = selectedUsers.length;
+
+  if (adminSelectionCountValue) {
+    adminSelectionCountValue.textContent = `${selectedCount} perfil${selectedCount === 1 ? "" : "s"} selecionado${selectedCount === 1 ? "" : "s"}`;
+  }
+
+  if (adminSelectionHintValue) {
+    adminSelectionHintValue.textContent = selectedCount
+      ? "As acoes abaixo vao usar apenas os perfis destacados."
+      : "Perfis protegidos continuam visiveis, mas ficam fora das acoes em lote.";
+  }
+
+  if (adminGrantSelectedButton) {
+    adminGrantSelectedButton.disabled = !selectedCount || isApplyingBulkAction;
+  }
+
+  if (adminRevokeSelectedButton) {
+    adminRevokeSelectedButton.disabled = !selectedCount || isApplyingBulkAction;
+  }
+
+  if (adminDeleteSelectedButton) {
+    adminDeleteSelectedButton.disabled = !selectedCount || isApplyingBulkAction;
+  }
+
+  if (adminClearSelectionButton) {
+    adminClearSelectionButton.disabled = !selectedCount || isApplyingBulkAction;
+  }
+}
+
+function setAdminBulkActionLoading(isLoading) {
+  isApplyingBulkAction = isLoading;
+
+  if (adminGrantSelectedButton) {
+    adminGrantSelectedButton.textContent = isLoading ? "Aplicando..." : "Dar permissao admin";
+  }
+
+  if (adminRevokeSelectedButton) {
+    adminRevokeSelectedButton.textContent = isLoading ? "Aplicando..." : "Remover permissao admin";
+  }
+
+  if (adminDeleteSelectedButton) {
+    adminDeleteSelectedButton.textContent = isLoading ? "Processando..." : "Excluir selecionados";
+  }
+
+  if (adminConfirmDeleteSelectedButton) {
+    adminConfirmDeleteSelectedButton.disabled = isLoading;
+    adminConfirmDeleteSelectedButton.textContent = isLoading ? "Excluindo..." : "Excluir perfis";
+  }
+
+  updateAdminSelectionSummary();
+}
+
+function toggleAdminUserSelection(userId) {
+  const user = getUserById(userId);
+
+  if (!currentAdminCanManageAdmins() || isApplyingBulkAction || !isAdminUserSelectable(user)) {
+    return;
+  }
+
+  if (selectedAdminUserIds.has(userId)) {
+    selectedAdminUserIds.delete(userId);
+  } else {
+    selectedAdminUserIds.add(userId);
+  }
+
+  renderAdminSelectionBar(adminUsers);
+  renderAdminEmails(adminUsers);
+}
+
+function clearAdminUserSelection({ keepFeedback = false } = {}) {
+  if (!selectedAdminUserIds.size) {
+    return;
+  }
+
+  selectedAdminUserIds.clear();
+
+  if (!keepFeedback) {
+    setAdminBulkFeedback("");
+  }
+
+  renderAdminSelectionBar(adminUsers);
+  renderAdminEmails(adminUsers);
+}
+
+function createAdminSelectionChip(user) {
+  const restrictionReason = getAdminSelectionRestrictionReason(user);
+  const isSelectable = !restrictionReason;
+  const chip = document.createElement(isSelectable ? "button" : "div");
+  chip.className = "admin-selection-chip";
+  chip.dataset.userId = String(user.id);
+
+  if (selectedAdminUserIds.has(user.id)) {
+    chip.classList.add("is-selected");
+  }
+
+  if (user.isPrimaryAdmin) {
+    chip.classList.add("is-protected");
+  }
+
+  if (isSelectable) {
+    chip.type = "button";
+    chip.setAttribute("aria-pressed", String(selectedAdminUserIds.has(user.id)));
+    chip.setAttribute("aria-label", `Selecionar perfil de ${user.name || "Usuario"}`);
+    chip.addEventListener("click", () => {
+      toggleAdminUserSelection(user.id);
+    });
+  } else {
+    chip.classList.add("is-disabled");
+    chip.setAttribute("aria-disabled", "true");
+    chip.title = restrictionReason;
+  }
+
+  const avatar = document.createElement("span");
+  avatar.className = "admin-selection-chip-avatar";
+  avatar.textContent = getNameInitials(user.name || user.email || "U");
+
+  const copy = document.createElement("span");
+  copy.className = "admin-selection-chip-copy";
+
+  const name = document.createElement("strong");
+  name.textContent = user.name || "Sem nome";
+
+  const email = document.createElement("span");
+  email.textContent = user.email || user.maskedEmail || "Sem e-mail";
+
+  copy.append(name, email);
+
+  const meta = document.createElement("span");
+  meta.className = "admin-selection-chip-meta";
+  meta.textContent = restrictionReason || getAdminRoleLabel(user);
+
+  chip.append(avatar, copy, meta);
+  return chip;
+}
+
+function renderAdminSelectionBar(users = []) {
+  if (!adminProfileSelectionList) {
+    return;
+  }
+
+  adminProfileSelectionList.replaceChildren();
+
+  const normalizedUsers = Array.isArray(users) ? users : [];
+
+  if (!normalizedUsers.length) {
+    const empty = document.createElement("div");
+    empty.className = "admin-empty";
+    empty.textContent = "Nenhum perfil carregado para gerenciamento.";
+    adminProfileSelectionList.appendChild(empty);
+    updateAdminSelectionSummary();
+    return;
+  }
+
+  normalizedUsers.forEach((user) => {
+    adminProfileSelectionList.appendChild(createAdminSelectionChip(user));
+  });
+
+  updateAdminSelectionSummary();
+}
+
+function closeAdminDeleteConfirmModal() {
+  if (!adminDeleteConfirmBackdrop) {
+    return;
+  }
+
+  hideModalLayer(adminDeleteConfirmBackdrop);
+  body.classList.remove("modal-open");
+  setAdminDeleteConfirmFeedback("");
+}
+
+function openAdminDeleteConfirmModal() {
+  const selectedUsers = getSelectedAdminUsers();
+
+  if (!adminDeleteConfirmBackdrop || !selectedUsers.length) {
+    return;
+  }
+
+  if (adminDeleteConfirmSummary) {
+    adminDeleteConfirmSummary.textContent =
+      selectedUsers.length === 1
+        ? `Excluir ${selectedUsers[0].name || "este perfil"} do banco?`
+        : `Excluir ${selectedUsers.length} perfis do banco?`;
+  }
+
+  if (adminDeleteConfirmList) {
+    adminDeleteConfirmList.replaceChildren();
+
+    selectedUsers.forEach((user) => {
+      const row = document.createElement("div");
+      row.className = "admin-delete-confirm-row";
+
+      const name = document.createElement("strong");
+      name.textContent = user.name || "Sem nome";
+
+      const meta = document.createElement("span");
+      meta.textContent = `${user.email || user.maskedEmail || "Sem e-mail"} • ${getAdminRoleLabel(user)}`;
+
+      row.append(name, meta);
+      adminDeleteConfirmList.appendChild(row);
+    });
+  }
+
+  setAdminDeleteConfirmFeedback("");
+  showModalLayer(adminDeleteConfirmBackdrop);
+  body.classList.add("modal-open");
+}
+
+async function applyAdminBulkAction(action) {
+  const selectedUsers = getSelectedAdminUsers();
+
+  if (!selectedUsers.length || isApplyingBulkAction) {
+    return;
+  }
+
+  setAdminBulkActionLoading(true);
+  setAdminBulkFeedback("");
+
+  try {
+    const response = await window.Start5Auth.apiRequest("/api/admin/users/batch", {
+      method: "POST",
+      body: {
+        action,
+        userIds: selectedUsers.map((user) => user.id),
+      },
+    });
+
+    selectedAdminUserIds.clear();
+    closeAdminDeleteConfirmModal();
+    await loadAdminData();
+    setAdminBulkFeedback(response?.message || "A acao foi aplicada com sucesso.", "success");
+  } catch (error) {
+    const message = error.message || "Nao foi possivel aplicar a acao selecionada.";
+    setAdminBulkFeedback(message, "error");
+    setAdminDeleteConfirmFeedback(message, "error");
+  } finally {
+    setAdminBulkActionLoading(false);
+  }
+}
+
 function renderAdminOverview(overview) {
   if (adminUsersValue) adminUsersValue.textContent = String(overview.totalUsers || 0);
   if (adminAdminsValue) adminAdminsValue.textContent = String(overview.adminUsers || 0);
@@ -280,7 +597,7 @@ function renderEmptyRow(message) {
 
   const row = document.createElement("tr");
   const cell = document.createElement("td");
-  cell.colSpan = 7;
+  cell.colSpan = currentAdminCanManageAdmins() ? 7 : 6;
   cell.className = "admin-empty";
   cell.textContent = message;
   row.appendChild(cell);
@@ -582,7 +899,9 @@ function renderAdminUsers(users) {
   if (!adminUsersTableBody) return;
 
   adminUsers = Array.isArray(users) ? users : [];
+  syncSelectedAdminUserIds();
   closeUserMenus();
+  renderAdminSelectionBar(adminUsers);
 
   if (!adminUsers.length) {
     renderEmptyRow("Nenhum usu\u00e1rio encontrado.");
@@ -616,8 +935,7 @@ function renderAdminEmails(users = []) {
       const leftTime = new Date(left.lastSessionAt || left.createdAt || 0).getTime() || 0;
       const rightTime = new Date(right.lastSessionAt || right.createdAt || 0).getTime() || 0;
       return rightTime - leftTime;
-    })
-    .slice(0, 5);
+    });
   const mostRecentAccess = recentUsers[0]?.lastSessionAt || recentUsers[0]?.createdAt || "";
 
   if (adminEmailAccountsValue) {
@@ -636,14 +954,81 @@ function renderAdminEmails(users = []) {
     adminEmailRecentValue.textContent = formatAdminDate(mostRecentAccess);
   }
 
-  renderMetricRows(
-    adminEmailList,
-    recentUsers.map((user) => ({
-      label: `${user.name || "Sem nome"} • ${user.maskedEmail || "Privado"}`,
-      value: formatAdminDate(user.lastSessionAt || user.createdAt),
-    })),
-    "Nenhuma conta carregada ainda."
-  );
+  if (!adminEmailList) {
+    return;
+  }
+
+  adminEmailList.replaceChildren();
+
+  if (!recentUsers.length) {
+    const empty = document.createElement("div");
+    empty.className = "admin-empty";
+    empty.textContent = "Nenhuma conta carregada ainda.";
+    adminEmailList.appendChild(empty);
+    return;
+  }
+
+  recentUsers.forEach((user) => {
+    const isSelected = selectedAdminUserIds.has(user.id);
+    const restrictionReason = getAdminSelectionRestrictionReason(user);
+    const isSelectable = currentAdminCanManageAdmins() && !restrictionReason;
+    const row = document.createElement(isSelectable ? "button" : "div");
+    row.className = "admin-account-row";
+    row.dataset.userId = String(user.id);
+
+    if (isSelected) {
+      row.classList.add("is-selected");
+    }
+
+    if (user.isPrimaryAdmin) {
+      row.classList.add("is-protected");
+    }
+
+    if (currentAdminCanManageAdmins() && isSelectable) {
+      row.type = "button";
+      row.setAttribute("aria-pressed", String(isSelected));
+      row.addEventListener("click", () => {
+        toggleAdminUserSelection(user.id);
+      });
+    } else if (currentAdminCanManageAdmins() && restrictionReason) {
+      row.classList.add("is-disabled");
+      row.setAttribute("aria-disabled", "true");
+      row.title = restrictionReason;
+    }
+
+    const accountMain = document.createElement("div");
+    accountMain.className = "admin-account-main";
+
+    const accountName = document.createElement("strong");
+    accountName.textContent = user.name || "Sem nome";
+
+    const accountEmail = document.createElement("span");
+    accountEmail.textContent = user.email || user.maskedEmail || "Sem e-mail";
+
+    accountMain.append(accountName, accountEmail);
+
+    if (restrictionReason) {
+      const accountNote = document.createElement("span");
+      accountNote.className = "admin-account-note";
+      accountNote.textContent = restrictionReason;
+      accountMain.appendChild(accountNote);
+    }
+
+    const accountMeta = document.createElement("div");
+    accountMeta.className = "admin-account-meta";
+
+    const accountRole = document.createElement("span");
+    accountRole.className = "admin-account-badge";
+    accountRole.textContent = getAdminRoleLabel(user);
+
+    const accountDate = document.createElement("span");
+    accountDate.className = "admin-account-date";
+    accountDate.textContent = formatAdminDate(user.lastSessionAt || user.createdAt);
+
+    accountMeta.append(accountRole, accountDate);
+    row.append(accountMain, accountMeta);
+    adminEmailList.appendChild(row);
+  });
 }
 
 function renderAdminProfile() {
@@ -675,28 +1060,53 @@ function renderAdminProfile() {
 }
 
 async function loadAdminData() {
+  let authReady = false;
+  const passiveAdminViews = new Set([
+    "hub",
+    "question-bank",
+    "proofs-hub",
+    "proofs-list",
+    "proofs-upload",
+    "proofs-answer-keys",
+    "proofs-questions",
+    "proofs-correction",
+    "proofs-results",
+  ]);
+
   try {
     await window.Start5Auth?.ready;
+    authReady = true;
 
     if (!window.Start5Auth?.canAccessAdmin?.(getAdminSession())) {
       window.location.replace("index.html");
       return;
     }
 
-    const [overviewResponse, usersResponse, essayMetricsResponse] = await Promise.all([
-      window.Start5Auth.apiRequest("/api/admin/overview"),
-      window.Start5Auth.apiRequest("/api/admin/users"),
-      window.Start5Auth.apiRequest("/api/admin/essay-metrics"),
-    ]);
+    if (passiveAdminViews.has(adminPageView)) {
+      return;
+    }
 
-    renderAdminOverview(overviewResponse.overview || {});
-    renderAdminEssayMetrics(essayMetricsResponse.metrics || {});
-    renderAdminUsers(usersResponse.users || []);
-    renderAdminEmails(usersResponse.users || []);
-    renderAdminProfile();
+    if (adminPageView === "profile") {
+      renderAdminProfile();
+      return;
+    }
+
+    if (adminPageView === "email") {
+      const usersResponse = await window.Start5Auth.apiRequest("/api/admin/users");
+      renderAdminUsers(usersResponse.users || []);
+      renderAdminEmails(usersResponse.users || []);
+      return;
+    }
   } catch (error) {
     console.error("Erro ao carregar admin:", error);
-    renderAdminEssayMetrics({});
+
+    if (!authReady) {
+      return;
+    }
+
+    adminUsers = [];
+    syncSelectedAdminUserIds();
+    renderAdminSelectionBar([]);
     renderEmptyRow("N\u00e3o foi poss\u00edvel carregar os dados do admin.");
     renderAdminEmails([]);
     renderAdminProfile();
@@ -730,6 +1140,43 @@ if (adminModalBackdrop) {
   });
 }
 
+closeAdminDeleteModalButtons.forEach((button) => {
+  button.addEventListener("click", closeAdminDeleteConfirmModal);
+});
+
+if (adminDeleteConfirmBackdrop) {
+  adminDeleteConfirmBackdrop.addEventListener("click", (event) => {
+    if (event.target === adminDeleteConfirmBackdrop) {
+      closeAdminDeleteConfirmModal();
+    }
+  });
+
+  adminDeleteConfirmBackdrop.addEventListener("cancel", (event) => {
+    event.preventDefault();
+    closeAdminDeleteConfirmModal();
+  });
+}
+
+adminClearSelectionButton?.addEventListener("click", () => {
+  clearAdminUserSelection();
+});
+
+adminGrantSelectedButton?.addEventListener("click", async () => {
+  await applyAdminBulkAction("grant-admin");
+});
+
+adminRevokeSelectedButton?.addEventListener("click", async () => {
+  await applyAdminBulkAction("revoke-admin");
+});
+
+adminDeleteSelectedButton?.addEventListener("click", () => {
+  openAdminDeleteConfirmModal();
+});
+
+adminConfirmDeleteSelectedButton?.addEventListener("click", async () => {
+  await applyAdminBulkAction("delete");
+});
+
 roleOptionButtons.forEach((button) => {
   button.addEventListener("click", () => {
     selectedRole = button.dataset.roleOption || "user";
@@ -762,6 +1209,11 @@ document.addEventListener("click", (event) => {
 
 document.addEventListener("keydown", (event) => {
   if (event.key !== "Escape") return;
+
+  if (isModalLayerOpen(adminDeleteConfirmBackdrop)) {
+    closeAdminDeleteConfirmModal();
+    return;
+  }
 
   if (isModalLayerOpen(adminModalBackdrop)) {
     closeAdminModal();
